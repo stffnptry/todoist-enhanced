@@ -514,6 +514,8 @@ export interface ComposerPlacement {
   date?: string;
   labels?: string[];
   priority?: 1 | 2 | 3 | 4;
+  /** Schätzung in Minuten, z. B. aus einem im Kalender aufgezogenen Zeitraum. */
+  minutes?: number;
 }
 
 /**
@@ -887,7 +889,7 @@ function AppShell({
             <ProjectView projectId={route.id} revealSectionId={route.sectionId} {...viewProps} />
           )}
           {route.view === 'review' && <ReviewView onOpen={openTask} />}
-          {route.view === 'calendar' && <CalendarView onOpen={openTask} />}
+          {route.view === 'calendar' && <CalendarView onOpen={openTask} onAddTask={addTaskTo} />}
           {route.view === 'insights' && <InsightsView onOpen={openTask} />}
           {route.view === 'settings' && <SettingsView />}
         </section>
@@ -942,6 +944,7 @@ function AppShell({
         defaultLabels={placement.labels}
         defaultPriority={placement.priority}
         defaultResponsibleUid={placement.responsibleUid}
+        defaultMinutes={placement.minutes}
       />
       <ClaudePanel open={claudeOpen} onClose={() => setClaudeOpen(false)} onOpenTask={openTask} />
       <MailDrop />

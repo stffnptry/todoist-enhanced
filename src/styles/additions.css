@@ -2068,3 +2068,9 @@ html.reduce-transparency .claudepanel,html.more-contrast .claudepanel{box-shadow
   outline:3px dashed var(--accent);outline-offset:-12px}
 .maildrop-card{display:flex;align-items:center;gap:var(--s2);padding:12px 18px;border-radius:var(--r-full);
   background:var(--surface,#fff);color:var(--text);font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+
+/* Kalender: Zeitraum für eine neue Aufgabe, während er aufgezogen wird. */
+.cal-event.cal-draft{position:absolute;z-index:4;pointer-events:none;display:flex;flex-direction:column;gap:2px;
+  padding:4px 6px;border-radius:6px;border:1.5px dashed var(--accent);
+  background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--text);font-size:var(--fs-12)}
+.cal-event.cal-draft span{color:var(--muted)}

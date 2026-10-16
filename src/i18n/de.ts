@@ -325,6 +325,8 @@ export const de: Record<TranslationKey, string> = {
   'group.priority': 'Priorität',
   'group.label': 'Label',
   'group.estimate': 'Schätzung',
+  'cal.newTask': 'Neue Aufgabe',
+  'cal.newTaskAt': 'Neue Aufgabe um {time}',
   'mail.dropHint': 'Loslassen, um eine Aufgabe im Eingang anzulegen',
   'mail.from': 'Von',
   'mail.date': 'Datum',

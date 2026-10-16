@@ -325,6 +325,8 @@ export const fr: Record<TranslationKey, string> = {
   'group.priority': 'Priorité',
   'group.label': 'Tag',
   'group.estimate': 'Estimation',
+  'cal.newTask': 'Nouvelle tâche',
+  'cal.newTaskAt': 'Nouvelle tâche à {time}',
   'mail.dropHint': 'Relâchez pour créer une tâche dans la boîte de réception',
   'mail.from': 'De',
   'mail.date': 'Date',

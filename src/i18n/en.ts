@@ -323,6 +323,8 @@ export const en = {
   'group.priority': 'Priority',
   'group.label': 'Tag',
   'group.estimate': 'Estimate',
+  'cal.newTask': 'New task',
+  'cal.newTaskAt': 'New task at {time}',
   'mail.dropHint': 'Drop to add as a task to the Inbox',
   'mail.from': 'From',
   'mail.date': 'Date',

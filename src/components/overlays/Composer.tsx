@@ -36,6 +36,8 @@ interface ComposerProps {
   /** Pre-filled tags, for a page that is one tag. */
   defaultLabels?: string[];
   defaultPriority?: DisplayPriority;
+  /** Schätzung, mit der die Eingabe startet (Zeitraum aus dem Kalender). */
+  defaultMinutes?: number;
   defaultResponsibleUid?: string | null;
 }
 
@@ -47,7 +49,7 @@ interface ComposerProps {
  * priority, tags and the estimate all sit on the row below.
  */
 export function Composer({
-  open, onClose, defaultProjectId, defaultSectionId, defaultDate, defaultLabels, defaultPriority, defaultResponsibleUid,
+  open, onClose, defaultProjectId, defaultSectionId, defaultDate, defaultLabels, defaultPriority, defaultResponsibleUid, defaultMinutes,
 }: ComposerProps) {
   const { t } = useT();
   const snapshot = useStore((s) => s.snapshot);
@@ -136,7 +138,7 @@ export function Composer({
     /* eslint-disable-next-line react-hooks/exhaustive-deps -- the array is
        built fresh by the caller on every render; its contents are the dep. */
   }, [open, defaultProjectId, defaultSectionId, defaultDate, defaultPriority, defaultLabels?.join('\u0000'),
-    inboxId, defaultResponsibleUid]);
+    inboxId, defaultResponsibleUid, defaultMinutes]);
 
   /** Alles so, wie es beim Öffnen war. */
   function resetForm() {
@@ -146,7 +148,7 @@ export function Composer({
     setPriority(4);
     setLabels(defaultLabels ?? []);
     setPriority(defaultPriority ?? 4);
-    setMinutes(null);
+    setMinutes(defaultMinutes ?? null);
     setTagsOpen(false);
     setTagQuery('');
     setSubtasks([]);
@@ -224,7 +226,7 @@ export function Composer({
     if (reading === 'date') setDate(defaultDate ?? '');
     if (reading === 'recurrence') setRecurrence(null);
     if (reading === 'priority') setPriority(4);
-    if (reading === 'duration') setMinutes(null);
+    if (reading === 'duration') setMinutes(defaultMinutes ?? null);
     if (reading === 'project') { setProjectId(fallbackProject); setSectionId(''); }
     /* A tag read from the name needs nothing here: it is read again from the
        name every time, so refusing it is enough to take it off. */

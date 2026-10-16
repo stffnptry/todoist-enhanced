@@ -55,7 +55,11 @@ const call = (command: string, input?: Record<string, unknown>): Promise<Answer>
  * changes its estimate, and its tick completes it, all in Todoist. Done tasks
  * stay where they were, faded. Nothing is written into a calendar any more.
  */
-export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
+export function CalendarView({ onOpen, onAddTask }: {
+  onOpen: (id: string) => void;
+  /** Neue Aufgabe zu einer Zeit im Raster (Doppelklick, Rechtsklick, Aufziehen). */
+  onAddTask?: (placement: { date: string; minutes: number }) => void;
+}) {
   const { t, locale } = useT();
   const { snapshot, items, childrenOf } = useData();
   const hour12 = useStore((s) => s.prefs.hour12);
@@ -363,6 +367,69 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
     // wieder öffnen; der nächste Abgleich bringt die Aufgabe zurück.
     completed.forget(task.id);
     void applyCommands([uncompleteItem(task.id)], (snap) => snap).then(() => refresh());
+  };
+
+  /* ---------- Neue Aufgabe im Raster, wie in Apple Kalender ----------
+     Doppelklick auf eine freie Stelle, Rechtsklick → „Neue Aufgabe um …“ oder
+     einen Zeitraum aufziehen. Es öffnet sich die normale Eingabe mit Tag,
+     Uhrzeit und – beim Aufziehen – der Länge als Schätzung. */
+
+  const [draft, setDraft] = useState<{ day: number; top: number; bottom: number } | null>(null);
+
+  const addAt = (day: Date, startMinute: number, minutes: number) => {
+    if (!onAddTask) return;
+    onAddTask({ date: toApiDateTime(new Date(startOfDay(day).getTime() + startMinute * 60_000)), minutes });
+  };
+
+  /** Die Minute unter dem Zeiger in einer Tagesspalte, auf das Raster abgerundet. */
+  const columnMinute = (column: HTMLElement, clientY: number) => {
+    const raw = ((clientY - column.getBoundingClientRect().top) / zoomRef.current) * 60;
+    return Math.max(0, Math.min(DAY_MINUTES - SNAP_MINUTES, Math.floor(raw / SNAP_MINUTES) * SNAP_MINUTES));
+  };
+
+  /** Nur freie Fläche zählt: auf Terminen und Aufgaben gelten deren eigene Klicks. */
+  const onFreeSpace = (target: EventTarget) => !(target as HTMLElement).closest('.cal-event, .cal-now');
+
+  const beginDraft = (pointer: ReactPointerEvent, dayIndex: number) => {
+    if (!onAddTask || pointer.button !== 0 || !onFreeSpace(pointer.target)) return;
+    const column = pointer.currentTarget as HTMLElement;
+    const from = columnMinute(column, pointer.clientY);
+    const startY = pointer.clientY;
+    let current = { top: from, bottom: from + SNAP_MINUTES };
+    let moved = false;
+
+    const onMove = (move: PointerEvent) => {
+      if (!moved && Math.abs(move.clientY - startY) < 4) return;
+      moved = true;
+      const minute = columnMinute(column, move.clientY);
+      current = minute >= from
+        ? { top: from, bottom: minute + SNAP_MINUTES }
+        : { top: minute, bottom: from + SNAP_MINUTES };
+      setDraft({ day: dayIndex, ...current });
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      setDraft(null);
+      if (moved) addAt(days[dayIndex], current.top, current.bottom - current.top);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
+
+  const onGridDoubleClick = (event: React.MouseEvent, dayIndex: number) => {
+    if (!onAddTask || !onFreeSpace(event.target)) return;
+    addAt(days[dayIndex], columnMinute(event.currentTarget as HTMLElement, event.clientY), DEFAULT_TASK_MINUTES);
+  };
+
+  const onGridContext = (event: React.MouseEvent, dayIndex: number) => {
+    if (!onAddTask || !onFreeSpace(event.target)) return;
+    const minute = columnMinute(event.currentTarget as HTMLElement, event.clientY);
+    const at = new Date(startOfDay(days[dayIndex]).getTime() + minute * 60_000);
+    openContext(event, t('cal.newTask'), [{
+      key: 'new', label: t('cal.newTaskAt', { time: timeLabel(at) }), icon: 'plus',
+      onPick: () => addAt(days[dayIndex], minute, DEFAULT_TASK_MINUTES),
+    }]);
   };
 
   /* ---------- Resizing a task's block: its length is the task's estimate ---------- */
@@ -764,7 +831,22 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
                     onDragOver={(e) => onDragOver(e, dayIndex)}
                     onDragLeave={(e) => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) setHover(null); }}
                     onDrop={(e) => onDrop(e, dayIndex)}
+                    onPointerDown={(e) => beginDraft(e, dayIndex)}
+                    onDoubleClick={(e) => onGridDoubleClick(e, dayIndex)}
+                    onContextMenu={(e) => onGridContext(e, dayIndex)}
                   >
+                    {draft && draft.day === dayIndex && (
+                      <div
+                        className="cal-event cal-draft"
+                        style={{ top: px(draft.top), height: Math.max(px(draft.bottom - draft.top) - 2, 14), left: 2, width: 'calc(100% - 4px)' }}
+                      >
+                        <strong>{t('cal.newTask')}</strong>
+                        <span>
+                          {formatTime(new Date(startOfDay(day).getTime() + draft.top * 60_000), locale, hour12)}–{formatTime(new Date(startOfDay(day).getTime() + draft.bottom * 60_000), locale, hour12)}
+                          {' · '}{formatDuration(draft.bottom - draft.top, locale)}
+                        </span>
+                      </div>
+                    )}
                     {placed.map(({ item: entry, top, bottom, column, columns }) => {
                       const style = {
                         top: px(top),
