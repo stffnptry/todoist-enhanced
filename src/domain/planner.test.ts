@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { localDateTime, parsePlanAnswer, plannerSystemPrompt } from './planner';
+import { decisionLogLines, localDateTime, parsePlanAnswer, plannerSystemPrompt } from './planner';
 import { item } from '@/test/items';
 import type { Snapshot } from './types';
 
@@ -56,5 +56,39 @@ describe('planning with Claude', () => {
     expect(prompt).toContain('[t1] Briefing lesen | P1 | due 2026-10-14 | estimate 45 min');
     expect(prompt).toContain('Wed 2026-10-14 09:00–09:15 Daily (Arbeit)');
     expect(prompt).toContain('Wed 2026-10-14: 8h00');
+  });
+
+  it('keeps proposed memory apart from the text and the proposals', () => {
+    const answer = [
+      'Plan steht.',
+      '```actions',
+      '[{"type":"date","taskId":"a","date":"2026-10-15"}]',
+      '```',
+      '```memory',
+      '- Du machst Sport lieber abends.',
+      '* Freitags nur Kleinkram.',
+      '',
+      '```',
+    ].join('\n');
+    const { text, actions, memory } = parsePlanAnswer(answer, open);
+    expect(text).toBe('Plan steht.');
+    expect(actions).toEqual([{ type: 'date', taskId: 'a', date: '2026-10-15' }]);
+    expect(memory).toEqual(['Du machst Sport lieber abends.', 'Freitags nur Kleinkram.']);
+  });
+
+  it('reads memory without proposals, and nothing when there is none', () => {
+    expect(parsePlanAnswer('Ok.\n```memory\n- Mag frühe Termine.\n```', open)).toEqual({ text: 'Ok.', actions: [], memory: ['Mag frühe Termine.'] });
+    expect(parsePlanAnswer('Nur Text.', open).memory).toEqual([]);
+  });
+
+  it('writes accepted and declined proposals as log lines', () => {
+    const lines = decisionLogLines(new Date(2026, 9, 15, 9, 30), [
+      { name: 'Sport', when: 'Do., 15. Okt. 18:00–19:00', accepted: true },
+      { name: 'Steuer', when: 'Fr., 16. Okt.', accepted: false },
+    ]);
+    expect(lines).toEqual([
+      '- 2026-10-15 09:30 ✓ Sport → Do., 15. Okt. 18:00–19:00',
+      '- 2026-10-15 09:30 ✗ Steuer → Fr., 16. Okt.',
+    ]);
   });
 });

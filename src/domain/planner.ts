@@ -13,6 +13,8 @@ import type { DailyCapacity } from './load';
  *
  * Claude only ever proposes. Each proposal names a task by its id from the
  * context; the panel shows them and applies the ones the person accepts.
+ * Claude may also propose facts to remember about the person; those are only
+ * kept (by the desktop app, in gedaechtnis.md) once the person agrees.
  */
 
 export type PlanAction =
@@ -112,6 +114,14 @@ export function plannerSystemPrompt(input: PlannerInput): string {
     'so never say a change is done: call it a proposal.',
     'Mention the proposals in plain words above the block too.',
     '',
+    'You also build a memory of how the user plans: their habits, preferences and the patterns in their decisions.',
+    'When you notice something lasting that would help future planning and is not in the memory yet, propose it',
+    'at the very end of your answer (after the actions block, if any) in exactly this format:',
+    '```memory',
+    '- one short sentence per fact, in the language of your answer',
+    '```',
+    'At most three facts, only lasting ones (no one-off plans), never guesses. The user decides what is kept.',
+    '',
     `Now: ${format(now, "EEEE yyyy-MM-dd HH:mm")} (local time). The user's week starts on day ${input.snapshot.user?.start_day ?? 1} (1 = Monday).`,
     '',
     'Capacity for tasks per day:',
@@ -124,14 +134,30 @@ export function plannerSystemPrompt(input: PlannerInput): string {
 }
 
 const ACTION_BLOCK = /```actions\s*\n([\s\S]*?)```/;
+const MEMORY_BLOCK = /```memory\s*\n([\s\S]*?)```/;
 const LOCAL_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Claude's answer split into what to show and what can be applied. Anything
- * malformed, or naming a task that is not open, is dropped rather than guessed.
+ * Claude's answer split into what to show, what can be applied and what it
+ * proposes to remember. Anything malformed, or naming a task that is not open,
+ * is dropped rather than guessed.
  */
 export function parsePlanAnswer(
+  answer: string,
+  isOpenTask: (id: string) => boolean,
+): { text: string; actions: PlanAction[]; memory: string[] } {
+  const match = MEMORY_BLOCK.exec(answer);
+  const memory = match
+    ? match[1].split('\n')
+      .map((line) => line.replace(/^\s*[-*•]\s*/, '').trim())
+      .filter((line) => line.length > 0 && line.length <= 300)
+      .slice(0, 5)
+    : [];
+  return { ...parseActions(match ? answer.replace(MEMORY_BLOCK, '') : answer, isOpenTask), memory };
+}
+
+function parseActions(
   answer: string,
   isOpenTask: (id: string) => boolean,
 ): { text: string; actions: PlanAction[] } {
@@ -159,6 +185,18 @@ export function parsePlanAnswer(
     }
   }
   return { text, actions };
+}
+
+/**
+ * Lines for the decision log (claude-protokoll.md): which proposals the person
+ * took (✓) and which they unticked (✗), so Claude can learn from the pattern.
+ */
+export function decisionLogLines(
+  now: Date,
+  entries: Array<{ name: string; when: string; accepted: boolean }>,
+): string[] {
+  const stamp = format(now, 'yyyy-MM-dd HH:mm');
+  return entries.map((e) => `- ${stamp} ${e.accepted ? '✓' : '✗'} ${e.name} → ${e.when}`);
 }
 
 /** A local "YYYY-MM-DDTHH:mm" as a Date in the user's time zone. */

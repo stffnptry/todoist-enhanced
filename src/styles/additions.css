@@ -1881,6 +1881,8 @@ html.more-contrast[data-theme="dark"]{--border:#6a6a6a;--border-strong:#8a8a8a;-
 .claude-task:hover{text-decoration:underline}
 .claude-actions .btn{justify-self:start}
 .claude-applied{display:flex;align-items:center;gap:6px;color:var(--muted);margin:0}
+/* Gedächtnis-Vorschläge: Häkchen + Satz, der umbrechen darf. */
+.claude-memory label{grid-template-columns:auto 1fr}
 .claude-input{display:flex;gap:var(--s2);align-items:center;padding:12px 18px 16px;border-top:1px solid var(--border)}
 .claude-input textarea{flex:1;resize:none;font:inherit;font-size:var(--fs-13);padding:10px 16px;border:1px solid var(--border-strong);border-radius:22px;background:var(--surface);color:var(--text);max-height:160px}
 .claude-input textarea:focus{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);outline-offset:0}

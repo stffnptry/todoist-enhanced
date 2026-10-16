@@ -10,7 +10,7 @@ import { formatTime, toApiDateTime } from '@/domain/dates';
 import { dueForDate } from '@/domain/recurrence';
 import { plainTitle } from '@/domain/reminders';
 import { renderMarkdown } from '@/domain/markdown';
-import { localDateTime, parsePlanAnswer, plannerSystemPrompt, type PlanAction } from '@/domain/planner';
+import { decisionLogLines, localDateTime, parsePlanAnswer, plannerSystemPrompt, type PlanAction } from '@/domain/planner';
 import { DEFAULT_TASK_MINUTES, type CalendarEvent, type CalendarInfo } from '@/domain/calendar';
 import { calendarCall, createTaskEvent } from '@/lib/desktopCalendar';
 import { calendarSyncOn, requestCalendarSync } from '@/hooks/useCalendarSync';
@@ -23,14 +23,17 @@ interface Message {
   actions: PlanAction[];
   /** Indexes of the proposals ticked for applying; null once applied. */
   chosen: number[] | null;
+  /** Facts Claude proposes to remember, and the ticked ones; null once kept. */
+  memory: string[];
+  memoryChosen: number[] | null;
   error?: boolean;
 }
 
 const LANGUAGE: Record<Locale, string> = { de: 'German', fr: 'French', en: 'English' };
 const newId = () => Math.random().toString(36).slice(2);
 
-/** While Claude is still writing, the proposals block is not shown as text. */
-const visibleWhileStreaming = (text: string) => text.split('```actions')[0];
+/** While Claude is still writing, the proposal and memory blocks are not shown as text. */
+const visibleWhileStreaming = (text: string) => text.split(/```(?:actions|memory)/)[0];
 
 /**
  * Planning with Claude, in a panel at the right of the window (desktop app).
@@ -83,13 +86,16 @@ export function ClaudePanel({ open, onClose, onOpenTask }: { open: boolean; onCl
       const isOpen = (id: string) => !!snapshot.items[id] && !snapshot.items[id].checked && !snapshot.items[id].is_deleted;
       setMessages((all) => {
         if (event.type === 'done') {
-          const { text, actions } = parsePlanAnswer(event.text ?? '', isOpen);
-          return [...all, { id: newId(), role: 'assistant', text, actions, chosen: actions.map((_, i) => i) }];
+          const { text, actions, memory } = parsePlanAnswer(event.text ?? '', isOpen);
+          return [...all, {
+            id: newId(), role: 'assistant', text, actions, chosen: actions.map((_, i) => i),
+            memory, memoryChosen: memory.map((_, i) => i),
+          }];
         }
         const reason = event.type === 'cancelled'
           ? t('claude.cancelled')
           : event.error === 'not-installed' ? t('claude.notInstalled') : t('claude.error', { reason: String(event.error ?? '') });
-        return [...all, { id: newId(), role: 'assistant', text: reason, actions: [], chosen: null, error: true }];
+        return [...all, { id: newId(), role: 'assistant', text: reason, actions: [], chosen: null, memory: [], memoryChosen: null, error: true }];
       });
       setStreaming('');
       setRunning(null);
@@ -123,7 +129,7 @@ export function ClaudePanel({ open, onClose, onOpenTask }: { open: boolean; onCl
     const claude = window.enhancedDesktop?.claude;
     if (!message || running || !claude) return;
     const requestId = newId();
-    setMessages((all) => [...all, { id: newId(), role: 'user', text: message, actions: [], chosen: null }]);
+    setMessages((all) => [...all, { id: newId(), role: 'user', text: message, actions: [], chosen: null, memory: [], memoryChosen: null }]);
     setDraft('');
     setStreaming('');
     setRunning(requestId);
@@ -181,6 +187,10 @@ export function ClaudePanel({ open, onClose, onOpenTask }: { open: boolean; onCl
       void updateTask(item.id, { due: dueForDate(item.due, toApiDateTime(start)) });
     }
     if (calendarSyncOn(prefs)) requestCalendarSync();
+    // What was taken and what was unticked, so Claude can learn the pattern.
+    window.enhancedDesktop?.claude?.log?.(decisionLogLines(new Date(), message.actions.map((action, i) => ({
+      ...describe(action), accepted: message.chosen!.includes(i),
+    }))));
     setMessages((all) => all.map((m) => (m.id === message.id ? { ...m, chosen: null } : m)));
     toast(t('claude.appliedToast', { count: chosen.length }));
     if (calendarFailed) toast(t('claude.calendarFailed'), undefined, { tone: 'error' });
@@ -191,6 +201,23 @@ export function ClaudePanel({ open, onClose, onOpenTask }: { open: boolean; onCl
       if (m.id !== message.id || !m.chosen) return m;
       const chosen = m.chosen.includes(index) ? m.chosen.filter((i) => i !== index) : [...m.chosen, index].sort();
       return { ...m, chosen };
+    }));
+
+  /* ---------- Memory ---------- */
+
+  const remember = (message: Message) => {
+    if (!message.memoryChosen) return;
+    const lines = message.memoryChosen.map((i) => message.memory[i]);
+    window.enhancedDesktop?.claude?.remember?.(lines);
+    setMessages((all) => all.map((m) => (m.id === message.id ? { ...m, memoryChosen: null } : m)));
+    toast(t('claude.rememberedToast', { count: lines.length }));
+  };
+
+  const toggleMemory = (message: Message, index: number) =>
+    setMessages((all) => all.map((m) => {
+      if (m.id !== message.id || !m.memoryChosen) return m;
+      const memoryChosen = m.memoryChosen.includes(index) ? m.memoryChosen.filter((i) => i !== index) : [...m.memoryChosen, index].sort();
+      return { ...m, memoryChosen };
     }));
 
   if (!open) return null;
@@ -263,6 +290,33 @@ export function ClaudePanel({ open, onClose, onOpenTask }: { open: boolean; onCl
                     </button>
                   )
                   : <p className="claude-applied"><Icon name="check" size="sm" /> {t('claude.applied')}</p>}
+              </div>
+            )}
+            {m.memory.length > 0 && (
+              <div className="claude-actions claude-memory">
+                <h3>{t('claude.memory')}</h3>
+                <ul>
+                  {m.memory.map((line, i) => (
+                    <li key={i}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={m.memoryChosen ? m.memoryChosen.includes(i) : true}
+                          disabled={!m.memoryChosen}
+                          onChange={() => toggleMemory(m, i)}
+                        />
+                        <span>{line}</span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+                {m.memoryChosen
+                  ? (
+                    <button className="btn" disabled={m.memoryChosen.length === 0} onClick={() => remember(m)}>
+                      {t('claude.remember', { count: m.memoryChosen.length })}
+                    </button>
+                  )
+                  : <p className="claude-applied"><Icon name="check" size="sm" /> {t('claude.remembered')}</p>}
               </div>
             )}
           </div>

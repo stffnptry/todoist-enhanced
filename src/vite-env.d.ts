@@ -19,6 +19,10 @@ interface Window {
       available: () => Promise<boolean>;
       ask: (request: { requestId: string; message: string; system: string; sessionId: string | null }) => void;
       cancel: (requestId: string) => void;
+      /** Keep facts the person agreed to in Claude's memory (newer desktop builds only). */
+      remember?: (lines: string[]) => void;
+      /** Record which proposals the person accepted or declined (newer desktop builds only). */
+      log?: (lines: string[]) => void;
       onEvent: (listener: (event: {
         requestId: string; type: 'delta' | 'done' | 'error' | 'cancelled';
         text?: string; error?: string; sessionId?: string;
