@@ -11,13 +11,18 @@
  */
 
 /** Twelve entries, January first. */
-export const MONTH_WORDS: Record<'en' | 'fr', string[]> = {
+export const MONTH_WORDS: Record<'en' | 'fr' | 'de', string[]> = {
   en: ['january|jan', 'february|feb', 'march|mar', 'april|apr', 'may', 'june|jun',
     'july|jul', 'august|aug', 'september|sept|sep', 'october|oct', 'november|nov',
     'december|dec'],
   fr: ['janvier|janv', 'fevrier|fevr', 'mars', 'avril|avr', 'mai', 'juin',
     'juillet|juil', 'aout', 'septembre|sept', 'octobre|oct', 'novembre|nov',
     'decembre|dec'],
+  /* Deutsch nur für das Lesen von Fälligkeitsdaten; Wiederholungen werden
+     (noch) nicht auf Deutsch gelesen. „märz“ ist gefaltet „marz“. */
+  de: ['januar|jan', 'februar|feb', 'marz|maerz|mrz', 'april|apr', 'mai', 'juni|jun',
+    'juli|jul', 'august|aug', 'september|sept|sep', 'oktober|okt', 'november|nov',
+    'dezember|dez'],
 };
 
 /** Seven entries, Sunday first, as `Date.getDay()` counts them. */

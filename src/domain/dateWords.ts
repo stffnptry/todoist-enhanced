@@ -1,6 +1,6 @@
 import { readNaturalDate } from './nlp';
 import { toApiDate } from './dates';
-import { textLang, type Locale } from '@/i18n';
+import type { Locale } from '@/i18n';
 
 /**
  * The date phrases worth offering while somebody types one.
@@ -11,7 +11,7 @@ import { textLang, type Locale } from '@/i18n';
  * those are things you type, not things you pick: a list is only useful while
  * it is short enough to read without moving your eyes.
  */
-const WORDS: Record<'en' | 'fr', string[]> = {
+const WORDS: Record<Locale, string[]> = {
   en: [
     'today', 'tomorrow', 'next week',
     'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
@@ -19,6 +19,10 @@ const WORDS: Record<'en' | 'fr', string[]> = {
   fr: [
     "aujourd'hui", 'demain', 'semaine prochaine',
     'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche',
+  ],
+  de: [
+    'heute', 'morgen', 'übermorgen', 'nächste Woche',
+    'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag',
   ],
 };
 
@@ -60,14 +64,13 @@ export function dateSuggestions(
   const digits = query.match(/^(\d{1,2})$/);
   if (digits) return daysOfMonth(Number(digits[1]), now);
 
-  const locale = textLang(interfaceLocale);
-  const other = locale === 'fr' ? 'en' : 'fr';
+  const others = (['en', 'fr', 'de'] as const).filter((lang) => lang !== interfaceLocale);
   const out: DateSuggestion[] = [];
 
-  /* Both languages, whatever the interface is set to — somebody reading
+  /* Every language, whatever the interface is set to — somebody reading
      French may well type "tomorrow" — with the interface's own words first,
      because those are the ones they are most likely to mean. */
-  for (const word of [...WORDS[locale], ...WORDS[other]]) {
+  for (const word of [...WORDS[interfaceLocale], ...others.flatMap((lang) => WORDS[lang])]) {
     if (!fold(word).startsWith(query)) continue;
     const reading = readNaturalDate(word, now);
     // A phrase the parser cannot read back is a suggestion that would lie.

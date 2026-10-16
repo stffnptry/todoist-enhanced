@@ -92,3 +92,63 @@ describe('relative calendar months and singular words', () => {
     expect(read('dans un')).toBeNull();
   });
 });
+
+describe('deutsche Datumsangaben (Schnelleingabe)', () => {
+  // now = Montag, 28.09.2026
+  it.each([
+    ['heute', '2026-09-28'],
+    ['morgen', '2026-09-29'],
+    ['übermorgen', '2026-09-30'],
+    ['nächste Woche', '2026-10-05'],
+    ['Montag', '2026-10-05'],
+    ['Freitag', '2026-10-02'],
+    ['Sonnabend', '2026-10-03'],
+    ['in 3 Tagen', '2026-10-01'],
+    ['in einer Woche', '2026-10-05'],
+    ['in zwei Wochen', '2026-10-12'],
+    ['in einem Monat', '2026-10-28'],
+    ['15. Oktober', '2026-10-15'],
+    ['1. März', '2027-03-01'],
+    ['15.10.', '2026-10-15'],
+    ['3.1.2027', '2027-01-03'],
+    ['15.10.26', '2026-10-15'],
+  ])('liest „%s“', (phrase, date) => {
+    expect(read(`Steuer machen ${phrase}`)?.date).toBe(date);
+  });
+
+  it('nimmt die Uhrzeit mit: „morgen 8:30“, „morgen um 9“, „Freitag 14 Uhr“', () => {
+    expect(read('Arzt morgen 8:30')).toMatchObject({ date: '2026-09-29T08:30:00', matched: 'morgen 8:30' });
+    expect(read('Arzt morgen um 9')).toMatchObject({ date: '2026-09-29T09:00:00', matched: 'morgen um 9' });
+    expect(read('Arzt Freitag 14 Uhr')).toMatchObject({ date: '2026-10-02T14:00:00', matched: 'Freitag 14 Uhr' });
+    expect(read('Arzt am Freitag um 8.15 Uhr')).toMatchObject({ date: '2026-10-02T08:15:00', matched: 'am Freitag um 8.15 Uhr' });
+  });
+
+  it('versteht Tageszeiten: „heute Abend“, „morgen früh“, „heute Morgen“', () => {
+    expect(read('Anrufen heute Abend')?.date).toBe('2026-09-28T19:00:00');
+    expect(read('Anrufen morgen früh')?.date).toBe('2026-09-29T09:00:00');
+    expect(read('Anrufen heute Morgen')?.date).toBe('2026-09-28T09:00:00');
+    expect(read('Anrufen morgen Nachmittag')?.date).toBe('2026-09-29T14:00:00');
+  });
+
+  it('nimmt Füllwörter mit, damit sie nicht im Namen bleiben', () => {
+    expect(read('Bericht bis Freitag')?.matched).toBe('bis Freitag');
+    expect(read('Bericht nächsten Montag')?.matched).toBe('nächsten Montag');
+    expect(read('Bericht bis morgen')?.matched).toBe('bis morgen');
+  });
+
+  it.each([
+    'Joggen jeden Montag',
+    'Joggen jeden Morgen',
+    'Guten Morgen sagen',
+    'Release 1.2.3 testen',
+    'Kaffee um 8.30.',
+  ])('liest nichts in „%s“', (text) => {
+    expect(read(text)?.date ?? null).toBeNull();
+  });
+
+  it('englische Angaben gehen weiter', () => {
+    expect(read('tomorrow 08:30')?.date).toBe('2026-09-29T08:30:00');
+    expect(read('monday')?.date).toBe('2026-10-05');
+    expect(read('in 3 days')?.date).toBe('2026-10-01');
+  });
+});

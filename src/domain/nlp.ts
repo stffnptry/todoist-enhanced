@@ -23,10 +23,24 @@ export interface DateReading {
   hasTime: boolean;
 }
 
-const WEEKDAYS: Record<'en' | 'fr', string[]> = {
+const WEEKDAYS: Record<'en' | 'fr' | 'de', string[]> = {
   en: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
   fr: ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'],
+  de: ['sonntag', 'montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag|sonnabend'],
 };
+
+/**
+ * Was vor einem deutschen Wochentag stehen darf und mit ihm verschwindet:
+ * „am Freitag“, „nächsten Montag“, „bis Freitag“. So bleibt kein „am“ im Namen.
+ */
+const DE_WEEKDAY_LEAD = '(?:(?:bis )?(?:zum |am |nachsten |nachster |kommenden |diesen )|bis )?';
+
+/**
+ * „jeden Montag“, „jeden Morgen“, „alle Freitage“ sind Wiederholungen bzw.
+ * Tageszeiten, keine einzelnen Tage. Lieber nichts lesen als einen Termin
+ * erfinden und „jeden“ im Aufgabennamen stehen lassen.
+ */
+const DE_NOT_A_DAY = '(?<!\\b(?:jeden|jede|jedes|alle|immer|guten|am|den|der|diesen|zum) )';
 
 /**
  * For each month, every word either language has for it, longest first so
@@ -35,7 +49,8 @@ const WEEKDAYS: Record<'en' | 'fr', string[]> = {
  * and "2 maisons" the 2nd of May (#123).
  */
 const MONTH_ALTERNATIVES: string[] = Array.from({ length: 12 }, (_, month) =>
-  [...MONTH_WORDS.en[month].split('|'), ...MONTH_WORDS.fr[month].split('|')]
+  [...MONTH_WORDS.en[month].split('|'), ...MONTH_WORDS.fr[month].split('|'),
+    ...MONTH_WORDS.de[month].split('|')]
     .sort((a, b) => b.length - a.length)
     .join('|'));
 
@@ -93,7 +108,16 @@ export function readTime(text: string): TimeReading | null {
     if (ampm[3].toLowerCase() === 'pm') hours += 12;
     return { hours, minutes: Number(ampm[2] ?? 0), ...span(ampm) };
   }
-  const hm = text.match(/\b(?:at|à|a)?\s*(\d{1,2})\s*[h:]\s*(\d{2})?\b/i);
+  /* Deutsch: „8 Uhr“, „8:30 Uhr“, „um 8.30 Uhr“ – und „um 8“ / „um 8:30“
+     ohne „Uhr“. Das „um“ gehört zur Uhrzeit, damit es nicht im Namen bleibt. */
+  const german = text.match(/\b(?:um\s+)?(\d{1,2})(?:[:.](\d{2}))?\s*uhr\b/i)
+    ?? text.match(/\bum\s+(\d{1,2})(?:[:.](\d{2}))?(?![.:]?\d)/i);
+  if (german) {
+    const hours = Number(german[1]);
+    const minutes = Number(german[2] ?? 0);
+    if (hours <= 23 && minutes <= 59) return { hours, minutes, ...span(german) };
+  }
+  const hm = text.match(/\b(?:at|à|a|um)?\s*(\d{1,2})\s*[h:]\s*(\d{2})?\b/i);
   if (hm) {
     const hours = Number(hm[1]);
     if (hours > 23) return null;
@@ -109,11 +133,13 @@ export function readTime(text: string): TimeReading | null {
    * Afternoon is tried before noon, because "après-midi" contains it.
    */
   const parts: Array<[RegExp, number]> = [
-    [/\b(?:apres[- ]midi|afternoon)\b/i, 14],
-    [/\b(?:matin|matinee|morning)\b/i, 9],
-    [/\b(?:soir|soiree|evening|tonight)\b/i, 19],
-    [/\b(?:midi|noon)\b/i, 12],
-    [/\b(?:nuit|night)\b/i, 21],
+    [/\b(?:apres[- ]midi|afternoon|nachmittags?)\b/i, 14],
+    /* „Morgen“ ist auf Deutsch auch „morgen“ (der nächste Tag); als Tageszeit
+       gilt es nur direkt nach „heute“. „morgen früh“ ist morgen um 9. */
+    [/\b(?:matin|matinee|morning|vormittags?|fruh|morgens)\b|(?<=\bheute\s{1,3})morgen\b/i, 9],
+    [/\b(?:soir|soiree|evening|tonight|abends?)\b/i, 19],
+    [/\b(?:midi|noon|mittags?)\b/i, 12],
+    [/\b(?:nuit|night|nachts?)\b/i, 21],
   ];
   for (const [pattern, hours] of parts) {
     const match = text.match(pattern);
@@ -122,6 +148,12 @@ export function readTime(text: string): TimeReading | null {
 
   return null;
 }
+
+/** „in einer Woche“, „in zwei Tagen“: Zahlwörter, die man wirklich tippt. */
+const GERMAN_COUNTS: Record<string, number> = {
+  ein: 1, eine: 1, einem: 1, einer: 1, zwei: 2, drei: 3, vier: 4, funf: 5,
+  sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10,
+};
 
 /** How far a time may sit from its day and still belong to it. */
 const TIME_GAP = 3;
@@ -183,9 +215,9 @@ export function readNaturalDate(
        anybody writes tonight, and it names the hour at the same time — the
        time reader takes the same words a moment later. */
     [/\b(ce soir|cette nuit|ce matin|cet? apres[- ]midi|this (?:morning|afternoon|evening)|tonight)\b/, 0],
-    [/\b(today|aujourd'?hui|auj)\b/, 0],
-    [/\b(tomorrow|demain)\b/, 1],
-    [/\b(after tomorrow|apres-demain|apres demain)\b/, 2],
+    [/\b(today|aujourd'?hui|auj|heute)\b/, 0],
+    [new RegExp(`\\b(?:tomorrow|demain|${DE_NOT_A_DAY}(?:bis )?morgen)\\b`), 1],
+    [/\b(after tomorrow|apres-demain|apres demain|(?:bis )?ubermorgen)\b/, 2],
   ];
   for (const [pattern, offset] of plain) {
     const match = text.match(pattern);
@@ -193,25 +225,27 @@ export function readNaturalDate(
   }
 
   // "next week" / "la semaine prochaine" — the coming Monday
-  const nextWeek = text.match(/\b(next week|semaine prochaine|la semaine prochaine)\b/);
+  const nextWeek = text.match(/\b(next week|semaine prochaine|la semaine prochaine|(?:in der )?(?:nachsten|kommenden) woche|(?:nachste|kommende) woche)\b/);
   if (nextWeek) {
     return found(addDays(today, ((8 - today.getDay()) % 7) || 7), nextWeek);
   }
 
   // "in 3 days" / "dans 2 semaines"
-  const relative = text.match(/\b(?:in|dans)\s+(\d{1,3}|un|une|a|an|one)\s+(days?|jours?|weeks?|semaines?|months?|mois)\b/);
+  // „in 3 Tagen“ / „in einer Woche“ / „in zwei Monaten“
+  const relative = text.match(/\b(?:in|dans)\s+(\d{1,3}|un|une|a|an|one|einem|einer|ein|eine|zwei|drei|vier|funf|sechs|sieben|acht|neun|zehn)\s+(days?|jours?|weeks?|semaines?|months?|mois|tag(?:en?)?|wochen?|monat(?:en?)?)\b/);
   if (relative) {
-    const count = /^\d+$/.test(relative[1]) ? Number(relative[1]) : 1;
-    const weeks = relative[2].startsWith('week') || relative[2].startsWith('semaine');
-    const months = relative[2].startsWith('month') || relative[2] === 'mois';
+    const count = /^\d+$/.test(relative[1]) ? Number(relative[1]) : (GERMAN_COUNTS[relative[1]] ?? 1);
+    const weeks = relative[2].startsWith('week') || relative[2].startsWith('semaine') || relative[2].startsWith('woche');
+    const months = relative[2].startsWith('month') || relative[2] === 'mois' || relative[2].startsWith('monat');
     return found(months ? addMonths(today, count) : addDays(today, count * (weeks ? 7 : 1)), relative);
   }
 
-  // A weekday name, in either language: the next one that is not today.
-  for (const names of Object.values(WEEKDAYS)) {
+  // A weekday name, in any language: the next one that is not today.
+  for (const [lang, names] of Object.entries(WEEKDAYS)) {
+    const lead = lang === 'de' ? `${DE_NOT_A_DAY}${DE_WEEKDAY_LEAD}` : '(?:next |prochain |le )?';
     for (let index = 0; index < names.length; index += 1) {
       const name = fold(names[index]);
-      const match = text.match(new RegExp(`\\b(?:next |prochain |le )?${name}\\b`));
+      const match = text.match(new RegExp(`\\b${lead}(?:${name})\\b`));
       if (!match) continue;
       const delta = ((index - today.getDay() + 7) % 7) || 7;
       return found(addDays(today, delta), match);
@@ -226,7 +260,8 @@ export function readNaturalDate(
   let earliest: { at: number; day: Date; match: RegExpMatchArray } | null = null;
   for (let month = 0; month < 12; month += 1) {
     const words = `(?:${MONTH_ALTERNATIVES[month]})\\.?(?![a-z])`;
-    const dayFirst = text.match(new RegExp(`\\b(\\d{1,2})(?:er|e|st|nd|rd|th)?\\s+${words}`));
+    // „15. Oktober“ und „15.Oktober“ schreiben den Tag mit Punkt.
+    const dayFirst = text.match(new RegExp(`\\b(\\d{1,2})(?:(?:er|e|st|nd|rd|th)?\\s+|\\.\\s*)${words}`));
     const monthFirst = text.match(new RegExp(`\\b${words}\\s+(\\d{1,2})(?:er|st|nd|rd|th)?\\b`));
     for (const match of [dayFirst, monthFirst]) {
       if (!match) continue;
@@ -239,6 +274,23 @@ export function readNaturalDate(
     }
   }
   if (earliest) return found(earliest.day, earliest.match);
+
+  /* „15.10.“ und „15.10.2026“: deutsch geschrieben, also immer Tag zuerst.
+     Der zweite Punkt ist Pflicht, und danach darf keine weitere Ziffer kommen –
+     sonst wäre „8.30“ eine Uhrzeit oder „1.2.3“ eine Versionsnummer. */
+  const dotted = text.match(/\b(\d{1,2})\.(\d{1,2})\.(?:(\d{4}|\d{2})(?!\d)|(?!\d))/);
+  if (dotted) {
+    const dayOfMonth = Number(dotted[1]);
+    const month = Number(dotted[2]) - 1;
+    const year = dotted[3]
+      ? Number(dotted[3].length === 2 ? `20${dotted[3]}` : dotted[3])
+      : today.getFullYear();
+    const day = new Date(year, month, dayOfMonth);
+    if (day.getMonth() === month && day.getDate() === dayOfMonth) {
+      const future = !dotted[3] && day < today ? new Date(year + 1, month, dayOfMonth) : day;
+      return found(future, dotted);
+    }
+  }
 
   /* "12/03" and "12/03/2026". Day first, except when the Date format setting
      says month first: the order is a preference, not a fact about a language. */
