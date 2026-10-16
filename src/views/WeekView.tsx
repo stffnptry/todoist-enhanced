@@ -1,6 +1,5 @@
 import { HireNote } from '@/components/HireNote';
 import { useMemo } from 'react';
-import { differenceInCalendarDays } from 'date-fns';
 import { PageHeader } from '@/components/PageHeader';
 import { ProjectQuickFilter } from '@/components/ProjectQuickFilter';
 import { SubtasksProvider } from '@/components/TaskRow';
@@ -18,8 +17,7 @@ import { viewPrefs } from '@/store/prefs';
 import { applyFilters, datedRoots, sortItems } from '@/store/selectors';
 import { bucketOf, byDay, groupWeek, restOfWeekItems, weekItems } from '@/domain/views';
 import { summariseLoad, weeklyCapacity } from '@/domain/load';
-import { formatRelativeDay, toApiDate } from '@/domain/dates';
-import { intlLocale } from '@/i18n';
+import { formatDayHeading, toApiDate } from '@/domain/dates';
 import { dueForDate } from '@/domain/recurrence';
 import { weekLabel } from '@/domain/types';
 import { placementFor, type TaskPlacement } from '@/domain/dnd';
@@ -107,12 +105,10 @@ function WeekBody({
     () => groupWeek(scoped, new Date(), prefs.showQuickGroup),
     [scoped, prefs.showQuickGroup],
   );
-  /* The rest of the week, one group per day: „Morgen“, then „Samstag, 17. Oktober“. */
+  /* The rest of the week, one group per day: „Morgen“, then „Samstag, 17. Oktober 2026“. */
   const laterDays = useMemo(() => byDay(groups.later).map((day) => ({
     ...day,
-    title: differenceInCalendarDays(day.date, new Date()) === 1
-      ? formatRelativeDay(day.date, locale)
-      : new Intl.DateTimeFormat(intlLocale(locale), { weekday: 'long', day: 'numeric', month: 'long' }).format(day.date),
+    title: formatDayHeading(day.date, locale),
   })), [groups.later, locale]);
 
   /* Today is measured against today's hours, not the week's. A day page

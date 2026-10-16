@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Item } from './types';
-import { dateTone, formatTimeAgo, msUntilNextDay, weekStartsOnOf } from './dates';
+import { dateTone, formatDayHeading, formatTimeAgo, msUntilNextDay, weekStartsOnOf } from './dates';
 
 describe('msUntilNextDay (#146)', () => {
   it('counts to the next local midnight', () => {
@@ -62,5 +62,15 @@ describe('dateTone (#218)', () => {
 
   it('has nothing to say about a task with no date', () => {
     expect(dateTone({ due: null } as unknown as Item, now)).toBeNull();
+  });
+});
+
+describe('formatDayHeading', () => {
+  const now = new Date(2026, 9, 15, 18, 0);
+  it('says Heute and Morgen, then the full date', () => {
+    expect(formatDayHeading(new Date(2026, 9, 15), 'de', now)).toBe('Heute');
+    expect(formatDayHeading(new Date(2026, 9, 16), 'de', now)).toBe('Morgen');
+    expect(formatDayHeading(new Date(2026, 9, 17), 'de', now)).toBe('Samstag, 17. Oktober 2026');
+    expect(formatDayHeading(new Date(2026, 9, 14), 'de', now)).toBe('Mittwoch, 14. Oktober 2026');
   });
 });

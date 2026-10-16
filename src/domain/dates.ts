@@ -141,6 +141,19 @@ export function formatRelativeDay(
 }
 
 /**
+ * Überschrift einer Tagesgruppe: „Heute“, „Morgen“, ab übermorgen (und für
+ * vergangene Tage) das volle Datum „Freitag, 16. Oktober 2026“. Eine Stelle
+ * für alle Tageslisten, damit Projekte und Meine Woche gleich aussehen.
+ */
+export function formatDayHeading(date: Date, locale: Locale, now = new Date()): string {
+  const diff = differenceInCalendarDays(startOfDay(date), startOfDay(now));
+  if (diff === 0 || diff === 1) return formatRelativeDay(date, locale, now);
+  return new Intl.DateTimeFormat(intlLocale(locale), {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  }).format(date);
+}
+
+/**
  * How a whole date is written.
  *
  * Every country orders these three numbers differently and is certain its own
