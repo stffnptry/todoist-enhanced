@@ -334,6 +334,48 @@ export function readNaturalDate(
     }
   }
 
+  /* Nur eine Uhrzeit, ohne Tag: „Arzt 14 Uhr“, „Call um 9:30“, "call 2pm".
+     Wie in Todoist heute – oder morgen, wenn die Uhrzeit heute schon vorbei
+     ist. Nur eindeutige Uhrzeiten: „2h“ ist eher eine Dauer, und eine Tageszeit
+     wie „abends“ allein ist zu oft einfach ein Wort im Namen. */
+  const clock = readClockTime(text);
+  if (clock) {
+    const at = new Date(today.getFullYear(), today.getMonth(), today.getDate(), clock.hours, clock.minutes);
+    const day = at.getTime() <= now.getTime() ? addDays(today, 1) : today;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return {
+      date: `${toApiDate(day)}T${pad(clock.hours)}:${pad(clock.minutes)}:00`,
+      matched: raw.slice(clock.start, clock.end),
+      index: clock.start,
+      hasTime: true,
+    };
+  }
+
+  return null;
+}
+
+/** A clock time that cannot be anything else: „14 Uhr“, „um 9“, „9:30“, "2pm", « 9h30 ». */
+function readClockTime(text: string): TimeReading | null {
+  const patterns = [
+    /\b(?:at\s+|à\s+|a\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i,
+    /\b(?:um\s+)?(\d{1,2})(?:[:.](\d{2}))?\s*uhr\b/i,
+    /\bum\s+(\d{1,2})(?:[:.](\d{2}))?(?![.:]?\d)/i,
+    /\b(?:at\s+|à\s+|a\s+|um\s+)?(\d{1,2}):(\d{2})\b/i,
+    /\b(?:à\s+|a\s+)?(\d{1,2})h(\d{2})\b/i,
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (!match) continue;
+    let hours = Number(match[1]);
+    const minutes = Number(match[2] ?? 0);
+    const half = match[3]?.toLowerCase();
+    if (half) {
+      if (hours < 1 || hours > 12) continue;
+      hours = (hours % 12) + (half === 'pm' ? 12 : 0);
+    }
+    if (hours > 23 || minutes > 59) continue;
+    return { hours, minutes, start: match.index!, end: match.index! + match[0].length };
+  }
   return null;
 }
 

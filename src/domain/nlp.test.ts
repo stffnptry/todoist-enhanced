@@ -141,7 +141,6 @@ describe('deutsche Datumsangaben (Schnelleingabe)', () => {
     'Joggen jeden Morgen',
     'Guten Morgen sagen',
     'Release 1.2.3 testen',
-    'Kaffee um 8.30.',
   ])('liest nichts in „%s“', (text) => {
     expect(read(text)?.date ?? null).toBeNull();
   });
@@ -168,5 +167,30 @@ describe('„in 30 Minuten“: ab jetzt gerechnet', () => {
     ['dans 2 heures', '2026-09-29T01:50:00'],
   ])('liest „%s“', (phrase, date) => {
     expect(readAt(`Wäsche ${phrase}`)).toMatchObject({ date, matched: phrase, index: 7, hasTime: true });
+  });
+});
+
+describe('nur eine Uhrzeit: heute, oder morgen, wenn sie schon vorbei ist', () => {
+  const at = new Date(2026, 8, 28, 10, 0);
+  const readAt = (text: string) => readNaturalDate(text, at);
+  it.each([
+    ['Arzt 14 Uhr', '2026-09-28T14:00:00', '14 Uhr'],
+    ['Arzt um 14:30', '2026-09-28T14:30:00', 'um 14:30'],
+    ['Arzt um 15', '2026-09-28T15:00:00', 'um 15'],
+    ['Arzt 8.30 Uhr', '2026-09-29T08:30:00', '8.30 Uhr'],
+    ['Arzt 16:45', '2026-09-28T16:45:00', '16:45'],
+    ['Kaffee um 8.30.', '2026-09-29T08:30:00', 'um 8.30'],
+    ['Call 2pm', '2026-09-28T14:00:00', '2pm'],
+    ['Appel à 9h30', '2026-09-29T09:30:00', 'à 9h30'],
+  ])('liest „%s“', (text, date, matched) => {
+    expect(readAt(text)).toMatchObject({ date, matched, hasTime: true });
+  });
+  it('ein Tag mit Uhrzeit geht vor', () => {
+    expect(readAt('Arzt morgen 14 Uhr')?.date).toBe('2026-09-29T14:00:00');
+  });
+  it('liest keine Dauer und keine Tageszeit allein als Uhrzeit', () => {
+    expect(readAt('Lernen 2h')).toBeNull();
+    expect(readAt('Abendessen kochen')).toBeNull();
+    expect(readAt('Kapitel 3 lesen')).toBeNull();
   });
 });
