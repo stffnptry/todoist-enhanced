@@ -2060,3 +2060,11 @@ html.reduce-transparency .claudepanel,html.more-contrast .claudepanel{box-shadow
 /* Kanban-Status „In Arbeit“ an der Zeile (domain/kanban.ts): wie ein Tag, in
    der Infofarbe, damit er sich von echten Tags abhebt. */
 .tag.status-doing{color:var(--info);background:color-mix(in srgb,var(--info) 12%,transparent)}
+
+/* E-Mails ins Fenster ziehen (components/MailDrop.tsx): ein Hinweis über
+   allem, der keine Klicks fängt. */
+.maildrop{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;background:color-mix(in srgb,var(--accent) 8%,transparent);
+  outline:3px dashed var(--accent);outline-offset:-12px}
+.maildrop-card{display:flex;align-items:center;gap:var(--s2);padding:12px 18px;border-radius:var(--r-full);
+  background:var(--surface,#fff);color:var(--text);font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.18)}

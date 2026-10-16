@@ -14,6 +14,15 @@ interface Window {
     setReminders?: (list: Array<{ key: string; itemId: string; at: number; title: string; body: string }>) => void;
     /** The Mac's calendars, through the desktop app's EventKit helper (newer desktop builds only). */
     calendar?: (command: string, input?: Record<string, unknown>) => Promise<{ ok: boolean; error?: string; [key: string]: unknown }>;
+    /** E-Mails als Aufgaben (components/MailDrop.tsx; neuere Mac-App-Versionen). */
+    mail?: {
+      /** Betreff, Absender, Datum und Text einer Mail aus Apple Mail, über ihre Message-ID. */
+      fromAppleMail: (messageId: string) => Promise<{ ok: boolean; error?: string; subject?: string; from?: string; date?: string; body?: string }>;
+      /** Was auf der Drag-Ablage des Systems liegt: Typen, Dateipfade, Text, HTML. */
+      dragPasteboard: () => Promise<{ ok: boolean; error?: string; types?: string[]; files?: string[]; text?: string | null; html?: string | null }>;
+      /** Eine .eml-Datei lesen, deren Pfad auf der Drag-Ablage lag. */
+      readEml: (file: string) => Promise<{ ok: boolean; error?: string; text?: string }>;
+    };
     /** Claude through the Claude CLI on this Mac (newer desktop builds only). */
     claude?: {
       available: () => Promise<boolean>;

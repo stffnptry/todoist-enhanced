@@ -51,6 +51,7 @@ import { placementForPage } from './domain/dnd';
 import { useParentEstimates } from './hooks/useParentEstimates';
 import { useDesktopReminders } from './hooks/useDesktopReminders';
 import { CalendarView } from './views/CalendarView';
+import { MailDrop } from './components/MailDrop';
 import { ClaudePanel } from './components/ClaudePanel';
 import { bucketOf, restOfWeekItems, hasLabel, somedayItems, upcomingItems, weekItems } from './domain/views';
 import { effectiveEstimate } from './domain/estimates';
@@ -943,6 +944,7 @@ function AppShell({
         defaultResponsibleUid={placement.responsibleUid}
       />
       <ClaudePanel open={claudeOpen} onClose={() => setClaudeOpen(false)} onOpenTask={openTask} />
+      <MailDrop />
       <TaskDetail
         taskId={openTaskId}
         onClose={() => setOpenTaskId(null)}
