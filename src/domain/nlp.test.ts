@@ -152,3 +152,21 @@ describe('deutsche Datumsangaben (Schnelleingabe)', () => {
     expect(read('in 3 days')?.date).toBe('2026-10-01');
   });
 });
+
+describe('„in 30 Minuten“: ab jetzt gerechnet', () => {
+  const at = new Date(2026, 8, 28, 23, 50);
+  const readAt = (text: string) => readNaturalDate(text, at);
+  it.each([
+    ['in 30 Minuten', '2026-09-29T00:20:00'],
+    ['in 5 min', '2026-09-28T23:55:00'],
+    ['in 2 Stunden', '2026-09-29T01:50:00'],
+    ['in einer Stunde', '2026-09-29T00:50:00'],
+    ['in einer halben Stunde', '2026-09-29T00:20:00'],
+    ['in anderthalb Stunden', '2026-09-29T01:20:00'],
+    ['in 45 minutes', '2026-09-29T00:35:00'],
+    ['in an hour', '2026-09-29T00:50:00'],
+    ['dans 2 heures', '2026-09-29T01:50:00'],
+  ])('liest „%s“', (phrase, date) => {
+    expect(readAt(`Wäsche ${phrase}`)).toMatchObject({ date, matched: phrase, index: 7, hasTime: true });
+  });
+});

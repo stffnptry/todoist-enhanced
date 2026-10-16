@@ -231,6 +231,29 @@ export function readNaturalDate(
   }
 
   // "in 3 days" / "dans 2 semaines"
+  /* „in 30 Minuten“, „in 2 Stunden“, „in einer halben Stunde“, "in 45 minutes",
+     « dans 2 heures »: ab jetzt gerechnet, auf die Minute genau. */
+  const soon = text.match(/\b(?:in|dans)\s+(?:(einer halben stunde|einer viertelstunde|anderthalb stunden|half an hour|une demi-heure)|(\d{1,3}|ein|eine|einem|einer|zwei|drei|vier|funf|sechs|sieben|acht|neun|zehn|a|an|one|un|une)\s+(minuten?|minutes?|mins?|stunden?|std|hours?|hrs?|heures?))\b/);
+  if (soon) {
+    let minutes: number;
+    if (soon[1]) {
+      minutes = { 'einer halben stunde': 30, 'einer viertelstunde': 15, 'anderthalb stunden': 90, 'half an hour': 30, 'une demi-heure': 30 }[soon[1]] ?? 0;
+    } else {
+      const count = /^\d+$/.test(soon[2]) ? Number(soon[2]) : (GERMAN_COUNTS[soon[2]] ?? 1);
+      minutes = /^(?:min|minute)/.test(soon[3]) ? count : count * 60;
+    }
+    if (minutes > 0) {
+      const at = new Date(now.getTime() + minutes * 60_000);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return {
+        date: `${toApiDate(at)}T${pad(at.getHours())}:${pad(at.getMinutes())}:00`,
+        matched: raw.slice(soon.index!, soon.index! + soon[0].length),
+        index: soon.index!,
+        hasTime: true,
+      };
+    }
+  }
+
   // „in 3 Tagen“ / „in einer Woche“ / „in zwei Monaten“
   const relative = text.match(/\b(?:in|dans)\s+(\d{1,3}|un|une|a|an|one|einem|einer|ein|eine|zwei|drei|vier|funf|sechs|sieben|acht|neun|zehn)\s+(days?|jours?|weeks?|semaines?|months?|mois|tag(?:en?)?|wochen?|monat(?:en?)?)\b/);
   if (relative) {

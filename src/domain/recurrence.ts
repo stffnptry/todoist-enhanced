@@ -42,6 +42,7 @@
 
 import { MONTH_WORDS, WEEKDAY_WORDS } from './dateVocabulary';
 import type { TodoistDue } from './types';
+import { readGermanRecurrence } from './recurrenceDe';
 
 export type RecurrenceLang = 'en' | 'fr';
 
@@ -136,7 +137,7 @@ const LANGS: Array<[RecurrenceLang, Words]> = [['en', EN], ['fr', FR]];
  * shape Todoist does not define.
  */
 const REFUSED = [
-  /\b(?:holidays?|bank holiday|workday after|jours? feries?|ferie)\b/,
+  /\b(?:holidays?|bank holiday|workday after|jours? feries?|ferie|feiertage?n?)\b/,
 ];
 
 /**
@@ -149,6 +150,10 @@ const REFUSED = [
 export function readRecurrence(raw: string): RecurrenceReading | null {
   const text = fold(raw);
   if (REFUSED.some((pattern) => pattern.test(text))) return null;
+
+  // Deutsch wird gelesen und als englische Regel an Todoist gegeben.
+  const german = readGermanRecurrence(raw);
+  if (german) return german;
 
   for (const [lang, w] of LANGS) {
     const reading = readIn(raw, text, lang, w);

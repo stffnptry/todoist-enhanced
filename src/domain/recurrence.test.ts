@@ -63,3 +63,60 @@ describe('dueForDate', () => {
     });
   });
 });
+
+describe('deutsche Wiederholungen werden als englische Regel an Todoist gegeben', () => {
+  it.each([
+    ['täglich', 'every day'],
+    ['wöchentlich', 'every week'],
+    ['werktags', 'every workday'],
+    ['jeden Tag', 'every day'],
+    ['jede Woche', 'every week'],
+    ['jedes Jahr', 'every year'],
+    ['jeden Werktag', 'every workday'],
+    ['jedes Wochenende', 'every weekend'],
+    ['jeden Montag', 'every mon'],
+    ['jeden Montag und Donnerstag', 'every mon, thu'],
+    ['montags', 'every mon'],
+    ['dienstags und freitags', 'every tue, fri'],
+    ['alle 3 Tage', 'every 3 days'],
+    ['alle 2 Wochen', 'every 2 weeks'],
+    ['alle 6 Monate', 'every 6 months'],
+    ['alle 3 Werktage', 'every 3 workdays'],
+    ['alle 2 Wochen am Montag', 'every 2 weeks mon'],
+    ['jeden zweiten Tag', 'every other day'],
+    ['jeden zweiten Freitag', 'every other fri'],
+    ['jeden zweiten Montag im Monat', 'every 2nd mon'],
+    ['jeden ersten Montag', 'every 1st mon'],
+    ['jeden letzten Freitag im Monat', 'every last fri'],
+    ['jeden letzten Tag im Monat', 'every last day'],
+    ['jeden 15.', 'every 15'],
+    ['jeden 1. und 15.', 'every 1, 15'],
+    ['jeden 24. Dezember', 'every dec 24'],
+    ['jeden Montag um 9', 'every mon at 09:00'],
+    ['täglich um 7:30 Uhr', 'every day at 07:30'],
+    ['jeden Tag 18 Uhr', 'every day at 18:00'],
+    ['jeden Abend', 'every day at evening'],
+    ['jeden Morgen um 7', 'every day at 07:00'],
+    ['werktags morgens', 'every workday at morning'],
+    ['jede Woche für 3 Wochen', 'every week for 3 weeks'],
+    ['jeden! Tag', 'every! day'],
+    ['alle! 3 Tage', 'every! 3 days'],
+  ])('liest „%s“', (phrase, string) => {
+    const reading = readRecurrence(`Sport ${phrase}`);
+    if (string === null) {
+      expect(reading).toBeNull();
+      return;
+    }
+    expect(reading).toMatchObject({ string, lang: 'en', matched: phrase, index: 6 });
+  });
+
+  it('lässt normalen Text und Feiertage in Ruhe', () => {
+    expect(readRecurrence('Alle Unterlagen sortieren')).toBeNull();
+    expect(readRecurrence('jeden Feiertag')).toBeNull();
+  });
+
+  it('englische und französische Regeln bleiben, wie sie waren', () => {
+    expect(readRecurrence('Gym every monday')).toMatchObject({ string: 'every monday', lang: 'en' });
+    expect(readRecurrence('Sport tous les lundis')).toMatchObject({ lang: 'fr' });
+  });
+});
