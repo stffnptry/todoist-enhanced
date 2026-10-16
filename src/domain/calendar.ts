@@ -109,6 +109,43 @@ export function onDay(event: Pick<CalendarEvent, 'start' | 'end' | 'allDay'>, da
   return start < to && (end > from || (end === start && start >= from));
 }
 
+/* ---------- Tasks on the grid ---------- */
+
+export interface TaskBlock<T> {
+  task: T;
+  start: Date;
+  done: boolean;
+  /** A finished occurrence of a recurring task, which itself moved on. */
+  occurrence?: boolean;
+}
+
+/**
+ * The tasks drawn on the grid: every task with a time inside [from, to), open
+ * or done, each once. A done task can come twice (still in the snapshot,
+ * ticked, and again in Todoist's history), and a task reopened since is in
+ * the open list and the history at once: the open one wins, wherever its
+ * time now is.
+ */
+export function taskBlocks<T extends { id: string }>(
+  open: T[],
+  done: T[],
+  startOf: (task: T) => Date | null,
+  from: Date,
+  to: Date,
+): Array<TaskBlock<T>> {
+  const seen = new Set<string>();
+  const blocks: Array<TaskBlock<T>> = [];
+  const add = (task: T, isDone: boolean) => {
+    if (seen.has(task.id)) return;
+    seen.add(task.id);
+    const start = startOf(task);
+    if (start && start >= from && start < to) blocks.push({ task, start, done: isDone });
+  };
+  for (const task of open) add(task, false);
+  for (const task of done) add(task, true);
+  return blocks;
+}
+
 /* ---------- The task list beside the grid ---------- */
 
 export const TASK_GROUPS = ['none', 'project', 'due', 'priority', 'estimate'] as const;

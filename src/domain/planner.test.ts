@@ -50,7 +50,6 @@ describe('planning with Claude', () => {
       capacity: [0, 480, 480, 480, 480, 480, 0],
       now,
       language: 'German',
-      calendarTarget: null,
     });
     expect(prompt).toContain('Answer in German');
     expect(prompt).toContain('[t1] Briefing lesen | P1 | due 2026-10-14 | estimate 45 min');

@@ -9,13 +9,15 @@ import { effectiveEstimate, formatDuration } from '@/domain/estimates';
 import { hasTime, dueDate, formatTime, toApiDateTime, weekBounds } from '@/domain/dates';
 import { dueForDate } from '@/domain/recurrence';
 import { plainTitle } from '@/domain/reminders';
-import { calendarSyncOn, requestCalendarSync } from '@/hooks/useCalendarSync';
-import { todoistTaskUrl } from '@/api/links';
+import { useCompletedAround } from '@/hooks/useCompletedAround';
+import { uncompleteItem } from '@/api/commands';
+import { colorValue } from '@/domain/colors';
+import { loadOccurrences, pruneOccurrences, saveOccurrences, type DoneOccurrence } from '@/lib/doneOccurrences';
 import { intlLocale, type TranslationKey } from '@/i18n';
 import { toDisplayPriority } from '@/domain/types';
 import {
   DEFAULT_TASK_MINUTES, SNAP_MINUTES, TASK_GROUPS, TASK_SORTS, type TaskGroupMode, type TaskSortMode, dueBucket, groupTasks, layoutDay, linkedTaskId, onDay, snapMinutes,
-  type CalendarEvent, type CalendarInfo,
+  taskBlocks, type CalendarEvent, type CalendarInfo, type TaskBlock,
 } from '@/domain/calendar';
 import type { Item } from '@/domain/types';
 
@@ -31,35 +33,35 @@ const DAY_MINUTES = 24 * 60;
 
 type Access = 'checking' | 'granted' | 'notDetermined' | 'denied' | 'unavailable';
 
-/** What is being dragged: a task from the list (or its dashed block), or a task's event. */
-type Drag =
-  | { kind: 'task'; item: Item; minutes: number; offset: number }
-  | { kind: 'event'; event: CalendarEvent; minutes: number; offset: number };
+/** What is being dragged: a task from the list, or its block on the grid. */
+type Drag = { item: Item; minutes: number; offset: number };
 
 type Answer = { ok: boolean; error?: string; [key: string]: unknown };
-type GridEntry = { kind: 'event'; event: CalendarEvent } | { kind: 'task'; task: Item };
+type GridEntry = { kind: 'event'; event: CalendarEvent } | { kind: 'task'; block: TaskBlock<Item> };
 
 const call = (command: string, input?: Record<string, unknown>): Promise<Answer> =>
   window.enhancedDesktop?.calendar?.(command, input) ?? Promise.resolve({ ok: false, error: 'unavailable' });
 
 /**
- * The week as the Mac's calendars see it, with the week's tasks beside it.
+ * The week as the Mac's calendars see it, with the tasks drawn into it.
  *
- * A task dragged onto the grid becomes an event in the calendar chosen as
- * target, as long as its estimate (30 minutes without one), and the task gets
- * the same time in Todoist, so its reminder follows. Only events made from a
- * task can be dragged again: meetings and the like are never moved from here.
+ * Calendars are only read. Tasks are drawn straight from Todoist: every task
+ * with a time is a block as long as its estimate (30 minutes without one).
+ * Dropping a task on the grid gives it that time, dragging a block's edge
+ * changes its estimate, and its tick completes it, all in Todoist. Done tasks
+ * stay where they were, faded. Nothing is written into a calendar any more.
  */
 export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
   const { t, locale } = useT();
   const { snapshot, items, childrenOf } = useData();
   const hour12 = useStore((s) => s.prefs.hour12);
   const calendarIds = useStore((s) => s.prefs.calendarIds);
-  const target = useStore((s) => s.prefs.calendarTarget);
-  const prefs = useStore((s) => s.prefs);
   const setPrefs = useStore((s) => s.setPrefs);
   const updateTask = useStore((s) => s.updateTask);
   const setEstimates = useStore((s) => s.setEstimates);
+  const toggleTask = useStore((s) => s.toggleTask);
+  const applyCommands = useStore((s) => s.apply);
+  const refresh = useStore((s) => s.refresh);
   const toast = useStore((s) => s.toast);
 
   const [access, setAccess] = useState<Access>(window.enhancedDesktop?.calendar ? 'checking' : 'unavailable');
@@ -116,17 +118,14 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
   const days = useMemo(() => Array.from({ length: dayCount }, (_, i) => addDays(firstDay, i)), [firstDay, dayCount]);
   const step = (direction: 1 | -1) => setAnchor((d) => addDays(d, direction * dayCount));
   const byId = useMemo(() => new Map(calendars.map((c) => [c.id, c])), [calendars]);
-  /* The target calendar is always read and shown: the tasks live there, and a
-     task is drawn once, as its event, only when that event is in view. */
-  const shownIds = useMemo(() => {
-    const chosen = (calendarIds ?? calendars.map((c) => c.id)).filter((id) => byId.has(id));
-    return target && byId.has(target) && !chosen.includes(target) ? [...chosen, target] : chosen;
-  }, [calendarIds, calendars, byId, target]);
+  const shownIds = useMemo(
+    () => (calendarIds ?? calendars.map((c) => c.id)).filter((id) => byId.has(id)),
+    [calendarIds, calendars, byId],
+  );
   const colors = useStore((s) => s.prefs.calendarColors);
   /** A calendar's colour: the one chosen here, else its own. */
   const colorOf = (id: string | undefined): string | undefined => (id ? colors[id] ?? byId.get(id)?.color : undefined);
   const [picking, setPicking] = useState<string | null>(null);
-  const targetCalendar = target ? byId.get(target) : undefined;
 
   /* ---------- Reading ---------- */
 
@@ -155,7 +154,9 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
       calendars: shownIds,
     });
     setLoading(false);
-    if (answer.ok) setEvents((answer.events as CalendarEvent[]) ?? []);
+    /* Termine mit Todoist-Link hat der frühere Abgleich angelegt: Die Aufgabe
+       steht selbst im Raster, ihr alter Termin wäre sie ein zweites Mal. */
+    if (answer.ok) setEvents(((answer.events as CalendarEvent[]) ?? []).filter((e) => !linkedTaskId(e)));
   }, [access, calendars.length, week.start, dayCount, shownIds]);
 
   useEffect(() => {
@@ -215,7 +216,6 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
     (item: Item) => effectiveEstimate(item, childrenOf).minutes ?? null,
     [childrenOf],
   );
-  const linked = useMemo(() => new Set(events.map(linkedTaskId).filter((id): id is string => !!id)), [events]);
   const roots = useMemo(() => rootItems(items), [items]);
   /* Every open task, ordered the way the list is set to; a filter narrows it by title. */
   const tasksOpen = useStore((s) => s.prefs.calendarTasksOpen);
@@ -245,111 +245,75 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
     if (groupMode === 'priority') return key.toUpperCase();
     return key;
   };
-  /* Tasks with a time this week that no event stands for yet: drawn dashed, so
-     the plan shows them, and dragged like any other task to put them in. */
-  const timedTasks = useMemo(
-    () => roots.filter((i) => hasTime(i.due) && !linked.has(i.id)).map((i) => ({ item: i, start: dueDate(i)! }))
-      .filter(({ start }) => start >= week.start && start < addDays(week.start, dayCount)),
-    [roots, linked, week.start, dayCount],
-  );
+  /* Every task with a time on the days shown, open or done. Done ones come
+     from the snapshot (ticked since the last full sync) and from Todoist's
+     history (everything else), so they stay where they were planned. */
+  const weekEnd = useMemo(() => addDays(week.start, dayCount), [week.start, dayCount]);
+  const completed = useCompletedAround(week.start, weekEnd);
+  const [occurrences, setOccurrences] = useState<DoneOccurrence[]>(loadOccurrences);
+  const blocks = useMemo(() => {
+    const openIds = new Set(roots.map((i) => i.id));
+    const doneHere = Object.values(snapshot.items)
+      .filter((i) => i.checked && !i.is_deleted && !(i.parent_id && openIds.has(i.parent_id)));
+    const doneEarlier = completed.items.map((c) => ({ ...c, id: c.task_id ?? c.id, checked: true }) as unknown as Item);
+    const drawn = taskBlocks(
+      roots, [...doneHere, ...doneEarlier],
+      (i) => (hasTime(i.due) ? dueDate(i) : null),
+      week.start, weekEnd,
+    );
+    const finished: Array<TaskBlock<Item>> = occurrences
+      .map((o) => ({ task: snapshot.items[o.taskId], start: new Date(o.start), done: true, occurrence: true }))
+      .filter((b) => b.task && !b.task.is_deleted && b.start >= week.start && b.start < weekEnd
+        && !drawn.some((d) => d.task.id === b.task.id && d.start.getTime() === b.start.getTime()));
+    return [...drawn, ...finished];
+  }, [roots, snapshot.items, completed.items, occurrences, week.start, weekEnd]);
 
   /* ---------- Writing ---------- */
 
   const timeLabel = (date: Date) =>
     `${new Intl.DateTimeFormat(intlLocale(locale), { weekday: 'short', day: 'numeric', month: 'short' }).format(date)} ${formatTime(date, locale, hour12)}`;
 
-  const syncOn = useStore((s) => calendarSyncOn(s.prefs));
-  const schedule = async (item: Item, start: Date, minutes: number) => {
-    if (!targetCalendar || !targetCalendar.writable) {
-      toast(t('cal.targetNone'), undefined, { tone: 'error' });
-      setPanel(true);
-      return;
-    }
-    /* With the calendar kept in step, the task's time is all that changes:
-       the next pass writes the event (as long as the estimate). */
-    if (syncOn) {
-      void updateTask(item.id, { due: dueForDate(item.due, toApiDateTime(start)) });
-      toast(t('cal.scheduled', { name: plainTitle(item.content), time: timeLabel(start) }));
-      requestCalendarSync();
-      return;
-    }
-    const end = new Date(start.getTime() + minutes * 60_000);
-    const answer = await call('create', {
-      calendar: targetCalendar.id,
-      title: plainTitle(item.content),
-      start: start.toISOString(),
-      end: end.toISOString(),
-      notes: `Todoist: ${todoistTaskUrl(item.id)}`,
-      url: todoistTaskUrl(item.id),
-    });
-    if (!answer.ok) {
-      toast(t('cal.failed', { reason: String(answer.error ?? '') }), undefined, { tone: 'error' });
-      return;
-    }
+  /** A task dropped on the grid: it gets that time in Todoist, and its block follows. */
+  const schedule = (item: Item, start: Date) => {
     void updateTask(item.id, { due: dueForDate(item.due, toApiDateTime(start)) });
     toast(t('cal.scheduled', { name: plainTitle(item.content), time: timeLabel(start) }));
-    void loadEvents();
   };
 
-  const move = async (event: CalendarEvent, start: Date) => {
-    const length = new Date(event.end).getTime() - new Date(event.start).getTime();
-    const end = new Date(start.getTime() + length);
-    // Shown at once where it was dropped; the calendar's answer follows.
-    setEvents((list) => list.map((e) => (e.id === event.id ? { ...e, start: start.toISOString(), end: end.toISOString() } : e)));
-    const answer = await call('update', { id: event.id, start: start.toISOString(), end: end.toISOString() });
-    if (!answer.ok) {
-      toast(t('cal.failed', { reason: String(answer.error ?? '') }), undefined, { tone: 'error' });
-      void loadEvents();
+  /** The tick on a block: done in Todoist, or open again. */
+  const toggleDone = (task: Item, start: Date) => {
+    if (snapshot.items[task.id]) {
+      // Eine wiederkehrende Aufgabe springt weiter: Das erledigte Vorkommen bleibt hier stehen.
+      if (!task.checked && task.due?.is_recurring) {
+        const next = pruneOccurrences([...occurrences, { taskId: task.id, start: start.toISOString() }], Date.now());
+        setOccurrences(next);
+        saveOccurrences(next);
+      }
+      void toggleTask(task.id);
       return;
     }
-    const taskId = linkedTaskId(event);
-    const item = taskId ? snapshot.items[taskId] : undefined;
-    if (item && !item.checked) void updateTask(item.id, { due: dueForDate(item.due, toApiDateTime(start)) });
-    if (syncOn) requestCalendarSync();
-    toast(t('cal.moved', { name: event.title, time: timeLabel(start) }));
-    void loadEvents();
+    // Nur noch im Verlauf (seit dem letzten vollen Abgleich erledigt): direkt
+    // wieder öffnen; der nächste Abgleich bringt die Aufgabe zurück.
+    completed.forget(task.id);
+    void applyCommands([uncompleteItem(task.id)], (snap) => snap).then(() => refresh());
   };
 
-  const remove = async (event: CalendarEvent) => {
-    setSelected(null);
-    const answer = await call('delete', { id: event.id });
-    if (!answer.ok) {
-      toast(t('cal.failed', { reason: String(answer.error ?? '') }), undefined, { tone: 'error' });
-      return;
-    }
-    toast(t('cal.removed'));
-    void loadEvents();
-  };
+  /* ---------- Resizing a task's block: its length is the task's estimate ---------- */
 
-  const createTasksCalendar = async () => {
-    const answer = await call('create-calendar', { title: t('cal.createdName') });
-    if (!answer.ok) {
-      toast(t('cal.failed', { reason: String(answer.error ?? '') }), undefined, { tone: 'error' });
-      return;
-    }
-    const created = answer.calendar as CalendarInfo;
-    setCalendars((list) => [...list, created]);
-    setPrefs({ calendarTarget: created.id, ...(calendarIds ? { calendarIds: [...calendarIds, created.id] } : {}) });
-    toast(t('cal.created', { name: created.title, source: created.source }));
-  };
-
-  /* ---------- Resizing a task's event: its length is the task's estimate ---------- */
-
-  const [resize, setResize] = useState<{ eventId: string; top: number; bottom: number } | null>(null);
+  const [resize, setResize] = useState<{ taskId: string; top: number; bottom: number } | null>(null);
   const resizing = useRef(false);
   const justResized = useRef(false);
 
-  const beginResize = (pointer: ReactPointerEvent, event: CalendarEvent, edge: 'top' | 'bottom', day: Date) => {
+  const beginResize = (pointer: ReactPointerEvent, task: Item, start: Date, minutes: number, edge: 'top' | 'bottom', day: Date) => {
     pointer.preventDefault();
     pointer.stopPropagation();
     const column = (pointer.currentTarget as HTMLElement).closest('.cal-col') as HTMLElement | null;
     if (!column) return;
     const midnight = startOfDay(day).getTime();
-    const startMin = (new Date(event.start).getTime() - midnight) / 60_000;
-    const endMin = (new Date(event.end).getTime() - midnight) / 60_000;
+    const startMin = (start.getTime() - midnight) / 60_000;
+    const endMin = Math.min(DAY_MINUTES, startMin + minutes);
     resizing.current = true;
     let current = { top: startMin, bottom: endMin };
-    setResize({ eventId: event.id, ...current });
+    setResize({ taskId: task.id, ...current });
 
     const onMove = (move: PointerEvent) => {
       const rect = column.getBoundingClientRect();
@@ -358,7 +322,7 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
       current = edge === 'bottom'
         ? { top: current.top, bottom: Math.max(current.top + SNAP_MINUTES, minute) }
         : { top: Math.min(current.bottom - SNAP_MINUTES, minute), bottom: current.bottom };
-      setResize({ eventId: event.id, ...current });
+      setResize({ taskId: task.id, ...current });
     };
     const onUp = () => {
       window.removeEventListener('pointermove', onMove);
@@ -368,31 +332,18 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
       setTimeout(() => { justResized.current = false; }, 0);
       setResize(null);
       if (current.top === startMin && current.bottom === endMin) return;
-      void applyResize(event, new Date(midnight + current.top * 60_000), new Date(midnight + current.bottom * 60_000));
+      applyResize(task, start, new Date(midnight + current.top * 60_000), new Date(midnight + current.bottom * 60_000));
     };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
   };
 
-  const applyResize = async (event: CalendarEvent, start: Date, end: Date) => {
-    setEvents((list) => list.map((e) => (e.id === event.id ? { ...e, start: start.toISOString(), end: end.toISOString() } : e)));
-    const answer = await call('update', { id: event.id, start: start.toISOString(), end: end.toISOString() });
-    if (!answer.ok) {
-      toast(t('cal.failed', { reason: String(answer.error ?? '') }), undefined, { tone: 'error' });
-      void loadEvents();
-      return;
-    }
-    const taskId = linkedTaskId(event);
-    const item = taskId ? snapshot.items[taskId] : undefined;
+  /** A new length is a new estimate; the top edge moved is a new time as well. */
+  const applyResize = (task: Item, was: Date, start: Date, end: Date) => {
     const minutes = Math.round((end.getTime() - start.getTime()) / 60_000);
-    if (item && !item.checked) {
-      void setEstimates([{ id: item.id, minutes }]);
-      if (start.getTime() !== new Date(event.start).getTime()) {
-        void updateTask(item.id, { due: dueForDate(item.due, toApiDateTime(start)) });
-      }
-    }
-    toast(t('cal.resized', { name: event.title, duration: formatDuration(minutes, locale) }));
-    if (syncOn) requestCalendarSync();
+    void setEstimates([{ id: task.id, minutes }]);
+    if (start.getTime() !== was.getTime()) void updateTask(task.id, { due: dueForDate(task.due, toApiDateTime(start)) });
+    toast(t('cal.resized', { name: plainTitle(task.content), duration: formatDuration(minutes, locale) }));
   };
 
   /* ---------- Dragging ---------- */
@@ -419,20 +370,11 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
 
   const startTaskDrag = (event: DragEvent, item: Item, grabbedAt = 0) => {
     const minutes = minutesOf(item) ?? DEFAULT_TASK_MINUTES;
-    drag.current = { kind: 'task', item, minutes, offset: grabbedAt };
+    if (resizing.current) { event.preventDefault(); return; }
+    drag.current = { item, minutes, offset: grabbedAt };
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', plainTitle(item.content));
     dragPicture(event, plainTitle(item.content), minutes);
-  };
-
-  const startEventDrag = (dragEvent: DragEvent, event: CalendarEvent) => {
-    if (resizing.current) { dragEvent.preventDefault(); return; }
-    const rect = (dragEvent.currentTarget as HTMLElement).getBoundingClientRect();
-    const minutes = (new Date(event.end).getTime() - new Date(event.start).getTime()) / 60_000;
-    drag.current = { kind: 'event', event, minutes, offset: ((dragEvent.clientY - rect.top) / hourPx) * 60 };
-    dragEvent.dataTransfer.effectAllowed = 'move';
-    dragEvent.dataTransfer.setData('text/plain', event.title);
-    dragPicture(dragEvent, event.title, minutes, colorOf(event.calendarId));
   };
 
   const pointerMinute = (event: DragEvent) => {
@@ -457,8 +399,7 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
     endDrag();
     if (!current) return;
     const start = new Date(days[dayIndex].getTime() + pointerMinute(event) * 60_000);
-    if (current.kind === 'task') void schedule(current.item, start, current.minutes);
-    else void move(current.event, start);
+    schedule(current.item, start);
   };
 
   const endDrag = () => {
@@ -481,17 +422,7 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
     };
   }, [selected]);
 
-  /** A click on an event: a task's event opens the task itself, any other event its own panel. */
-  const openEvent = (event: CalendarEvent) => {
-    const taskId = linkedTaskId(event);
-    const item = taskId ? snapshot.items[taskId] : undefined;
-    if (item && !item.is_deleted) {
-      setSelected(null);
-      onOpen(item.id);
-      return;
-    }
-    setSelected({ event });
-  };
+  const openEvent = (event: CalendarEvent) => setSelected({ event });
 
   /* ---------- Drawing ---------- */
 
@@ -573,14 +504,6 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
       {panel && (
         <div className="cal-panel">
           <p className="cal-panel-hint">{t('cal.calendarsHint')}</p>
-          {!targetCalendar && <p className="cal-panel-warn">{t('cal.targetNone')}</p>}
-          <label className="cal-check cal-sync">
-            <input type="checkbox" checked={prefs.calendarSync} onChange={() => setPrefs({ calendarSync: !prefs.calendarSync })} />
-            <span>
-              <strong>{t('cal.sync')}</strong>
-              <span className="cal-sync-hint">{t('cal.syncHint')}</span>
-            </span>
-          </label>
           {sources.map((source) => (
             <div key={source} className="cal-source">
               <h3>{source}</h3>
@@ -590,8 +513,6 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
                     <input
                       type="checkbox"
                       checked={shownIds.includes(c.id)}
-                      disabled={c.id === target}
-                      title={c.id === target ? t('cal.targetAlwaysShown') : undefined}
                       onChange={() => {
                         const next = shownIds.includes(c.id) ? shownIds.filter((id) => id !== c.id) : [...shownIds, c.id];
                         setPrefs({ calendarIds: next });
@@ -634,19 +555,10 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
                       </span>
                     )}
                   </span>
-                  {c.writable && !c.subscribed && (
-                    <label className="cal-target">
-                      <input type="radio" name="cal-target" checked={target === c.id} onChange={() => setPrefs({ calendarTarget: c.id })} />
-                      {t('cal.target')}
-                    </label>
-                  )}
                 </div>
               ))}
             </div>
           ))}
-          <button className="btn" onClick={() => void createTasksCalendar()}>
-            <Icon name="plus" size="sm" /> {t('cal.createCalendar', { name: t('cal.createdName') })}
-          </button>
         </div>
       )}
 
@@ -699,7 +611,7 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
                   <ul>
                     {group.items.map((item) => {
                       const minutes = minutesOf(item);
-                      const planned = linked.has(item.id);
+                      const planned = hasTime(item.due);
                       const due = dueDate(item);
                       return (
                         <li
@@ -769,10 +681,10 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
                 const timed = events.filter((e) => !spansDays(e) && onDay(e, day));
                 const placed = layoutDay<GridEntry>([
                   ...timed.map((e) => ({ item: { kind: 'event', event: e } as GridEntry, start: new Date(e.start), end: new Date(e.end) })),
-                  ...timedTasks.filter(({ start }) => isSameDay(start, day)).map(({ item, start }) => ({
-                    item: { kind: 'task', task: item } as GridEntry,
-                    start,
-                    end: new Date(start.getTime() + (minutesOf(item) ?? DEFAULT_TASK_MINUTES) * 60_000),
+                  ...blocks.filter(({ start }) => isSameDay(start, day)).map((block) => ({
+                    item: { kind: 'task', block } as GridEntry,
+                    start: block.start,
+                    end: new Date(block.start.getTime() + (minutesOf(block.task) ?? DEFAULT_TASK_MINUTES) * 60_000),
                   })),
                 ], day);
                 return (
@@ -791,70 +703,82 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
                         width: `calc(${100 / columns}% - 4px)`,
                       };
                       if (entry.kind === 'task') {
-                        const task = entry.task;
+                        const { task, start, done, occurrence } = entry.block;
+                        const minutes = minutesOf(task) ?? DEFAULT_TASK_MINUTES;
+                        const live = resize && resize.taskId === task.id ? resize : null;
+                        const sized = live
+                          ? { ...style, top: px(live.top), height: Math.max(px(live.bottom - live.top) - 2, 14) }
+                          : style;
                         return (
                           <div
-                            key={`task-${task.id}`}
-                            className="cal-event cal-event-task"
-                            style={style}
-                            draggable
-                            title={t('cal.timedTask')}
-                            onDragStart={(e) => {
+                            key={`task-${task.id}-${occurrence ? start.getTime() : ''}`}
+                            className={`cal-event cal-taskblock${done ? ' done' : ''}${live ? ' resizing' : ''}`}
+                            style={{ ...sized, ['--ev' as string]: colorValue(snapshot.projects[task.project_id]?.color) }}
+                            draggable={!done}
+                            title={done ? t('cal.doneBlock') : t('cal.taskBlock')}
+                            onDragStart={done ? undefined : (e) => {
                               const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                               startTaskDrag(e, task, ((e.clientY - rect.top) / hourPx) * 60);
                             }}
                             onDragEnd={endDrag}
-                            onClick={() => onOpen(task.id)}
+                            onClick={() => { if (!justResized.current) onOpen(task.id); }}
                           >
-                            <span className="cal-event-title">{plainTitle(task.content)}</span>
+                            <span className="cal-taskblock-head">
+                              <button
+                                type="button"
+                                className={`cal-tick${done ? ' on' : ''}`}
+                                role="checkbox"
+                                aria-checked={done}
+                                aria-label={done ? t('cal.reopen') : t('cal.complete')}
+                                title={done ? t('cal.reopen') : t('cal.complete')}
+                                draggable={false}
+                                onMouseDown={(ev) => ev.stopPropagation()}
+                                disabled={occurrence}
+                                onClick={(ev) => { ev.stopPropagation(); toggleDone(task, start); }}
+                              >
+                                {done && <Icon name="check" size="sm" />}
+                              </button>
+                              <span className="cal-event-title">{plainTitle(task.content)}</span>
+                            </span>
+                            {live
+                              ? (
+                                <span className="cal-event-time">
+                                  {formatTime(new Date(startOfDay(day).getTime() + live.top * 60_000), locale, hour12)}–{formatTime(new Date(startOfDay(day).getTime() + live.bottom * 60_000), locale, hour12)} · {formatDuration(live.bottom - live.top, locale)}
+                                </span>
+                              )
+                              : px(bottom - top) >= 36 && <span className="cal-event-time">{formatTime(start, locale, hour12)} · {formatDuration(minutes, locale)}</span>}
+                            {!done && (
+                              <>
+                                <span
+                                  className="cal-resize top"
+                                  draggable={false}
+                                  onMouseDown={(ev) => ev.preventDefault()}
+                                  onPointerDown={(ev) => beginResize(ev, task, start, minutes, 'top', day)}
+                                  onClick={(ev) => ev.stopPropagation()}
+                                />
+                                <span
+                                  className="cal-resize bottom"
+                                  draggable={false}
+                                  onMouseDown={(ev) => ev.preventDefault()}
+                                  onPointerDown={(ev) => beginResize(ev, task, start, minutes, 'bottom', day)}
+                                  onClick={(ev) => ev.stopPropagation()}
+                                />
+                              </>
+                            )}
                           </div>
                         );
                       }
                       const e = entry.event;
-                      const fromTask = linkedTaskId(e) !== null && byId.get(e.calendarId)?.writable;
                       const start = new Date(e.start);
-                      const live = resize && resize.eventId === e.id ? resize : null;
-                      const sized = live
-                        ? { ...style, top: px(live.top), height: Math.max(px(live.bottom - live.top) - 2, 14) }
-                        : style;
                       return (
                         <div
                           key={e.id}
-                          className={`cal-event${fromTask ? ' from-task' : ''}${live ? ' resizing' : ''}`}
-                          style={{ ...sized, ['--ev' as string]: colorOf(e.calendarId) ?? 'var(--accent)' }}
-                          draggable={Boolean(fromTask)}
-                          onDragStart={fromTask ? (d) => startEventDrag(d, e) : undefined}
-                          onDragEnd={endDrag}
-                          onClick={() => { if (!justResized.current) openEvent(e); }}
-                          // Right-click on a task's event shows the event itself (to take it out of the calendar).
-                          onContextMenu={(ev) => { ev.preventDefault(); setSelected({ event: e }); }}
+                          className="cal-event"
+                          style={{ ...style, ['--ev' as string]: colorOf(e.calendarId) ?? 'var(--accent)' }}
+                          onClick={() => openEvent(e)}
                         >
                           <span className="cal-event-title">{e.title}</span>
-                          {live
-                            ? (
-                              <span className="cal-event-time">
-                                {formatTime(new Date(startOfDay(day).getTime() + live.top * 60_000), locale, hour12)}–{formatTime(new Date(startOfDay(day).getTime() + live.bottom * 60_000), locale, hour12)} · {formatDuration(live.bottom - live.top, locale)}
-                              </span>
-                            )
-                            : px(bottom - top) >= 36 && <span className="cal-event-time">{formatTime(start, locale, hour12)}</span>}
-                          {fromTask && (
-                            <>
-                              <span
-                                className="cal-resize top"
-                                draggable={false}
-                                onMouseDown={(ev) => ev.preventDefault()}
-                                onPointerDown={(ev) => beginResize(ev, e, 'top', day)}
-                                onClick={(ev) => ev.stopPropagation()}
-                              />
-                              <span
-                                className="cal-resize bottom"
-                                draggable={false}
-                                onMouseDown={(ev) => ev.preventDefault()}
-                                onPointerDown={(ev) => beginResize(ev, e, 'bottom', day)}
-                                onClick={(ev) => ev.stopPropagation()}
-                              />
-                            </>
-                          )}
+                          {px(bottom - top) >= 36 && <span className="cal-event-time">{formatTime(start, locale, hour12)}</span>}
                         </div>
                       );
                     })}
@@ -877,7 +801,6 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
       {selected && (() => {
         const e = selected.event;
         const calendar = byId.get(e.calendarId);
-        const taskId = linkedTaskId(e);
         const start = new Date(e.start);
         const end = new Date(e.end);
         const dayFormat = new Intl.DateTimeFormat(intlLocale(locale), { weekday: 'long', day: 'numeric', month: 'long' });
@@ -916,16 +839,6 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
                 <div className="prop">
                   <span className="proplabel">{t('cal.link')}</span>
                   <a className="cal-propvalue cal-proplink" href={link} target="_blank" rel="noreferrer">{link}</a>
-                </div>
-              )}
-              {taskId && (
-                <div className="cal-eventsheet-actions">
-                  {snapshot.items[taskId] && (
-                    <button className="btn" onClick={() => { setSelected(null); onOpen(taskId); }}>{t('cal.openTask')}</button>
-                  )}
-                  {calendar?.writable && (
-                    <button className="btn" onClick={() => void remove(e)}>{t('cal.remove')}</button>
-                  )}
                 </div>
               )}
             </div>

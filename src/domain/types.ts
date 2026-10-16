@@ -240,6 +240,8 @@ export interface CompletedItem {
   section_id: string | null;
   content: string;
   completed_at: string;
+  /** The date it had when it was done (the calendar places it there). */
+  due?: TodoistDue | null;
   labels?: string[];
   /** Todoist's own duration, read as an estimate like on an open task (#151). */
   duration?: TodoistDuration | null;

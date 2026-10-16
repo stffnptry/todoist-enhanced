@@ -307,13 +307,10 @@ export interface Preferences {
   showQuickGroup: boolean;
   /** Desktop app: a system notification when a task is due or a reminder is set. */
   desktopReminders: boolean;
-  /** Calendar view: the calendars shown (null = all) and the one tasks are written into. */
+  /** Calendar view: the calendars shown (null = all). */
   calendarIds: string[] | null;
-  calendarTarget: string | null;
   /** Calendar view: the task list beside the grid, shown or folded, and how it is ordered. */
   calendarTasksOpen: boolean;
-  /** Calendar view: tasks with a time are written into the target calendar on their own. */
-  calendarSync: boolean;
   /** Calendar view: a colour chosen per calendar, over the calendar's own. */
   calendarColors: Record<string, string>;
   /** Calendar view: the height of an hour, in pixels (zoomed with ⌘ + scroll). */
@@ -441,9 +438,7 @@ export const defaultPreferences = (locale: Locale): Preferences => ({
   showQuickGroup: true,
   desktopReminders: true,
   calendarIds: null,
-  calendarTarget: null,
   calendarTasksOpen: true,
-  calendarSync: true,
   calendarColors: {},
   calendarHourPx: 64,
   calendarSpan: 'week',
@@ -538,9 +533,7 @@ export function hydratePreferences(stored: unknown, locale: Locale): Preferences
     sidebarSearch: s.sidebarSearch !== false,
     desktopReminders: s.desktopReminders !== false,
     calendarIds: Array.isArray(s.calendarIds) ? s.calendarIds.filter((id): id is string => typeof id === 'string') : null,
-    calendarTarget: typeof s.calendarTarget === 'string' ? s.calendarTarget : null,
     calendarTasksOpen: s.calendarTasksOpen !== false,
-    calendarSync: s.calendarSync !== false,
     calendarSpan: s.calendarSpan === 'day' || s.calendarSpan === 'two' ? s.calendarSpan : 'week',
     calendarHourPx: typeof s.calendarHourPx === 'number' && s.calendarHourPx >= 24 && s.calendarHourPx <= 200 ? s.calendarHourPx : 64,
     calendarColors: s.calendarColors && typeof s.calendarColors === 'object'

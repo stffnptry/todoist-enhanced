@@ -11,9 +11,8 @@ import { dueForDate } from '@/domain/recurrence';
 import { plainTitle } from '@/domain/reminders';
 import { renderMarkdown } from '@/domain/markdown';
 import { decisionLogLines, localDateTime, parsePlanAnswer, plannerSystemPrompt, type PlanAction } from '@/domain/planner';
-import { DEFAULT_TASK_MINUTES, type CalendarEvent, type CalendarInfo } from '@/domain/calendar';
-import { calendarCall, createTaskEvent } from '@/lib/desktopCalendar';
-import { calendarSyncOn, requestCalendarSync } from '@/hooks/useCalendarSync';
+import { linkedTaskId, type CalendarEvent, type CalendarInfo } from '@/domain/calendar';
+import { calendarCall } from '@/lib/desktopCalendar';
 import { intlLocale, type Locale } from '@/i18n';
 
 interface Message {
@@ -48,6 +47,7 @@ export function ClaudePanel({ open, onClose, onOpenTask }: { open: boolean; onCl
   const { snapshot, items, childrenOf } = useData();
   const prefs = useStore((s) => s.prefs);
   const updateTask = useStore((s) => s.updateTask);
+  const setEstimates = useStore((s) => s.setEstimates);
   const toast = useStore((s) => s.toast);
 
   const [available, setAvailable] = useState<boolean | null>(null);
@@ -113,14 +113,15 @@ export function ClaudePanel({ open, onClose, onOpenTask }: { open: boolean; onCl
       const ids = prefs.calendarIds ?? calendars.map((c) => c.id);
       const today = startOfDay(new Date());
       const read = await calendarCall('events', { from: today.toISOString(), to: addDays(today, 8).toISOString(), calendars: ids });
-      events = (read.events as CalendarEvent[]) ?? [];
+      // Termine, die der frühere Abgleich für Aufgaben angelegt hat, sind keine
+      // Termine: Die Aufgaben selbst stehen schon in der Liste.
+      events = ((read.events as CalendarEvent[]) ?? []).filter((e) => !linkedTaskId(e));
     }
     return plannerSystemPrompt({
       snapshot, roots, minutesOf, events, calendars,
       capacity: prefs.dailyCapacity,
       now: new Date(),
       language: LANGUAGE[locale] ?? 'German',
-      calendarTarget: prefs.calendarTarget,
     });
   };
 
@@ -169,8 +170,6 @@ export function ClaudePanel({ open, onClose, onOpenTask }: { open: boolean; onCl
   const apply = async (message: Message) => {
     if (!message.chosen) return;
     const chosen = message.chosen.map((i) => message.actions[i]);
-    const target = prefs.calendarTarget;
-    let calendarFailed = false;
     for (const action of chosen) {
       const item = snapshot.items[action.taskId];
       if (!item) continue;
@@ -179,21 +178,16 @@ export function ClaudePanel({ open, onClose, onOpenTask }: { open: boolean; onCl
         continue;
       }
       const start = localDateTime(action.start);
-      // With the calendar kept in step, the next pass writes the block.
-      if (target && !calendarSyncOn(prefs)) {
-        const answer = await createTaskEvent(item, target, start, action.minutes || DEFAULT_TASK_MINUTES);
-        if (!answer.ok) calendarFailed = true;
-      }
       void updateTask(item.id, { due: dueForDate(item.due, toApiDateTime(start)) });
+      // Im Kalender ist der Block so lang wie die Schätzung: Ohne eine wird Claudes Länge dazu.
+      if (action.minutes > 0 && minutesOf(item) === null) void setEstimates([{ id: item.id, minutes: action.minutes }]);
     }
-    if (calendarSyncOn(prefs)) requestCalendarSync();
     // What was taken and what was unticked, so Claude can learn the pattern.
     window.enhancedDesktop?.claude?.log?.(decisionLogLines(new Date(), message.actions.map((action, i) => ({
       ...describe(action), accepted: message.chosen!.includes(i),
     }))));
     setMessages((all) => all.map((m) => (m.id === message.id ? { ...m, chosen: null } : m)));
     toast(t('claude.appliedToast', { count: chosen.length }));
-    if (calendarFailed) toast(t('claude.calendarFailed'), undefined, { tone: 'error' });
   };
 
   const toggleChoice = (message: Message, index: number) =>

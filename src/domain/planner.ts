@@ -32,8 +32,6 @@ export interface PlannerInput {
   now: Date;
   /** The interface language, as a name ("Deutsch"), for the answer. */
   language: string;
-  /** Whether accepted time blocks also go into a calendar. */
-  calendarTarget: string | null;
 }
 
 const LANGUAGE_RULE = (language: string) =>
@@ -108,7 +106,7 @@ export function plannerSystemPrompt(input: PlannerInput): string {
     ' {"type":"date","taskId":"<id>","date":"YYYY-MM-DD"}]',
     '```',
     '"schedule" gives a task a time block (start in local time, length in minutes);',
-    `${input.calendarTarget ? 'accepted blocks are also written into the user\'s calendar.' : 'accepted blocks set the task\'s time in Todoist.'}`,
+    'accepted blocks set the task\'s time in Todoist, and a task without an estimate gets the block\'s length as one.',
     '"date" moves a task to a day without a time. Only use task ids from the list below, never invent tasks,',
     'and never put anything else in that block. The user reviews and accepts each proposal; nothing changes before that,',
     'so never say a change is done: call it a proposal.',

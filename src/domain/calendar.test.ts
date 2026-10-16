@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dueBucket, effortBucket, groupTasks, layoutDay, linkedTaskId, onDay, snapMinutes } from './calendar';
+import { dueBucket, effortBucket, groupTasks, layoutDay, linkedTaskId, onDay, snapMinutes, taskBlocks } from './calendar';
 
 const day = new Date(2026, 9, 14);
 const at = (h: number, m = 0) => new Date(2026, 9, 14, h, m);
@@ -89,5 +89,30 @@ describe('the task list beside the calendar', () => {
     expect(shape('none', { by: 'estimate', descending: true })).toEqual(['all:ceabfd']);
     expect(shape('none', { by: 'due', descending: false })).toEqual(['all:abcdef']);
     expect(shape('none', { by: 'title', descending: true })).toEqual(['all:fedcba']);
+  });
+});
+
+describe('tasks on the calendar grid', () => {
+  const from = new Date(2026, 9, 12);
+  const to = new Date(2026, 9, 19);
+  const at = (day: number, hour: number) => new Date(2026, 9, day, hour);
+  type T = { id: string; start: Date | null };
+  const blocks = (open: T[], done: T[]) =>
+    taskBlocks(open, done, (task) => task.start, from, to).map((b) => `${b.task.id}:${b.done ? 'done' : 'open'}`);
+
+  it('shows open and done tasks with a time inside the days shown', () => {
+    expect(blocks(
+      [{ id: 'a', start: at(13, 9) }, { id: 'b', start: null }, { id: 'c', start: at(20, 9) }],
+      [{ id: 'd', start: at(14, 10) }, { id: 'e', start: at(11, 10) }],
+    )).toEqual(['a:open', 'd:done']);
+  });
+
+  it('draws a done task once, though the snapshot and the history both have it', () => {
+    expect(blocks([], [{ id: 'd', start: at(14, 10) }, { id: 'd', start: at(14, 10) }])).toEqual(['d:done']);
+  });
+
+  it('takes a reopened task as open, even when its open time is elsewhere', () => {
+    expect(blocks([{ id: 'r', start: at(14, 11) }], [{ id: 'r', start: at(13, 9) }])).toEqual(['r:open']);
+    expect(blocks([{ id: 'r', start: at(25, 11) }], [{ id: 'r', start: at(13, 9) }])).toEqual([]);
   });
 });

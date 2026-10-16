@@ -50,7 +50,6 @@ import { detectConflicts } from './domain/conflicts';
 import { placementForPage } from './domain/dnd';
 import { useParentEstimates } from './hooks/useParentEstimates';
 import { useDesktopReminders } from './hooks/useDesktopReminders';
-import { useCalendarSync } from './hooks/useCalendarSync';
 import { CalendarView } from './views/CalendarView';
 import { ClaudePanel } from './components/ClaudePanel';
 import { anytimeItems, bucketOf, hasLabel, somedayItems, upcomingItems, weekItems } from './domain/views';
@@ -765,7 +764,6 @@ function AppShell({
 
   const openTask = (id: string) => setOpenTaskId(id);
   useDesktopReminders(openTask);
-  useCalendarSync();
   /* Claude's panel, desktop app only: the sidebar's button and ⌘J toggle it.
      Like a task opened as a panel, the page makes room for it. */
   const [claudeOpen, setClaudeOpen] = useState(false);
