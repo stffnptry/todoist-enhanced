@@ -34,6 +34,7 @@ import {
 import type { TranslationKey } from '@/i18n';
 import { byChildOrder } from '@/domain/orderKey';
 import { plainTitle } from '@/domain/markdown';
+import { intlLocale } from '@/i18n';
 
 /** The destination each action stands for, in the drop table's own terms. */
 const targetFor = (action: ReviewAction): DropTarget => {
@@ -274,7 +275,7 @@ export function ReviewView({ onOpen }: ReviewViewProps) {
               </button>
             </span>
             <span className="rangelabel">
-              {formatRange(weekRange, locale === 'fr' ? 'fr-FR' : 'en-GB')}
+              {formatRange(weekRange, intlLocale(locale))}
               {weekOffset === -1 && <small> · {t('review.lastWeek')}</small>}
               {weekOffset === 0 && <small> · {t('review.thisWeek')}</small>}
             </span>

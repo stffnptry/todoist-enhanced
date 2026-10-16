@@ -1,5 +1,6 @@
 import { readNaturalDate } from './nlp';
 import { toApiDate } from './dates';
+import { textLang, type Locale } from '@/i18n';
 
 /**
  * The date phrases worth offering while somebody types one.
@@ -50,7 +51,7 @@ const LIMIT = 3;
  */
 export function dateSuggestions(
   typed: string,
-  locale: 'en' | 'fr',
+  interfaceLocale: Locale,
   now = new Date(),
 ): DateSuggestion[] {
   const query = fold(typed.trim());
@@ -59,6 +60,7 @@ export function dateSuggestions(
   const digits = query.match(/^(\d{1,2})$/);
   if (digits) return daysOfMonth(Number(digits[1]), now);
 
+  const locale = textLang(interfaceLocale);
   const other = locale === 'fr' ? 'en' : 'fr';
   const out: DateSuggestion[] = [];
 

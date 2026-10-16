@@ -50,7 +50,7 @@ interface Copy {
   completed: string[];
 }
 
-const COPY: Record<Locale, Copy> = {
+const COPY_EN_FR: Record<'en' | 'fr', Copy> = {
   fr: {
     person: 'Camille Durand',
     email: 'camille@demo.test',
@@ -190,6 +190,9 @@ const COPY: Record<Locale, Copy> = {
     ],
   },
 };
+
+/* No German demo yet: a German interface shows the English demo. */
+const COPY: Record<Locale, Copy> = { ...COPY_EN_FR, de: COPY_EN_FR.en };
 
 export function buildDemoSnapshot(locale: Locale = 'en', seed = 20260914): Snapshot {
   const copy = COPY[locale] ?? COPY.en;

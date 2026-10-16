@@ -15,6 +15,7 @@ import { markOnboarded } from '@/domain/onboarding';
 import { avatarUrl } from '@/domain/colors';
 import { karmaStanding } from '@/domain/karma';
 import type { TranslationKey } from '@/i18n';
+import { intlLocale } from '@/i18n';
 
 /**
  * The setup, once per account, v2 included: it is asked of every account
@@ -148,7 +149,7 @@ export function Walkthrough({
                 <span className="setup-rankbar"><i style={{ width: `${karma.progress}%` }} /></span>
                 {karma.remaining !== null && karma.next && (
                   <small>{t('setup.welcome.karma', {
-                    remaining: karma.remaining.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-GB'),
+                    remaining: karma.remaining.toLocaleString(intlLocale(locale)),
                     next: t(`karma.${karma.next.key}` as TranslationKey),
                   })}</small>
                 )}

@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEve
 import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
 import { useT } from '@/hooks/useT';
+import type { Locale } from '@/i18n';
 
 /**
  * Every emoji, to react to a comment with (#27).
@@ -43,7 +44,7 @@ export function reactionKey(unicode: string): string {
 
 let loading: Promise<Data> | null = null;
 
-function loadData(locale: 'en' | 'fr'): Promise<Data> {
+function loadData(locale: Locale): Promise<Data> {
   loading ??= Promise.all([
     import('emojibase-data/en/compact.json'),
     import('emojibase-data/fr/compact.json'),

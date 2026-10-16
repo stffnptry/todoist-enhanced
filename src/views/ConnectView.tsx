@@ -54,9 +54,9 @@ export function ConnectView() {
   return (
     <div className="signin">
       <div className="signin-lang seg2" role="group" aria-label={t('settings.language')}>
-        {(['en', 'fr'] as const).map((value) => (
+        {(['en', 'fr', 'de'] as const).map((value) => (
           <button key={value} aria-pressed={locale === value} onClick={() => setLocale(value)}>
-            {value === 'en' ? 'English' : 'Français'}
+            {value === 'en' ? 'English' : value === 'fr' ? 'Français' : 'Deutsch'}
           </button>
         ))}
       </div>

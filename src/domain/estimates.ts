@@ -1,4 +1,5 @@
 import { ESTIMATE_PREFIX, estimateStorage, type EstimateStorage, type TodoistUser, type Item } from './types';
+import type { Locale } from '@/i18n';
 
 /**
  * An estimate is a number of minutes, carried one of two ways (#151):
@@ -148,7 +149,7 @@ export function estimatePatch(item: Pick<Item, 'labels'>, minutes: number | null
 }
 
 /** "1 h 15", "45 min", "2 h". The separator keeps the mockup's typography. */
-export function formatDuration(minutes: number, locale: 'en' | 'fr' = 'en'): string {
+export function formatDuration(minutes: number, locale: Locale = 'en'): string {
   const h = Math.floor(minutes / 60);
   const m = Math.round(minutes % 60);
   const hourUnit = 'h';

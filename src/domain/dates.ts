@@ -3,6 +3,7 @@ import {
   parseISO, startOfDay, startOfWeek,
 } from 'date-fns';
 import type { Item, TodoistDue } from './types';
+import { intlLocale, type Locale } from '@/i18n';
 
 /** True when the due value carries a time of day, not just a calendar date. */
 export const hasTime = (due: TodoistDue | null): boolean =>
@@ -102,12 +103,12 @@ export function daysBetween(from: Date, to: Date): Date[] {
  * How long ago something happened, the way Todoist words its notifications:
  * "10 minutes ago", "2 days ago", then a plain date once it is a week old.
  */
-export function formatTimeAgo(date: Date, locale: 'en' | 'fr', now = new Date()): string {
+export function formatTimeAgo(date: Date, locale: Locale, now = new Date()): string {
   const seconds = Math.max(0, Math.round((now.getTime() - date.getTime()) / 1000));
-  const intl = locale === 'fr' ? 'fr-FR' : 'en-GB';
+  const intl = intlLocale(locale);
   const relative = new Intl.RelativeTimeFormat(intl, { numeric: 'always' });
   const upper = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
-  if (seconds < 60) return locale === 'fr' ? 'À l’instant' : 'Just now';
+  if (seconds < 60) return locale === 'fr' ? 'À l’instant' : locale === 'de' ? 'Gerade eben' : 'Just now';
   if (seconds < 3600) return upper(relative.format(-Math.floor(seconds / 60), 'minute'));
   if (seconds < 86400) return upper(relative.format(-Math.floor(seconds / 3600), 'hour'));
   if (seconds < 7 * 86400) return upper(relative.format(-Math.floor(seconds / 86400), 'day'));
@@ -117,20 +118,21 @@ export function formatTimeAgo(date: Date, locale: 'en' | 'fr', now = new Date())
 /** "Today", "Tomorrow", "Mon 14", "14 Sep" depending on how far away it is. */
 export function formatRelativeDay(
   date: Date,
-  locale: 'en' | 'fr',
+  locale: Locale,
   now = new Date(),
 ): string {
   const diff = differenceInCalendarDays(startOfDay(date), startOfDay(now));
   const strings = {
     en: { today: 'Today', tomorrow: 'Tomorrow', yesterday: 'Yesterday' },
     fr: { today: "Aujourd'hui", tomorrow: 'Demain', yesterday: 'Hier' },
+    de: { today: 'Heute', tomorrow: 'Morgen', yesterday: 'Gestern' },
   }[locale];
 
   if (diff === 0) return strings.today;
   if (diff === 1) return strings.tomorrow;
   if (diff === -1) return strings.yesterday;
 
-  const intl = locale === 'fr' ? 'fr-FR' : 'en-GB';
+  const intl = intlLocale(locale);
   // Inside the coming week a weekday name reads faster than a number.
   if (diff > 1 && diff < 7) {
     return new Intl.DateTimeFormat(intl, { weekday: 'short' }).format(date);
@@ -165,16 +167,16 @@ const TEMPLATES: Record<DateFormat, (p: Record<string, string>) => string> = {
 };
 
 /** "Tuesday", for a date whose number is already written beside it. */
-export const weekdayName = (date: Date, locale: 'en' | 'fr'): string =>
-  new Intl.DateTimeFormat(locale === 'fr' ? 'fr-FR' : 'en-GB', { weekday: 'long' })
+export const weekdayName = (date: Date, locale: Locale): string =>
+  new Intl.DateTimeFormat(intlLocale(locale), { weekday: 'long' })
     .format(date);
 
 export function formatDay(
   date: Date,
-  locale: 'en' | 'fr',
+  locale: Locale,
   format: DateFormat = 'dmy',
 ): string {
-  const intl = locale === 'fr' ? 'fr-FR' : 'en-GB';
+  const intl = intlLocale(locale);
   const options: Intl.DateTimeFormatOptions = format === 'numeric'
     ? { day: '2-digit', month: '2-digit', year: 'numeric' }
     : { day: 'numeric', month: 'short', year: 'numeric' };
@@ -198,7 +200,7 @@ export function formatDay(
  */
 export function formatDayOrName(
   date: Date,
-  locale: 'en' | 'fr',
+  locale: Locale,
   format: DateFormat = 'dmy',
   now = new Date(),
 ): string {
@@ -206,12 +208,13 @@ export function formatDayOrName(
   const names = {
     en: { '0': 'Today', '1': 'Tomorrow', '-1': 'Yesterday' },
     fr: { '0': "Aujourd'hui", '1': 'Demain', '-1': 'Hier' },
+    de: { '0': 'Heute', '1': 'Morgen', '-1': 'Gestern' },
   }[locale] as Record<string, string | undefined>;
   return names[String(diff)] ?? formatDay(date, locale, format);
 }
 
-export function formatTime(date: Date, locale: 'en' | 'fr', hour12: boolean): string {
-  return new Intl.DateTimeFormat(locale === 'fr' ? 'fr-FR' : 'en-GB', {
+export function formatTime(date: Date, locale: Locale, hour12: boolean): string {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     hour: '2-digit',
     minute: '2-digit',
     hour12,

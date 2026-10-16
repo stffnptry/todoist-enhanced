@@ -11,6 +11,7 @@ import { avatarUrl } from '@/domain/colors';
 import { formatRelativeDay } from '@/domain/dates';
 import { renderMarkdown } from '@/domain/markdown';
 import type { Note, NoteAttachment } from '@/domain/types';
+import { intlLocale, type Locale } from '@/i18n';
 
 /* The full palette and its data load the first time somebody reacts (#27). */
 const EmojiPalette = lazy(() => import('./EmojiPalette').then((module) => ({ default: module.EmojiPalette })));
@@ -18,9 +19,9 @@ const EmojiPalette = lazy(() => import('./EmojiPalette').then((module) => ({ def
 const IMAGE = /^image\//;
 
 /** "Today · 10:12", "7 Oct · 16:52": when a comment was written, to the minute. */
-function commentTime(iso: string, locale: 'en' | 'fr'): string {
+function commentTime(iso: string, locale: Locale): string {
   const date = new Date(iso);
-  const clock = new Intl.DateTimeFormat(locale === 'fr' ? 'fr-FR' : 'en-GB', {
+  const clock = new Intl.DateTimeFormat(intlLocale(locale), {
     hour: '2-digit', minute: '2-digit', hour12: false,
   }).format(date);
   return `${formatRelativeDay(date, locale)} · ${clock}`;

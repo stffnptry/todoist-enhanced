@@ -11,6 +11,7 @@ import {
   anchorAllowed, buildRule, readClock, weekdayOrder, weekOfMonth,
   type MonthlyAnchor, type RepeatRule, type RepeatUnit,
 } from '@/domain/repeatRule';
+import { intlLocale, textLang, type Locale } from '@/i18n';
 
 /* The keys the row or the list behind a picker also listen to: inside a
    panel they belong to the field or the button they are pressed on. */
@@ -32,7 +33,7 @@ const QUARTERS = Array.from({ length: 96 }, (_, at) =>
 /* Todoist's durations: the quarters up to an hour, then every half hour. */
 const DURATIONS = [15, 30, 45, ...Array.from({ length: 46 }, (_, at) => 60 + at * 30)];
 
-const intl = (locale: 'en' | 'fr') => (locale === 'fr' ? 'fr-FR' : 'en-GB');
+const intl = (locale: Locale) => intlLocale(locale);
 const digits = (text: string) => text.toLowerCase().replace(/\s+/g, '').replace(/h/g, ':');
 
 /** The task's duration, where the picker's context has one to change. */
@@ -270,7 +271,7 @@ const preset = (patch: Partial<RepeatRule>, time: string | null): RepeatRule => 
 export function RepeatPresets({ start, time, current, onApply, onCustom, onStop }: RepeatPresetsProps) {
   const { t, locale } = useT();
   const weekday = new Intl.DateTimeFormat(intl(locale), { weekday: 'long' }).format(start);
-  const monthDay = locale === 'fr' ? (start.getDate() === 1 ? '1er' : String(start.getDate())) : ordinalEn(start.getDate());
+  const monthDay = locale === 'fr' ? (start.getDate() === 1 ? '1er' : String(start.getDate())) : locale === 'de' ? `${start.getDate()}.` : ordinalEn(start.getDate());
   const dayMonth = new Intl.DateTimeFormat(intl(locale), { day: 'numeric', month: 'long' }).format(start);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -299,7 +300,7 @@ export function RepeatPresets({ start, time, current, onApply, onCustom, onStop 
   return (
     <div className="datepicker-sub datepicker-options" ref={listRef} onKeyDown={onKey}>
       {presets.map(({ key, label, rule }) => {
-        const on = current !== null && bare(buildRule(rule, locale, start).string) === bare(current);
+        const on = current !== null && bare(buildRule(rule, textLang(locale), start).string) === bare(current);
         return (
           <button key={key} type="button" className={`opt${on ? ' on' : ''}`} onClick={() => onApply(rule)}>
             <span><Icon name="repeat" size="sm" /> {label}</span>
@@ -382,16 +383,16 @@ export function RepeatDialog({ start, initial, replaces, onApply, onCancel }: Re
       : end < toApiDate(start) ? t('repeat.endBefore') : null;
 
   const effective: RepeatRule = { ...rule, end: ends ? end : null };
-  const built = buildRule(effective, locale, start);
+  const built = buildRule(effective, textLang(locale), start);
   const canApply = !endProblem && !(ends && !end);
 
   const weekdayName = (day: number, style: 'long' | 'narrow') =>
     new Intl.DateTimeFormat(intl(locale), { weekday: style }).format(new Date(2026, 9, 11 + day)); // 11 Oct 2026 is a Sunday
   const nth = weekOfMonth(start);
-  const ordinal = locale === 'fr' ? (nth === 1 ? '1er' : `${nth}e`) : ordinalEn(nth);
+  const ordinal = locale === 'fr' ? (nth === 1 ? '1er' : `${nth}e`) : locale === 'de' ? `${nth}.` : ordinalEn(nth);
   const monthLabel: Record<MonthlyAnchor, string> = {
     day: t('repeat.monthDay', {
-      day: locale === 'fr' ? (start.getDate() === 1 ? '1er' : String(start.getDate())) : ordinalEn(start.getDate()),
+      day: locale === 'fr' ? (start.getDate() === 1 ? '1er' : String(start.getDate())) : locale === 'de' ? `${start.getDate()}.` : ordinalEn(start.getDate()),
     }),
     weekday: nth > 4
       ? t('repeat.monthLastWeekday', { weekday: weekdayName(start.getDay(), 'long') })

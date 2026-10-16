@@ -25,6 +25,12 @@ const WORDS = {
     reload: 'Recharger',
     report: 'Nous dire ce qui s\'est passé',
   },
+  de: {
+    title: 'Etwas ist schiefgelaufen',
+    body: 'Die Seite ist auf ein Problem gestoßen und konnte nicht weitermachen. Neu laden behebt das meistens.',
+    reload: 'Neu laden',
+    report: 'Erzähl uns, was passiert ist',
+  },
 } as const;
 
 interface State { failed: boolean }
@@ -42,7 +48,8 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
 
   render() {
     if (!this.state.failed) return this.props.children;
-    const lang = document.documentElement.lang?.startsWith('fr') ? 'fr' : 'en';
+    const htmlLang = document.documentElement.lang ?? '';
+    const lang = htmlLang.startsWith('fr') ? 'fr' : htmlLang.startsWith('de') ? 'de' : 'en';
     const words = WORDS[lang];
     return (
       <div className="connect" role="alert">

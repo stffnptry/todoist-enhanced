@@ -32,6 +32,7 @@ import { toDisplayPriority, type CompletedItem } from '@/domain/types';
 import type { TranslationKey } from '@/i18n';
 import { byChildOrder } from '@/domain/orderKey';
 import { plainTitle } from '@/domain/markdown';
+import { intlLocale } from '@/i18n';
 
 type Tab = 'overview' | 'logbook';
 
@@ -108,7 +109,7 @@ export function InsightsView({ onOpen }: { onOpen?: (id: string) => void }) {
     [previous, roots, snapshot],
   );
 
-  const intl = locale === 'fr' ? 'fr-FR' : 'en-GB';
+  const intl = intlLocale(locale);
 
   /* The layout can be edited on the dashboard only, and leaving it ends it. */
   const [editing, setEditing] = useState(false);
@@ -628,7 +629,7 @@ function Logbook({ completed, onOpen }: { completed: CompletedItem[]; onOpen?: (
       : cut.priority !== null
         ? `P${cut.priority}`
         : cut.at !== null && group === 'month'
-          ? new Intl.DateTimeFormat(locale === 'fr' ? 'fr-FR' : 'en-GB', { month: 'long', year: 'numeric' }).format(cut.at)
+          ? new Intl.DateTimeFormat(intlLocale(locale), { month: 'long', year: 'numeric' }).format(cut.at)
           : cut.at !== null ? formatRelativeDay(cut.at, locale) : '—';
     return { ...cut, title };
   }), [filtered, group, sort, snapshot.projects, locale]);

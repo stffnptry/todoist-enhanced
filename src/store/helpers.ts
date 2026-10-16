@@ -300,6 +300,7 @@ export function explainFailure(error: string, locale: Locale): string {
      this account write to it, typically a task of a team project it can see
      but has not joined. Said plainly rather than as Todoist's two words. */
   if (/^item not found$/i.test(said)) {
+    if (locale === 'de') return 'Todoist erlaubt diesem Konto nicht, diese Aufgabe zu ändern (oft ein Teamprojekt, das du siehst, aber dem du nicht beigetreten bist). Es wurde nichts gespeichert.';
     return locale === 'fr'
       ? 'Todoist ne permet pas à ce compte de modifier cette tâche (souvent un projet d’équipe que vous voyez sans l’avoir rejoint). Rien n’a été enregistré.'
       : 'Todoist does not let this account change this task (often a team project you can see but have not joined). Nothing was saved.';
@@ -323,6 +324,21 @@ export function explainFailure(error: string, locale: Locale): string {
       ? `Todoist a refusé cette modification (« ${said} »). Elle n’a pas été enregistrée.`
       : 'Todoist a refusé cette modification. Elle n’a pas été enregistrée.';
   }
+  if (locale === 'de') {
+    if (limit) {
+      const what = /project/i.test(said) ? ' für Projekte'
+        : /section/i.test(said) ? ' für Abschnitte'
+          : /label|tag/i.test(said) ? ' für Labels'
+            : /comment|note/i.test(said) ? ' für Kommentare'
+              : /collaborator|member/i.test(said) ? ' für Mitwirkende'
+                : /task|item/i.test(said) ? ' für Aufgaben'
+                  : '';
+      return `Limit${what} erreicht: Das ist eine Grenze deines Todoist-Kontos oder Workspaces, nicht dieser App. Die Änderung wurde nicht gespeichert.`;
+    }
+    return said
+      ? `Todoist hat diese Änderung abgelehnt („${said}“). Sie wurde nicht gespeichert.`
+      : 'Todoist hat diese Änderung abgelehnt. Sie wurde nicht gespeichert.';
+  }
   const english = said || 'Todoist refused it';
   return limit
     ? `${english} — this is a limit on your Todoist account or workspace, not on this app. The change was not saved.`
@@ -344,6 +360,7 @@ export function explainFailures(
   const reason = explainFailure(failures[0].error, locale);
   const saved = total - failures.length;
   if (saved <= 0) return reason;
+  if (locale === 'de') return `${saved} von ${total} Änderungen gespeichert. ${reason}`;
   return locale === 'fr'
     ? `${saved} modification${saved > 1 ? 's' : ''} sur ${total} enregistrée${saved > 1 ? 's' : ''}. ${reason}`
     : `${saved} of ${total} changes saved. ${reason}`;

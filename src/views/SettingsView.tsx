@@ -22,6 +22,7 @@ import type { Locale, TranslationKey } from '@/i18n';
 import { APP_NAME, AUTHOR, AUTHOR_AVATAR_URL, AUTHOR_GITHUB_URL, COFFEE_URL, GITHUB_URL, LINKEDIN_URL, VERSION, X_URL } from '@/app-info';
 import { karmaStanding } from '@/domain/karma';
 import { projectTree } from '@/store/selectors';
+import { intlLocale } from '@/i18n';
 
 /** Where the things this app only reads are changed. */
 const TODOIST_ACCOUNT_URL = 'https://app.todoist.com/app/settings/account';
@@ -57,7 +58,7 @@ export function SettingsView() {
 
   const current = useCurrentSection();
   const avatar = avatarUrl(user);
-  const intl = locale === 'fr' ? 'fr-FR' : 'en-GB';
+  const intl = intlLocale(locale);
 
   /* Monday-first labels. 8 January 2024 was a Monday; the capacity array is
      indexed Sunday-first, so the two are mapped rather than assumed equal. */
@@ -198,6 +199,7 @@ export function SettingsView() {
                 options={[
                   { value: 'en', label: 'English' },
                   { value: 'fr', label: 'Français' },
+                  { value: 'de', label: 'Deutsch' },
                 ]}
               />
             </Row>

@@ -14,6 +14,7 @@ import { isOverdue, overdueBy } from '@/domain/dates';
 import type { Item } from '@/domain/types';
 import type { TranslationKey } from '@/i18n';
 import { plainTitle } from '@/domain/markdown';
+import { intlLocale } from '@/i18n';
 
 interface InsightsPanelProps {
   open: boolean;
@@ -62,7 +63,7 @@ export function InsightsPanel({
 
   const weekBars: BarDatum[] = useMemo(() => {
     const counts = new Map(summary.byDay.map((day) => [day.date, day.count]));
-    const intl = locale === 'fr' ? 'fr-FR' : 'en-GB';
+    const intl = intlLocale(locale);
     return daysOf(window7).map((at) => {
       const key = format(at, 'yyyy-MM-dd');
       return {
