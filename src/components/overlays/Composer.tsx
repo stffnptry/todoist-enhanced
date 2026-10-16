@@ -99,8 +99,46 @@ export function Composer({
   /** The readings of the name that have been turned down, by position in it. */
   const [refusals, setRefusals] = useState<TextRange[]>([]);
 
+  /*
+   * „Weitere Aufgabe anlegen“ (wie in Jira): Ist der Schalter an, bleibt das
+   * Fenster nach dem Hinzufügen offen und fängt leer von vorn an. Gemerkt wird
+   * er in einem eigenen localStorage-Schlüssel, nicht in den Einstellungen:
+   * Das Schnellerfassen-Fenster ist eine zweite Kopie der App und darf den
+   * geteilten Zustand nicht schreiben. Ein einzelner Schalter, den beide
+   * Fenster lesen, ist dagegen genau das Gewünschte.
+   */
+  const [keepOpen, setKeepOpen] = useState(readKeepOpen);
+  const toggleKeepOpen = () => {
+    const next = !keepOpen;
+    setKeepOpen(next);
+    try { localStorage.setItem(KEEP_OPEN_KEY, next ? '1' : '0'); } catch { /* ohne Speicher gilt er nur jetzt */ }
+    // Weiter tippen können, ohne zurück ins Namensfeld klicken zu müssen.
+    boxRef.current?.querySelector<HTMLElement>(`[aria-label="${CSS.escape(t('composer.name'))}"]`)?.focus();
+  };
+  const boxRef = useRef<HTMLDivElement | null>(null);
+  /* Zählt die leeren Neuanfänge mit. Als `key` des Namensfelds baut er es neu,
+     und ein neues Feld nimmt sich den Fokus von selbst. */
+  const [round, setRound] = useState(0);
+  /* Die eben angelegte Aufgabe, kurz als Bestätigung gezeigt: Das Fenster
+     bleibt ja offen, und das Schnellerfassen hat keine Toasts. */
+  const [justAdded, setJustAdded] = useState<string | null>(null);
+  useEffect(() => {
+    if (!justAdded) return;
+    const timer = setTimeout(() => setJustAdded(null), 2500);
+    return () => clearTimeout(timer);
+  }, [justAdded, round]);
+
   useEffect(() => {
     if (!open) return;
+    setKeepOpen(readKeepOpen());
+    resetForm();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps -- the array is
+       built fresh by the caller on every render; its contents are the dep. */
+  }, [open, defaultProjectId, defaultSectionId, defaultDate, defaultPriority, defaultLabels?.join('\u0000'),
+    inboxId, defaultResponsibleUid]);
+
+  /** Alles so, wie es beim Öffnen war. */
+  function resetForm() {
     setResponsibleUid(defaultResponsibleUid ?? null);
     setName('');
     setDescription('');
@@ -118,10 +156,7 @@ export function Composer({
     setDate(defaultDate ?? '');
     setRecurrence(null);
     setDeadline('');
-    /* eslint-disable-next-line react-hooks/exhaustive-deps -- the array is
-       built fresh by the caller on every render; its contents are the dep. */
-  }, [open, defaultProjectId, defaultSectionId, defaultDate, defaultPriority, defaultLabels?.join('\u0000'),
-    inboxId, defaultResponsibleUid]);
+  }
 
   useEffect(() => {
     if (!open || !projectId || !responsibleUid || canAssign(snapshot, projectId, responsibleUid)) return;
@@ -379,13 +414,21 @@ export function Composer({
       subtasks: allSubtasks,
     });
 
-    if (saved) onClose();
+    if (!saved) return;
+    if (keepOpen) {
+      resetForm();
+      setJustAdded(content);
+      setRound((n) => n + 1);
+    } else {
+      onClose();
+    }
   }
 
   return (
     <>
     <Overlay open={open} onClose={onClose} label={t('nav.addTask')} size="sm">
       <div
+        ref={boxRef}
         className="composerbox"
         /* Cmd+Enter saves, from any field in the sheet — Todoist's own key for
            it, and the one anybody writing in the description or filling in
@@ -401,6 +444,7 @@ export function Composer({
         }}
       >
         <TaskNameField
+          key={round}
           value={name}
           onChange={setName}
           onSubmit={() => void submit()}
@@ -649,9 +693,28 @@ export function Composer({
 
         {/* Level 4, the way out, on its own bar: always in the same place. */}
         <div className="composer-actions">
-          <span className="composer-hint" aria-hidden="true">
-            <kbd>⌘</kbd><kbd>↵</kbd> {t('composer.hintAdd')}
-          </span>
+          <label className="composer-more">
+            <button
+              type="button"
+              className="switch"
+              role="switch"
+              aria-checked={keepOpen}
+              onClick={toggleKeepOpen}
+            />
+            <span>{t('composer.keepOpen')}</span>
+          </label>
+          {justAdded ? (
+            <span className="composer-hint composer-added" role="status">
+              <Icon name="check" size="sm" />
+              <span className="composer-added-text">{t('composer.added', { name: justAdded })}</span>
+            </span>
+          ) : (
+            <span className="composer-hint" aria-hidden="true" title={t('composer.hintAdd')}>
+              {/* Nur die Tasten: Neben dem Schalter ist für die Worte kein Platz,
+                  sie stehen im Tooltip. */}
+              <kbd>⌘</kbd><kbd>↵</kbd>
+            </span>
+          )}
           <button className="btn quiet" onClick={onClose}>{t('composer.cancel')}</button>
           {/* Everything typed can be read as a date, a project or a tag, and then
               there is no title left for Todoist: the button says so rather than
@@ -734,4 +797,11 @@ function EstimateChip({
       </span>
     </button>
   );
+}
+
+/** Schlüssel des Schalters „Weitere Aufgabe anlegen“, für beide Fenster. */
+const KEEP_OPEN_KEY = 'composer.keepOpen';
+
+function readKeepOpen(): boolean {
+  try { return localStorage.getItem(KEEP_OPEN_KEY) === '1'; } catch { return false; }
 }

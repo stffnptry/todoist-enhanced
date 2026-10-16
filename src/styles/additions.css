@@ -2010,3 +2010,23 @@ html.reduce-transparency .claudepanel,html.more-contrast .claudepanel{box-shadow
 .cal-event.cal-taskblock.done .cal-event-title{font-weight:500;color:var(--muted);text-decoration:line-through}
 .cal-event.cal-taskblock.done:hover{opacity:.85}
 @media (prefers-reduced-motion:reduce){.cal-tick{transition:none}}
+
+/* Schalter „Weitere Aufgabe anlegen“ links in der Leiste des Eingabefensters. */
+.composer-more{
+  display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+  color:var(--muted);font-size:var(--fs-12);white-space:nowrap;
+}
+.composer-more .switch{width:32px;height:18px;padding:2px}
+.composer-more .switch::after{width:14px;height:14px}
+.composer-more .switch[aria-checked="true"]::after{margin-left:14px}
+.composer-more:has(.switch[aria-checked="true"]){color:var(--text)}
+.composer-hint{white-space:nowrap}
+/* Grid-Kind: ohne das wächst die Leiste mit einem langen Namen aus dem Fenster. */
+.composerbox .composer-actions{min-width:0}
+.composer-added{color:var(--muted);flex:1 1 0;min-width:0;overflow:hidden}
+.composer-added-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.composer-added .icon{flex:0 0 auto;color:var(--accent)}
+@media (max-width:720px){
+  .composerbox .composer-actions{flex-wrap:wrap}
+  .composer-more{flex-basis:100%}
+}

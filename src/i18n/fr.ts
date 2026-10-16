@@ -488,6 +488,8 @@ export const fr: Record<TranslationKey, string> = {
   'composer.removeTag': 'Retirer le tag {name}',
   'composer.planning': 'Planification',
   'composer.hintAdd': 'pour ajouter',
+  'composer.keepOpen': 'Créer une autre',
+  'composer.added': '« {name} » ajoutée',
 
   /* Search */
   'search.placeholder': 'Rechercher une tâche, un projet ou une étiquette…',

@@ -488,6 +488,8 @@ export const de: Record<TranslationKey, string> = {
   'composer.removeTag': 'Label {name} entfernen',
   'composer.planning': 'Planung',
   'composer.hintAdd': 'zum Hinzufügen',
+  'composer.keepOpen': 'Weitere Aufgabe anlegen',
+  'composer.added': '„{name}“ hinzugefügt',
 
   /* Search */
   'search.placeholder': 'Aufgaben, Projekte oder Labels suchen …',

@@ -486,6 +486,8 @@ export const en = {
   'composer.removeTag': 'Remove the tag {name}',
   'composer.planning': 'Planning',
   'composer.hintAdd': 'to add',
+  'composer.keepOpen': 'Create another',
+  'composer.added': 'Added “{name}”',
 
   /* Search */
   'search.placeholder': 'Search tasks, projects or tags…',
