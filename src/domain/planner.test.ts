@@ -30,7 +30,7 @@ describe('planning with Claude', () => {
       + '{"type":"delete","taskId":"a"}]\n```';
     expect(parsePlanAnswer(answer, open).actions).toEqual([]);
     expect(parsePlanAnswer('```actions\nkein json\n```', open).actions).toEqual([]);
-    expect(parsePlanAnswer('Nur Text.', open)).toEqual({ text: 'Nur Text.', actions: [] });
+    expect(parsePlanAnswer('Nur Text.', open)).toEqual({ text: 'Nur Text.', actions: [], memory: [] });
   });
 
   it('reads a local time as local time', () => {

@@ -29,6 +29,7 @@ import * as idb from '@/db/idb';
 import { sync } from '@/api/sync';
 import { sendCommands } from '@/api/commands';
 import { emptySnapshot, type TodoistUser } from '@/domain/types';
+import { defaultPreferences } from './prefs';
 import { useStore } from './store';
 
 const asUser = (id: string) => ({ id } as TodoistUser);
@@ -46,7 +47,8 @@ function todoistAnswersAs(userId: string) {
 
 beforeEach(() => {
   vi.useFakeTimers();
-  vi.stubGlobal('navigator', { onLine: true });
+  // English messages whatever the language of the Mac running the tests (Node's navigator follows it).
+  vi.stubGlobal('navigator', { onLine: true, language: 'en-US' });
   vi.stubGlobal('window', { setTimeout: () => 0 });
   vi.clearAllMocks();
   vi.mocked(sendCommands).mockImplementation(async (_token, commands) => ({
@@ -56,7 +58,7 @@ beforeEach(() => {
   db.queue = [];
   const cached = emptySnapshot();
   cached.user = asUser('u1');
-  useStore.setState({ demo: false, snapshot: cached, toasts: [], pendingCount: 0, syncState: 'idle' });
+  useStore.setState({ demo: false, snapshot: cached, toasts: [], pendingCount: 0, syncState: 'idle', prefs: defaultPreferences('en') });
 });
 afterEach(() => {
   vi.useRealTimers();
