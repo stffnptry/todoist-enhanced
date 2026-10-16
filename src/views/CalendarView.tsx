@@ -160,10 +160,10 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
 
   useEffect(() => {
     void loadEvents();
-    const timer = setInterval(() => { void loadEvents(); setNow(new Date()); }, 2 * 60_000);
+    const timer = setInterval(() => { void loadEvents(); }, 2 * 60_000);
     const onChanged = () => { void loadEvents(); };
     window.addEventListener('enhanced:calendar-changed', onChanged);
-    const onFocus = () => { void loadEvents(); setNow(new Date()); };
+    const onFocus = () => { void loadEvents(); };
     window.addEventListener('focus', onFocus);
     return () => {
       clearInterval(timer);
@@ -171,6 +171,22 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
       window.removeEventListener('enhanced:calendar-changed', onChanged);
     };
   }, [loadEvents]);
+
+  // Eigener Takt für den Jetzt-Strich, unabhängig vom Termin-Abgleich: Alle
+  // 2 Minuten waren bei 64 px/h nur ~2 px, der Strich wirkte ohne Fokus starr.
+  // Beim Wiederaufdecken sofort nachziehen (gedrosselte Timer im Hintergrund).
+  useEffect(() => {
+    const tick = () => setNow(new Date());
+    const timer = setInterval(tick, 30_000);
+    const onVisible = () => { if (document.visibilityState === 'visible') tick(); };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', tick);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', tick);
+    };
+  }, []);
 
   // Opened on the working day: the grid starts scrolled to seven in the morning.
   useEffect(() => {
