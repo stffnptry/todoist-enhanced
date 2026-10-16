@@ -7,7 +7,6 @@ import { useT } from '@/hooks/useT';
 import { useStore } from '@/store/store';
 import type { DisplayMode, GroupKey, Item, SortKey } from '@/domain/types';
 import { groupItems, sortItems } from '@/store/selectors';
-import { formatRelativeDay } from '@/domain/dates';
 import { differenceInCalendarWeeks } from 'date-fns';
 import { formatDuration } from '@/domain/estimates';
 import { summariseLoad } from '@/domain/load';
@@ -96,7 +95,10 @@ function useGrouped(props: ModeSurfaceProps) {
       unassigned: t('detail.unassigned'),
       unavailable: t('assignee.unavailable'),
       priority: (p) => t(`common.p${p}` as TranslationKey),
-      day: (d) => (d ? formatRelativeDay(d, locale) : t('common.none')),
+      // Volles Datum wie „Freitag, 16. Oktober 2026“, damit jede Tagesgruppe eindeutig ist.
+      day: (d) => (d
+        ? new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(d)
+        : t('common.none')),
       week: (monday) => {
         const weeks = differenceInCalendarWeeks(monday, new Date(), { weekStartsOn: 1 });
         if (weeks === 0) return t('group.thisWeek');

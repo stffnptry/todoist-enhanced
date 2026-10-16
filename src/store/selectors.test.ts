@@ -63,6 +63,21 @@ describe('groupItems', () => {
   it('lists priorities from P1 to P4', () => {
     expect(keys('priority')).toEqual(['p1', 'p2', 'p3', 'p4']);
   });
+
+  it('names each day group for its own day, one group per day', () => {
+    const days = [
+      item({ id: 'b', due: due('2026-10-16') }),
+      item({ id: 'a', due: due('2026-10-14') }),
+      item({ id: 'c', due: due('2026-10-16') }),
+      item({ id: 'x' }),
+    ];
+    const named = { ...labels, day: (d: Date | null) => (d ? d.toDateString() : 'none'), month: () => 'month' };
+    expect(groupItems(days, 'day', snapshot, named).map((g) => [g.key, g.title, g.items.length])).toEqual([
+      ['2026-10-14', 'Wed Oct 14 2026', 1],
+      ['2026-10-16', 'Fri Oct 16 2026', 2],
+      ['none', 'none', 1],
+    ]);
+  });
 });
 
 describe('sortItems by priority (#98 follow-up)', () => {

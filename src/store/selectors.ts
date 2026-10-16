@@ -6,7 +6,7 @@ import {
 } from '@/domain/types';
 import { estimateOf, effectiveEstimate } from '@/domain/estimates';
 import { dueDate } from '@/domain/dates';
-import { startOfMonth, startOfWeek } from 'date-fns';
+import { startOfDay, startOfMonth, startOfWeek } from 'date-fns';
 import { bucketOf, hasLabel, isOpen, splitQuick } from '@/domain/views';
 import type { RowOrder } from '@/domain/dnd';
 import { PREFERENCES_TASK_CONTENT } from './prefs';
@@ -407,8 +407,11 @@ export function groupItems(
            whichever of its days came first; so is a month (#98). */
         const d = dueDate(item);
         const key = d ? bucketDateKey(d, group) : 'none';
-        const start = d && (group === 'week' ? startOfWeek(d, { weekStartsOn: 1 }) : startOfMonth(d));
+        const start = d && (group === 'day' ? startOfDay(d)
+          : group === 'week' ? startOfWeek(d, { weekStartsOn: 1 }) : startOfMonth(d));
+        // Nach Tag gruppiert hieß jede Gruppe nur nach ihrem Monat („Oktober 2026“, mehrfach).
         const title = !start ? labels.day(null)
+          : group === 'day' ? labels.day(start)
           : group === 'week' ? (labels.week ?? labels.day)(start)
           : (labels.month ?? labels.day)(start);
         push(key, title, item);
