@@ -2,6 +2,7 @@ import { HireNote } from '@/components/HireNote';
 import { useMemo, useState } from 'react';
 import { ProjectMenu } from '@/components/ProjectMenu';
 import { PageHeader } from '@/components/PageHeader';
+import { ProjectQuickFilter } from '@/components/ProjectQuickFilter';
 import { SubtasksProvider } from '@/components/TaskRow';
 import { DisplayMenu } from '@/components/DisplayMenu';
 import { ModeSurface } from '@/components/ModeSurface';
@@ -297,6 +298,7 @@ function SimpleListBody({
         load={load}
         onOpenUnestimated={load.unestimatedCount > 0 ? onUnestimated : undefined}
         time={timePill}
+        quickFilter={<ProjectQuickFilter viewKey={viewKey} pageItems={pool0} childrenOf={childrenOf} />}
       />
       <TimePanel
         pageItems={scoped}

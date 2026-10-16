@@ -27,6 +27,8 @@ interface PageHeaderProps {
   onOpenUnestimated?: () => void;
   /** Offers the time filter on this page. Left out on the pages it does not belong on. */
   time?: TimePillProps;
+  /** Projekt-Schnellfilter, gleich nach „Ich habe Zeit“ auf derselben Zeile. */
+  quickFilter?: ReactNode;
   /** Where the page does not put the note for Todoist's people itself, it goes under the header. */
   hireNote?: boolean;
 }
@@ -38,7 +40,7 @@ interface PageHeaderProps {
  * which the caller decides by passing it or not (#173).
  */
 export function PageHeader({
-  title, subtitle, actions, load, onOpenUnestimated, time, hireNote = true,
+  title, subtitle, actions, load, onOpenUnestimated, time, quickFilter, hireNote = true,
 }: PageHeaderProps) {
   const { t, locale } = useT();
 
@@ -121,6 +123,13 @@ export function PageHeader({
                 </button>
               )}
             </span>
+          </>
+        )}
+
+        {quickFilter && (
+          <>
+            <span className="sep">·</span>
+            {quickFilter}
           </>
         )}
       </div>

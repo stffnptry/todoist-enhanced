@@ -11,6 +11,7 @@ import { bucketOf, hasLabel, isOpen, splitQuick } from '@/domain/views';
 import type { RowOrder } from '@/domain/dnd';
 import { PREFERENCES_TASK_CONTENT } from './prefs';
 import { byChildOrder, byLabelOrder, bySectionOrder } from '@/domain/orderKey';
+import { inProjects } from '@/domain/projectQuick';
 
 /**
  * The workspace filter's stand-in for "My projects".
@@ -92,7 +93,8 @@ export function applyFilters(
 ): Item[] {
   return items.filter((item) => {
     if (!matchesAssignee(item, filters.assignees, snapshot)) return false;
-    if (filters.projects.length > 0 && !filters.projects.includes(item.project_id)) return false;
+    /* Ein gewähltes Projekt schließt seine Unterprojekte ein (Schnellfilter im Seitenkopf). */
+    if (filters.projects.length > 0 && !inProjects(snapshot, item.project_id, filters.projects)) return false;
 
     if (filters.workspaces.length > 0) {
       const workspaceId = snapshot.projects[item.project_id]?.workspace_id ?? null;

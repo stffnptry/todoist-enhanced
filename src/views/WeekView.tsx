@@ -1,6 +1,7 @@
 import { HireNote } from '@/components/HireNote';
 import { useMemo } from 'react';
 import { PageHeader } from '@/components/PageHeader';
+import { ProjectQuickFilter } from '@/components/ProjectQuickFilter';
 import { SubtasksProvider } from '@/components/TaskRow';
 import { DisplayMenu } from '@/components/DisplayMenu';
 import { TaskGroup } from '@/components/TaskGroup';
@@ -219,6 +220,7 @@ function WeekBody({
         load={load}
         onOpenUnestimated={load.unestimatedCount > 0 ? onUnestimated : undefined}
         time={timePill}
+        quickFilter={<ProjectQuickFilter viewKey={viewKey} pageItems={pool} childrenOf={childrenOf} />}
       />
       <TimePanel
         pageItems={scoped}

@@ -1,6 +1,7 @@
 import { HireNote } from '@/components/HireNote';
 import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/PageHeader';
+import { ProjectQuickFilter } from '@/components/ProjectQuickFilter';
 import { SubtasksProvider } from '@/components/TaskRow';
 import { DisplayMenu } from '@/components/DisplayMenu';
 import { PageMenu } from '@/components/PageMenu';
@@ -139,6 +140,7 @@ function UpcomingBody({ onOpen, onInsights, onUnestimated, onAddTaskTo }: Upcomi
         }
         load={load}
         onOpenUnestimated={load.unestimatedCount > 0 ? onUnestimated : undefined}
+        quickFilter={<ProjectQuickFilter viewKey="upcoming" pageItems={pool} childrenOf={childrenOf} />}
       />
 
 
