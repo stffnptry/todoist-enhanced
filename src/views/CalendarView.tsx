@@ -19,6 +19,11 @@ import {
   taskBlocks, type CalendarEvent, type CalendarInfo, type TaskBlock,
 } from '@/domain/calendar';
 import type { Item } from '@/domain/types';
+import { ContextMenu, type ContextMenuItem } from '@/components/ContextMenu';
+import { useConfirm } from '@/components/overlays/Confirm';
+import { leaveToText, pointAnchor } from '@/lib/contextMenu';
+import { copyText, isTemporaryId, todoistTaskUrl } from '@/api/links';
+import { toApiDate } from '@/domain/dates';
 
 /** The height of an hour is the user's (⌘ + scroll), between these. */
 const MIN_HOUR_PX = 28;
@@ -271,6 +276,70 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
 
   const timeLabel = (date: Date) =>
     `${new Intl.DateTimeFormat(intlLocale(locale), { weekday: 'short', day: 'numeric', month: 'short' }).format(date)} ${formatTime(date, locale, hour12)}`;
+
+  /* ---------- Rechtsklick ---------- */
+
+  const removeTask = useStore((s) => s.removeTask);
+  const demo = useStore((s) => s.demo);
+  const confirm = useConfirm();
+  /** Das offene Rechtsklick-Menü: wo, und was darin steht. */
+  const [context, setContext] = useState<{ anchor: HTMLElement; label: string; items: ContextMenuItem[] } | null>(null);
+  const closeContext = useCallback(() => setContext(null), []);
+
+  /** Was man mit einer Aufgabe tun kann – im Raster (mit Uhrzeit) wie in der Liste daneben. */
+  const taskItems = (task: Item, block?: { start: Date; done: boolean; occurrence: boolean }): ContextMenuItem[] => {
+    const known = Boolean(snapshot.items[task.id]);
+    return [
+      { key: 'edit', label: t('task.edit'), icon: 'edit', onPick: () => onOpen(task.id) },
+      ...(block && !block.occurrence ? [{
+        key: 'done', label: block.done ? t('cal.reopen') : t('cal.complete'), icon: 'check' as const,
+        onPick: () => toggleDone(task, block.start),
+      }] : []),
+      /* Nicht bei wiederkehrenden: Ihre Uhrzeit steht in der Regel („every mon at 9“). */
+      ...(block && !block.done && known && !task.due?.is_recurring ? [{
+        key: 'unschedule', label: t('cal.unschedule'), icon: 'calendar' as const,
+        /* Der Tag bleibt, nur die Uhrzeit geht: Die Aufgabe wandert zurück in die Liste. */
+        onPick: () => void updateTask(task.id, { due: dueForDate(task.due, toApiDate(block.start), 'en', { dropTime: true }) }),
+      }] : []),
+      {
+        key: 'todoist', label: t('task.openInTodoist'), icon: 'external', separated: true,
+        onPick: () => { window.open(todoistTaskUrl(task.id), '_blank', 'noopener'); },
+      },
+      ...(!demo && !isTemporaryId(task.id) ? [{
+        key: 'link', label: t('task.copyLink'), icon: 'link' as const,
+        onPick: () => void copyText(todoistTaskUrl(task.id)).then((ok) => toast(t(ok ? 'task.linkCopied' : 'task.linkNotCopied'))),
+      }] : []),
+      ...(known ? [{
+        key: 'delete', label: t('task.delete'), icon: 'close' as const, danger: true, separated: true,
+        onPick: () => void confirm({
+          title: t('task.deleteTitle'),
+          body: t('task.deleteConfirm', { name: task.content }),
+          confirmLabel: t('task.delete'),
+          destructive: true,
+        }).then((ok) => { if (ok) void removeTask(task.id); }),
+      }] : []),
+    ];
+  };
+
+  const eventItems = (event: CalendarEvent): ContextMenuItem[] => {
+    const link = /^https?:\/\//.test(event.url) ? event.url : '';
+    return [
+      { key: 'show', label: t('cal.showEvent'), icon: 'calendar', onPick: () => openEvent(event) },
+      ...(link ? [{ key: 'link', label: t('cal.openLink'), icon: 'external' as const, onPick: () => { window.open(link, '_blank', 'noopener'); } }] : []),
+      ...(event.title ? [{
+        key: 'copy', label: t('cal.copyTitle'), icon: 'copy' as const,
+        onPick: () => void copyText(event.title).then((ok) => toast(t(ok ? 'cal.titleCopied' : 'comment.notCopied'))),
+      }] : []),
+    ];
+  };
+
+  /** Öffnet ein Rechtsklick-Menü am Zeiger – außer über Text, der markiert ist. */
+  const openContext = (event: React.MouseEvent, label: string, items: ContextMenuItem[]) => {
+    if (leaveToText(event.nativeEvent)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setContext({ anchor: pointAnchor(event), label, items });
+  };
 
   /** A task dropped on the grid: it gets that time in Todoist, and its block follows. */
   const schedule = (item: Item, start: Date) => {
@@ -621,6 +690,7 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
                           onDragStart={(e) => startTaskDrag(e, item)}
                           onDragEnd={endDrag}
                           onDoubleClick={() => onOpen(item.id)}
+                          onContextMenu={(ev) => openContext(ev, t('task.moreActions'), taskItems(item))}
                         >
                           <span className="cal-task-main">
                             <span className="cal-task-title">{plainTitle(item.content)}</span>
@@ -662,6 +732,7 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
                     className="cal-chip"
                     style={{ ['--ev' as string]: colorOf(e.calendarId) ?? 'var(--accent)' }}
                     onClick={() => openEvent(e)}
+                    onContextMenu={(ev) => openContext(ev, t('cal.eventActions'), eventItems(e))}
                   >
                     {e.title}
                   </button>
@@ -721,6 +792,7 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
                             }}
                             onDragEnd={endDrag}
                             onClick={() => { if (!justResized.current) onOpen(task.id); }}
+                            onContextMenu={(ev) => openContext(ev, t('task.moreActions'), taskItems(task, { start, done, occurrence: Boolean(occurrence) }))}
                           >
                             <span className="cal-taskblock-head">
                               <button
@@ -775,6 +847,7 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
                           className="cal-event"
                           style={{ ...style, ['--ev' as string]: colorOf(e.calendarId) ?? 'var(--accent)' }}
                           onClick={() => openEvent(e)}
+                          onContextMenu={(ev) => openContext(ev, t('cal.eventActions'), eventItems(e))}
                         >
                           <span className="cal-event-title">{e.title}</span>
                           {px(bottom - top) >= 36 && <span className="cal-event-time">{formatTime(start, locale, hour12)}</span>}
@@ -796,6 +869,8 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
           </div>
         </div>
       </div>
+
+      {context && <ContextMenu anchor={context.anchor} label={context.label} items={context.items} onClose={closeContext} />}
 
       {selected && (() => {
         const e = selected.event;

@@ -13,6 +13,7 @@ import { usePhoneBehaviour } from '@/hooks/useTouchLayout';
 import { ROW_MENU_EVENT } from '@/hooks/useKeyboard';
 import { copyText, isTemporaryId, todoistTaskUrl } from '@/api/links';
 import { ROW_PRESS_EVENT, type RowMenu } from '@/domain/gestures';
+import { leaveToText, pointAnchor } from '@/lib/contextMenu';
 import { useStore } from '@/store/store';
 import { useConfirm } from './overlays/Confirm';
 import { effectiveEstimate, formatDuration } from '@/domain/estimates';
@@ -70,13 +71,18 @@ const ROWMENU_GAP_PX = 4;
  * Measured again whenever the menu changes size (typed suggestions grow it),
  * the window does, or anything scrolls under it.
  */
-function useMenuPlacement(menu: string, anchorRef: React.RefObject<HTMLElement | null>) {
+function useMenuPlacement(
+  menu: string,
+  anchorRef: React.RefObject<HTMLElement | null>,
+  /** Per Rechtsklick geöffnet: der Punkt, an dem das Menü hängt, statt der Knöpfe. */
+  point: HTMLElement | null = null,
+) {
   const ref = useRef<HTMLDivElement | null>(null);
 
   useLayoutEffect(() => {
     if (menu === 'none') return;
     const node = ref.current;
-    const anchor = anchorRef.current;
+    const anchor = point ?? anchorRef.current;
     if (!node || !anchor) return;
     const menuBox: HTMLDivElement = node;
 
@@ -101,8 +107,10 @@ function useMenuPlacement(menu: string, anchorRef: React.RefObject<HTMLElement |
         menuBox.style.overflowY = 'auto';
       }
       const top = goUp ? box.top - ROWMENU_GAP_PX - shown : box.bottom + ROWMENU_GAP_PX;
+      /* Am Mauszeiger beginnt das Menü dort, wo geklickt wurde, wie jedes
+         Kontextmenü auf dem Mac; an den Knöpfen endet es bündig mit ihnen. */
       const left = Math.min(
-        Math.max(margin, box.right - width),
+        Math.max(margin, point ? box.left : box.right - width),
         Math.max(margin, window.innerWidth - width - margin),
       );
       menuBox.style.top = `${Math.max(margin, top)}px`;
@@ -133,7 +141,7 @@ function useMenuPlacement(menu: string, anchorRef: React.RefObject<HTMLElement |
       window.removeEventListener('resize', place);
       window.removeEventListener('scroll', onScroll, { capture: true });
     };
-  }, [menu, anchorRef]);
+  }, [menu, anchorRef, point]);
 
   return { ref, className: ' floating' };
 }
@@ -191,11 +199,14 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep }: TaskActionsPro
      inside it is not inside `ref` and has to be recognised separately. */
   const sheetRef = useRef<HTMLDivElement>(null);
   const phone = usePhoneBehaviour();
+  /** Per Rechtsklick geöffnet: wo der Zeiger war. Gilt, bis das Menü zu ist. */
+  const [point, setPoint] = useState<HTMLElement | null>(null);
   /* Only where a menu hangs off its row. On a phone it is a sheet along the
      bottom edge, placed by the stylesheet, with nothing to flip. */
-  const placement = useMenuPlacement(phone || menu === 'estimate' ? 'none' : menu, ref);
+  const placement = useMenuPlacement(phone || (menu === 'estimate' && !point) ? 'none' : menu, ref, point);
 
   useEffect(() => { if (menu !== 'move') { setDest(''); setDestPick(-1); } }, [menu]);
+  useEffect(() => { if (menu === 'none') setPoint(null); }, [menu]);
 
   /* Two ways to be asked for a menu, and the row is where both arrive: a key
      pressed on the row the cursor is on, and a finger held on the row under
@@ -211,11 +222,23 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep }: TaskActionsPro
       setMenu((event as CustomEvent<RowMenu>).detail);
     };
     const byFinger = (event: Event) => setMenu((event as CustomEvent<RowMenu>).detail);
+    /* Der dritte Weg: ein Rechtsklick (oder Ctrl-Klick) irgendwo auf der
+       Zeile öffnet das „…“-Menü am Zeiger. Eine Unteraufgabe ist eine eigene
+       Zeile in ihrer Elternzeile; die innerste antwortet, die äußere nicht. */
+    const byRightClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || leaveToText(event)) return;
+      if ((event.target as Element).closest('[data-task-id]') !== row) return;
+      event.preventDefault();
+      setPoint(pointAnchor(event));
+      setMenu('more');
+    };
     row.addEventListener(ROW_MENU_EVENT, byKey);
     row.addEventListener(ROW_PRESS_EVENT, byFinger);
+    row.addEventListener('contextmenu', byRightClick);
     return () => {
       row.removeEventListener(ROW_MENU_EVENT, byKey);
       row.removeEventListener(ROW_PRESS_EVENT, byFinger);
+      row.removeEventListener('contextmenu', byRightClick);
     };
   }, []);
 
@@ -480,8 +503,14 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep }: TaskActionsPro
     void updateTask(item.id, { estimateMinutes: value });
   };
 
+  /* Am Mauszeiger (Rechtsklick) schwebt sie dort: Das Feld in der Zeile wäre
+     unsichtbar, solange der Zeiger nicht über der Zeile steht. */
   const estimateSheet = (
-    <div className="popover rowmenu asSheet estimatesheet" role="menu">
+    <div
+      className={`popover rowmenu estimatesheet${phone ? ' asSheet' : placement.className}`}
+      role="menu"
+      ref={phone ? undefined : placement.ref}
+    >
       <h5>{t('task.setEstimate')}</h5>
       {/* Most estimates are one of these, and on a phone typing "45" means
           opening a keyboard over half the screen to press two keys. The field
@@ -515,7 +544,7 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep }: TaskActionsPro
 
   const menus = (
     <>
-      {phone && menu === 'estimate' && estimateSheet}
+      {(phone || point) && menu === 'estimate' && estimateSheet}
         {menu === 'schedule' && (
           <div
             className={`popover rowmenu schedulemenu${phone ? ' asSheet' : placement.className}`}
@@ -656,7 +685,9 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep }: TaskActionsPro
                 to be the whole of what hovering one would have shown — the
                 swipe tray is the shortcut to the three most-used of these, not
                 the only way to reach them. */}
-            {phone && (
+            {/* Ebenso am Mauszeiger: Dort sind die Knöpfe der Zeile nicht
+                zu sehen, das Menü muss sie mitbringen. */}
+            {(phone || point) && (
               <>
                 <button className="opt" onClick={() => setMenu('schedule')}>
                   <span><Icon name="calendar" size="sm" /> {t('task.schedule')}</span>
@@ -727,7 +758,7 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep }: TaskActionsPro
 
   return (
     <span className="trow-actions" ref={ref} onPointerEnter={() => void warmPeople()} onClick={(e) => e.stopPropagation()}>
-      {menu === 'estimate' && !phone ? (
+      {menu === 'estimate' && !phone && !point ? (
         /* Opens empty, with the current duration shown as the placeholder: the
            point of the field is to type a new one, and Enter on nothing leaves
            it as it was rather than clearing it. */

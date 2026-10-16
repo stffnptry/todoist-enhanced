@@ -11,6 +11,7 @@ import { TaskRow } from './TaskRow';
 import { SectionMenu } from './SectionMenu';
 import { formatDuration, effectiveEstimate } from '@/domain/estimates';
 import type { Item } from '@/domain/types';
+import { leaveToText, pointAnchor } from '@/lib/contextMenu';
 
 interface TaskGroupProps {
   title?: string;
@@ -78,6 +79,9 @@ export function TaskGroup({
   };
   const [menuOpen, setMenuOpen] = useState(false);
   const moreRef = useRef<HTMLButtonElement>(null);
+  /** Per Rechtsklick geöffnet: der Punkt, an dem das Menü hängt, statt der drei Punkte. */
+  const [menuPoint, setMenuPoint] = useState<HTMLElement | null>(null);
+  const hasMenu = Boolean(sectionId && onDelete && projectId);
 
   // An empty derived grouping is noise. A real section is not: it is somewhere
   // you chose to make, and a section you just created has to be visible before
@@ -108,7 +112,15 @@ export function TaskGroup({
           carries the field you name it in. */}
       {(title || sectionId) && (
         <div className="gheadblock">
-        <div className="ghead">
+        <div
+          className="ghead"
+          onContextMenu={hasMenu ? (event) => {
+            if (leaveToText(event.nativeEvent)) return;
+            event.preventDefault();
+            setMenuPoint(pointAnchor(event));
+            setMenuOpen(true);
+          } : undefined}
+        >
           {/* A section is dragged by its own handle, so a click on the heading
               still collapses it. */}
           {sectionId && <SectionHandle id={sectionId} label={t('section.move')} />}
@@ -161,7 +173,7 @@ export function TaskGroup({
                   aria-expanded={menuOpen}
                   aria-label={t('section.actions')}
                   title={t('section.actions')}
-                  onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
+                  onClick={(e) => { e.stopPropagation(); setMenuPoint(null); setMenuOpen((v) => !v); }}
                 >
                   <Icon name="more" size="sm" />
                 </button>
@@ -170,8 +182,8 @@ export function TaskGroup({
                     sectionId={sectionId}
                     name={title ?? ''}
                     projectId={projectId}
-                    anchor={moreRef.current}
-                    onClose={() => setMenuOpen(false)}
+                    anchor={menuPoint ?? moreRef.current}
+                    onClose={() => { setMenuOpen(false); setMenuPoint(null); }}
                     onDelete={onDelete}
                     onEdit={() => {
                       const field = document.querySelector<HTMLInputElement>(`[data-section-name="${CSS.escape(sectionId)}"]`);

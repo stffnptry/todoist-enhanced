@@ -175,6 +175,7 @@ function TagRow({
       <FavouriteStar on={label.is_favorite} onToggle={() => void setFavourite(label.id, !label.is_favorite)} />
       <PageMenu
         label={t('labels.actions')}
+        contextOn=".tagcard"
         items={[
           { key: 'edit', label: t('labels.edit'), icon: 'edit', onPick: onEdit },
           {

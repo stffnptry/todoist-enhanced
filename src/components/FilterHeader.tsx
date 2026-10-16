@@ -107,6 +107,7 @@ export function FilterMenu({ filter, onEdit }: { filter: Filter; onEdit: () => v
   return (
     <PageMenu
       label={t('filters.actions')}
+      contextOn=".tagcard, .phead"
       items={[
         { key: 'edit', label: t('filters.edit'), icon: 'edit', onPick: onEdit },
         ...(filter.is_frozen ? [] : [{

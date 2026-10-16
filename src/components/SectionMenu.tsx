@@ -7,6 +7,7 @@ import { useConfirm } from './overlays/Confirm';
 import { usePhoneBehaviour } from '@/hooks/useTouchLayout';
 import { copyText, isTemporaryId, todoistSectionUrl } from '@/api/links';
 import { projectTree, type ProjectNode } from '@/store/selectors';
+import { isPointAnchor } from '@/lib/contextMenu';
 
 export interface SectionMenuProps {
   sectionId: string;
@@ -64,7 +65,8 @@ export function SectionMenu({ sectionId, name, projectId, onDelete, onEdit, anch
       ? Math.max(margin, button.top - height - 4)
       : below;
     const left = Math.min(
-      Math.max(margin, button.right - width),
+      // Per Rechtsklick geöffnet beginnt es genau am Zeiger.
+      Math.max(margin, isPointAnchor(anchor) ? button.left : button.right - width),
       Math.max(margin, window.innerWidth - width - margin),
     );
     setPosition({ top, left });

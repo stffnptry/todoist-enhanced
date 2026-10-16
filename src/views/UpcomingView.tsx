@@ -129,6 +129,7 @@ function UpcomingBody({ onOpen, onInsights, onUnestimated, onAddTaskTo }: Upcomi
               {t('toolbar.insights')}
             </button>
             <PageMenu
+              contextOn=".phead"
               items={[7, 15, 30, 60].map((days) => ({
                 key: `h${days}`,
                 label: t('upcoming.horizon', { days }),

@@ -1135,11 +1135,13 @@
 .rowsheet .rowmenu.asSheet .opt{min-height:44px}
 .rowsheet .rowmenu.asSheet .pickersearch{min-height:var(--ctl-h-touch)}
 .rowsheet .rowmenu.asSheet .movelist{max-height:44vh}
-.rowsheet .estimatesheet h5{
+.rowsheet .estimatesheet h5,
+.estimatesheet.floating h5{
   margin:0 0 var(--s2);font-size:var(--fs-11);font-weight:700;letter-spacing:.06em;
   text-transform:uppercase;color:var(--faint);
 }
-.rowsheet .estimatesheet .estfield{width:100%}
+.rowsheet .estimatesheet .estfield,
+.estimatesheet.floating .estfield{width:100%}
 /* The durations an estimate usually is, as targets a thumb can hit without a
    keyboard coming up over half the screen. */
 .estquick{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:var(--s3)}
@@ -2045,3 +2047,12 @@ html.reduce-transparency .claudepanel,html.more-contrast .claudepanel{box-shadow
 .pquick-name{max-width:14em;overflow:hidden;text-overflow:ellipsis}
 .pquick-count{font-weight:500;color:var(--faint);font-variant-numeric:tabular-nums}
 .pquick-chip.on .pquick-count{color:inherit;opacity:.7}
+
+/* Rechtsklick-Menüs (lib/contextMenu.ts): am Mauszeiger, über allem, was
+   scrollt – die Position setzt das Menü selbst. */
+.popover.rowmenu.contextmenu,
+.popover.pagemenu-list.atpoint{position:fixed;right:auto;bottom:auto;z-index:110}
+.popover.rowmenu.contextmenu{min-width:210px}
+/* Schätzung per Rechtsklick: dieselbe Karte wie auf dem Handy, am Zeiger. */
+.rowmenu.estimatesheet.floating{width:300px;max-width:calc(100vw - 16px);padding:var(--s3)}
+.rowmenu.estimatesheet.floating .estchip{min-height:32px;padding:0 12px}

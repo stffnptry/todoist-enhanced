@@ -22,6 +22,8 @@ interface ProjectRowSortableProps {
    * on the page.
    */
   onPressHold?: (row: HTMLElement) => void;
+  /** Rechtsklick auf die Zeile: öffnet dasselbe Menü wie die drei Punkte. */
+  onContextMenu?: (event: React.MouseEvent<HTMLElement>) => void;
   children: ReactNode;
 }
 
@@ -55,7 +57,7 @@ export const PRESS_HOLD_EVENT = 'enhanced:presshold';
  * project and a project is never reordered by accident.
  */
 export function ProjectRowSortable({
-  projectId, className = '', sortable = true, onPressHold, children,
+  projectId, className = '', sortable = true, onPressHold, onContextMenu, children,
 }: ProjectRowSortableProps) {
   const id = projectRowId(projectId);
   const rowRef = useRef<HTMLDivElement | null>(null);
@@ -88,7 +90,7 @@ export function ProjectRowSortable({
   const nesting = useStore((s) => s.nesting);
   const { active, over } = useDndContext();
 
-  if (!sortable) return <div className={`navrow${className}`}>{children}</div>;
+  if (!sortable) return <div className={`navrow${className}`} onContextMenu={onContextMenu}>{children}</div>;
 
   const landing = (isOver || beforeOver || afterOver) && !isDragging && !taskDragging;
   const translated = active?.rect.current.translated;
@@ -106,6 +108,7 @@ export function ProjectRowSortable({
       className={`navrow sortable${isDragging ? ' lifting' : ''}${landing ? (nesting ? ' nesting' : ` drop-${position}`) : ''}${className}`}
       {...attributes}
       {...listeners}
+      onContextMenu={onContextMenu}
     >
       <span ref={setBeforeRef} className="project-drop-slot before" aria-hidden="true" />
       {children}

@@ -28,6 +28,7 @@ import { applyFilters, pullQuick, rootItems, sortItems } from '@/store/selectors
 import { summariseLoad } from '@/domain/load';
 import { readProjectIcon, stripProjectIcon, withProjectIcon } from '@/domain/projectIcons';
 import { bySectionOrder } from '@/domain/orderKey';
+import { pointAnchor } from '@/lib/contextMenu';
 
 interface ProjectViewProps {
   projectId: string;
@@ -307,6 +308,7 @@ function ProjectBody({
     <div className="page">
       <PageHeader
         hireNote={!hireInList}
+        onContextMenu={(event) => setMenuAnchor(pointAnchor(event))}
         title={
           <span className="ptitle-row">
             {/* The project's mark, in front of its name: pressing it opens the

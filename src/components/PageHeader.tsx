@@ -4,6 +4,7 @@ import { useT } from '@/hooks/useT';
 import { HireNote } from './HireNote';
 import { formatDuration } from '@/domain/estimates';
 import { loadTone, type LoadSummary } from '@/domain/load';
+import { leaveToText } from '@/lib/contextMenu';
 
 /** The "I have time" pill (#159): the page offers it by passing this. */
 export interface TimePillProps {
@@ -31,6 +32,8 @@ interface PageHeaderProps {
   quickFilter?: ReactNode;
   /** Where the page does not put the note for Todoist's people itself, it goes under the header. */
   hireNote?: boolean;
+  /** Rechtsklick auf Titel und Beschreibung: dasselbe Menü wie die drei Punkte der Seite. */
+  onContextMenu?: (event: React.MouseEvent<HTMLElement>) => void;
 }
 
 /**
@@ -40,7 +43,7 @@ interface PageHeaderProps {
  * which the caller decides by passing it or not (#173).
  */
 export function PageHeader({
-  title, subtitle, actions, load, onOpenUnestimated, time, quickFilter, hireNote = true,
+  title, subtitle, actions, load, onOpenUnestimated, time, quickFilter, hireNote = true, onContextMenu,
 }: PageHeaderProps) {
   const { t, locale } = useT();
 
@@ -58,7 +61,14 @@ export function PageHeader({
   return (
     <>
       <div className="phead">
-        <div className="phead-text">
+        <div
+          className="phead-text"
+          onContextMenu={onContextMenu && ((event) => {
+            if (event.defaultPrevented || leaveToText(event.nativeEvent)) return;
+            event.preventDefault();
+            onContextMenu(event);
+          })}
+        >
           <h1 className="ptitle">{title}</h1>
           {/* A div, not a p: the project description is an editable block and
               markup cannot legally sit inside a paragraph. */}

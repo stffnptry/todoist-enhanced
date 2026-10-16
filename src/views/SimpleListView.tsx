@@ -23,6 +23,7 @@ import { summariseLoad } from '@/domain/load';
 import type { TranslationKey } from '@/i18n';
 import type { Item } from '@/domain/types';
 import type { DropTarget, RowOrder, TaskPlacement } from '@/domain/dnd';
+import { pointAnchor } from '@/lib/contextMenu';
 
 interface SimpleListViewProps {
   kind: 'someday' | 'inbox' | 'label' | 'filter';
@@ -252,6 +253,7 @@ function SimpleListBody({
     <div className="page">
       <PageHeader
         hireNote={!hireInList}
+        onContextMenu={inboxProject ? (event) => setMenuAnchor(pointAnchor(event)) : undefined}
         title={filter ? <FilterTitle filter={filter} /> : title}
         subtitle={filter ? <FilterDescription filter={filter} /> : undefined}
         actions={

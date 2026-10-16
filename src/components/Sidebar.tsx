@@ -32,6 +32,7 @@ import { dragClock } from './dnd/DragProvider';
 import type { ProjectSheetTarget } from './overlays/ProjectSheet';
 import { byChildOrder, byLabelOrder } from '@/domain/orderKey';
 import { visibleSidebarNav, type SidebarItemId } from '@/domain/sidebar';
+import { pointAnchor } from '@/lib/contextMenu';
 
 interface SidebarProps {
   route: Route;
@@ -360,6 +361,10 @@ export function Sidebar({
             /* Held under a finger, the row itself is the anchor: the button
                this menu usually hangs from is not on the page on a phone. */
             onPressHold={(node) => setRowMenu(menuOpen ? null : { key: rowKey, anchor: node })}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              setRowMenu({ key: rowKey, anchor: pointAnchor(event) });
+            }}
           >
             <button
               className={`navitem${folderLike ? ' folderitem' : ''}${isOver ? ' dropping' : ''}`}

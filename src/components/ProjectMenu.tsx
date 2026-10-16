@@ -10,6 +10,7 @@ import type { Project } from '@/domain/types';
 import { copyPending, copyText, isTemporaryId, projectEmail, todoistProjectUrl } from '@/api/links';
 import { ApiError } from '@/api/client';
 import { isSharedWithMe } from '@/domain/sharing';
+import { isPointAnchor } from '@/lib/contextMenu';
 
 export interface ProjectMenuProps {
   project: Project;
@@ -76,7 +77,8 @@ export function ProjectMenu({
       ? Math.max(margin, button.top - height - 4)
       : below;
 
-    const wanted = align === 'right' ? button.right - width : button.left - 4;
+    // Per Rechtsklick geöffnet beginnt es genau am Zeiger.
+    const wanted = isPointAnchor(anchor) ? button.left : align === 'right' ? button.right - width : button.left - 4;
     const left = Math.min(
       Math.max(margin, wanted),
       Math.max(margin, window.innerWidth - width - margin),

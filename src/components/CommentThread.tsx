@@ -12,6 +12,7 @@ import { formatRelativeDay } from '@/domain/dates';
 import { renderMarkdown } from '@/domain/markdown';
 import type { Note, NoteAttachment } from '@/domain/types';
 import { intlLocale, type Locale } from '@/i18n';
+import { leaveToText, pointAnchor } from '@/lib/contextMenu';
 
 /* The full palette and its data load the first time somebody reacts (#27). */
 const EmojiPalette = lazy(() => import('./EmojiPalette').then((module) => ({ default: module.EmojiPalette })));
@@ -92,20 +93,22 @@ function CommentRow({ note, itemId }: { note: Note; itemId: string }) {
   const holder = useRef<HTMLDivElement>(null);
   const reactButton = useRef<HTMLButtonElement>(null);
   const moreButton = useRef<HTMLButtonElement>(null);
+  /** Per Rechtsklick geöffnet: wo der Zeiger war, statt der drei Punkte. */
+  const [point, setPoint] = useState<HTMLElement | null>(null);
   const menuRef = useMenuKeys(menu === 'more', () => setMenu(null));
   /* The ⋯ menu floats over the window, below its button when there is room
      and above it when not, so the task window never cuts it off (#34). */
   const [menuPlace, setMenuPlace] = useState<{ top: number; left: number } | null>(null);
   useLayoutEffect(() => {
-    if (menu !== 'more') { setMenuPlace(null); return; }
+    if (menu !== 'more') { setMenuPlace(null); setPoint(null); return; }
     const measure = () => {
-      const box = moreButton.current?.getBoundingClientRect();
+      const box = (point ?? moreButton.current)?.getBoundingClientRect();
       if (!box) return;
       const width = menuRef.current?.offsetWidth ?? 200;
       const height = menuRef.current?.offsetHeight ?? 160;
       const below = box.bottom + 4;
       const top = below + height + 8 <= window.innerHeight ? below : Math.max(8, box.top - height - 4);
-      const left = Math.min(Math.max(8, box.right - width), window.innerWidth - width - 8);
+      const left = Math.min(Math.max(8, point ? box.left : box.right - width), window.innerWidth - width - 8);
       setMenuPlace({ top, left });
     };
     measure();
@@ -115,7 +118,7 @@ function CommentRow({ note, itemId }: { note: Note; itemId: string }) {
       window.removeEventListener('resize', measure);
       window.removeEventListener('scroll', measure, true);
     };
-  }, [menu, menuRef]);
+  }, [menu, menuRef, point]);
   const closeMenu = useCallback(() => setMenu(null), []);
 
   useEffect(() => { if (!editing) setDraft(note.content); }, [note.content, editing]);
@@ -151,7 +154,16 @@ function CommentRow({ note, itemId }: { note: Note; itemId: string }) {
   };
 
   return (
-    <article className="comment" data-note-id={note.id}>
+    <article
+      className="comment"
+      data-note-id={note.id}
+      onContextMenu={editing ? undefined : (event) => {
+        if (event.defaultPrevented || leaveToText(event.nativeEvent)) return;
+        event.preventDefault();
+        setPoint(pointAnchor(event));
+        setMenu('more');
+      }}
+    >
       <Avatar picture={picture} name={author} />
       <div className="comment-body">
         <header>
@@ -220,7 +232,7 @@ function CommentRow({ note, itemId }: { note: Note; itemId: string }) {
             aria-label={t('comment.more')}
             title={t('comment.more')}
             aria-expanded={menu === 'more'}
-            onClick={() => setMenu((now) => (now === 'more' ? null : 'more'))}
+            onClick={() => { setPoint(null); setMenu((now) => (now === 'more' ? null : 'more')); }}
           >
             <Icon name="more" size="sm" />
           </button>
