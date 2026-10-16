@@ -1,4 +1,4 @@
-import { addMonths, differenceInMonths, parseISO, startOfDay } from 'date-fns';
+import { addMonths, differenceInMonths, endOfWeek, parseISO, startOfDay } from 'date-fns';
 import { SYSTEM_LABELS, weekLabel, type Bucket, type Item } from './types';
 import { estimateOf } from './estimates';
 import { dueDate, hasTime, isFuture, isOverdue, isToday, toApiDate } from './dates';
@@ -49,6 +49,19 @@ export interface WeekGroups {
   untimed: Item[];
   timed: Item[];
   anytime: Item[];
+  /** Dated after today but before the week is out (Monday to Sunday), by time. */
+  later: Item[];
+}
+
+/**
+ * Whether a task is dated after today but still inside this week (the week
+ * runs Monday to Sunday). These belong to My week too: a task due on Friday
+ * is a task for this week, and without them the page held only the `week`
+ * label's tasks and, with Today on its own page, was empty for most people.
+ */
+export function isLaterThisWeek(item: Item, now = new Date()): boolean {
+  const d = dueDate(item);
+  return !!d && bucketOf(item, now) === 'upcoming' && d <= endOfWeek(now, { weekStartsOn: 1 });
 }
 
 /**
@@ -61,7 +74,7 @@ export interface WeekGroups {
  * urgent fact about them.
  */
 export function groupWeek(items: Item[], now = new Date(), showQuickGroup = true): WeekGroups {
-  const groups: WeekGroups = { overdue: [], quick: [], untimed: [], timed: [], anytime: [] };
+  const groups: WeekGroups = { overdue: [], quick: [], untimed: [], timed: [], anytime: [], later: [] };
 
   for (const item of items) {
     const bucket = bucketOf(item, now);
@@ -73,6 +86,8 @@ export function groupWeek(items: Item[], now = new Date(), showQuickGroup = true
       else groups.untimed.push(item);
     } else if (bucket === 'anytime') {
       groups.anytime.push(item);
+    } else if (isLaterThisWeek(item, now)) {
+      groups.later.push(item);
     }
   }
 
@@ -80,6 +95,7 @@ export function groupWeek(items: Item[], now = new Date(), showQuickGroup = true
     (dueDate(a)?.getTime() ?? 0) - (dueDate(b)?.getTime() ?? 0);
   groups.timed.sort(byTime);
   groups.overdue.sort(byTime);
+  groups.later.sort(byTime);
 
   return groups;
 }
@@ -231,10 +247,39 @@ export function anytimeItems(items: Item[], now = new Date()): Item[] {
   return items.filter((i) => bucketOf(i, now) === 'anytime');
 }
 
+/**
+ * My week when Today has a page of its own: the rest of the week from tomorrow
+ * on, plus the `week` label's tasks.
+ */
+export function restOfWeekItems(items: Item[], now = new Date()): Item[] {
+  return items.filter((i) => bucketOf(i, now) === 'anytime' || isLaterThisWeek(i, now));
+}
+
 /** Everything My week covers, used for the header counts and the load pill. */
 export function weekItems(items: Item[], now = new Date()): Item[] {
   return items.filter((i) => {
     const b = bucketOf(i, now);
-    return b === 'overdue' || b === 'today' || b === 'anytime';
+    return b === 'overdue' || b === 'today' || b === 'anytime' || isLaterThisWeek(i, now);
   });
+}
+
+export interface DayGroup {
+  /** `yyyy-MM-dd`. */
+  key: string;
+  date: Date;
+  items: Item[];
+}
+
+/** Tasks split into one group per local day, in the order they came. */
+export function byDay(items: Item[]): DayGroup[] {
+  const groups = new Map<string, DayGroup>();
+  for (const item of items) {
+    const d = dueDate(item);
+    if (!d) continue;
+    const key = toApiDate(d);
+    const group = groups.get(key) ?? { key, date: startOfDay(d), items: [] };
+    group.items.push(item);
+    groups.set(key, group);
+  }
+  return [...groups.values()];
 }

@@ -1,5 +1,6 @@
 import { HireNote } from '@/components/HireNote';
 import { useMemo } from 'react';
+import { differenceInCalendarDays } from 'date-fns';
 import { PageHeader } from '@/components/PageHeader';
 import { ProjectQuickFilter } from '@/components/ProjectQuickFilter';
 import { SubtasksProvider } from '@/components/TaskRow';
@@ -15,9 +16,10 @@ import { useStore } from '@/store/store';
 import { useConfirm } from '@/components/overlays/Confirm';
 import { viewPrefs } from '@/store/prefs';
 import { applyFilters, datedRoots, sortItems } from '@/store/selectors';
-import { anytimeItems, bucketOf, groupWeek, weekItems } from '@/domain/views';
+import { bucketOf, byDay, groupWeek, restOfWeekItems, weekItems } from '@/domain/views';
 import { summariseLoad, weeklyCapacity } from '@/domain/load';
-import { toApiDate } from '@/domain/dates';
+import { formatRelativeDay, toApiDate } from '@/domain/dates';
+import { intlLocale } from '@/i18n';
 import { dueForDate } from '@/domain/recurrence';
 import { weekLabel } from '@/domain/types';
 import { placementFor, type TaskPlacement } from '@/domain/dnd';
@@ -70,7 +72,7 @@ function addToGroupFor(group: GroupKey, key: string): TaskPlacement | undefined 
 function WeekBody({
   onOpen, onInsights, onUnestimated, onAddTaskTo, scope = 'all',
 }: WeekViewProps) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const timePill = useTimePill();
   const { snapshot, items, childrenOf } = useData(scope === 'today' ? 'today' : 'week');
   const prefs = useStore((s) => s.prefs);
@@ -92,7 +94,7 @@ function WeekBody({
             return bucket === 'overdue' || bucket === 'today';
           })
         : scope === 'anytime'
-          ? anytimeItems(roots, now)
+          ? restOfWeekItems(roots, now)
           : weekItems(roots, now);
     return inScope;
   }, [items, snapshot, scope]);
@@ -105,6 +107,13 @@ function WeekBody({
     () => groupWeek(scoped, new Date(), prefs.showQuickGroup),
     [scoped, prefs.showQuickGroup],
   );
+  /* The rest of the week, one group per day: „Morgen“, then „Samstag, 17. Oktober“. */
+  const laterDays = useMemo(() => byDay(groups.later).map((day) => ({
+    ...day,
+    title: differenceInCalendarDays(day.date, new Date()) === 1
+      ? formatRelativeDay(day.date, locale)
+      : new Intl.DateTimeFormat(intlLocale(locale), { weekday: 'long', day: 'numeric', month: 'long' }).format(day.date),
+  })), [groups.later, locale]);
 
   /* Today is measured against today's hours, not the week's. A day page
      showing "12 % of capacity" would be describing a week it does not draw. */
@@ -175,6 +184,10 @@ function WeekBody({
       { id: 'timed', title: t('group.timed'), items: groups.timed },
     ];
     const anytime = [
+      ...laterDays.map((day) => ({
+        id: `day:${day.key}`, title: day.title, items: day.items,
+        dropTarget: { kind: 'day' as const, date: day.date },
+      })),
       { id: 'anytime', title: t('group.anytime'), items: groups.anytime,
         dropTarget: { kind: 'anytime' as const } },
     ];
@@ -182,21 +195,25 @@ function WeekBody({
       scope === 'today' ? today : scope === 'anytime' ? anytime : [...today, ...anytime];
     return columns
       .filter((column) => column.items.length > 0 || column.dropTarget)
-      .map((column) => ({
-        ...column, items: sortItems(column.items, current.sort, childrenOf, 'day', snapshot, true),
-        /* Each column a task can be added to has the line to do it, empty or full. */
-        onAddTask: column.id === 'quick' ? () => onAddTaskTo(placementFor({ kind: 'quick' }))
-          : column.id === 'untimed' || column.id === 'timed' ? () => onAddTaskTo(placementFor({ kind: 'today' }))
-            : column.id === 'anytime' ? () => onAddTaskTo(placementFor({ kind: 'anytime' }))
-              : undefined,
-      }));
+      .map((column) => {
+        const target = column.dropTarget;
+        return {
+          ...column, items: sortItems(column.items, current.sort, childrenOf, 'day', snapshot, true),
+          /* Each column a task can be added to has the line to do it, empty or full. */
+          onAddTask: column.id === 'quick' ? () => onAddTaskTo(placementFor({ kind: 'quick' }))
+            : column.id === 'untimed' || column.id === 'timed' ? () => onAddTaskTo(placementFor({ kind: 'today' }))
+              : column.id === 'anytime' ? () => onAddTaskTo(placementFor({ kind: 'anytime' }))
+                : target?.kind === 'day' ? () => onAddTaskTo(placementFor(target))
+                  : undefined,
+        };
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- placementFor and onAddTaskTo are stable for a page.
-  }, [groups, prefs.showQuickGroup, current.sort, childrenOf, snapshot, t, scope]);
+  }, [groups, laterDays, prefs.showQuickGroup, current.sort, childrenOf, snapshot, t, scope]);
 
   /* Whether one of the groups below is drawn with its own "Add task" line. */
   const hasAddLine = (scope !== 'anytime' && (
     (prefs.showQuickGroup && groups.quick.length > 0) || groups.untimed.length > 0 || groups.timed.length > 0 || hireNoteOpen
-  )) || (scope !== 'today' && groups.anytime.length > 0);
+  )) || (scope !== 'today' && (groups.anytime.length > 0 || groups.later.length > 0));
 
   return (
     <div className="page">
@@ -290,6 +307,18 @@ function WeekBody({
           />
           </>
           )}
+
+          {scope !== 'today' && laterDays.map((day) => (
+            <TaskGroup
+              key={day.key}
+              title={day.title}
+              items={sortedGroup(day.items)}
+              childrenOf={childrenOf}
+              onOpen={onOpen}
+              dropTarget={{ kind: 'day', date: day.date }}
+              onAddTask={() => onAddTaskTo(placementFor({ kind: 'day', date: day.date }))}
+            />
+          ))}
 
           {scope !== 'today' && (
             <TaskGroup

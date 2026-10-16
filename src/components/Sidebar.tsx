@@ -13,7 +13,7 @@ import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
 import { navigate, type Route } from '@/hooks/useRoute';
 import { projectCounts, projectTree, rootItems, type ProjectNode } from '@/store/selectors';
-import { anytimeItems, bucketOf, hasLabel, somedayItems, upcomingItems, weekItems } from '@/domain/views';
+import { bucketOf, restOfWeekItems, hasLabel, somedayItems, upcomingItems, weekItems } from '@/domain/views';
 import { markerStyle, avatarUrl } from '@/domain/colors';
 import { firstName, karmaStanding } from '@/domain/karma';
 import { readProjectIcon } from '@/domain/projectIcons';
@@ -159,7 +159,7 @@ export function Sidebar({
       }).length,
       /* The count has to match the page. A "My week" that no longer contains
          today must not keep counting today's work. */
-      week: (weekLayout === 'split' ? anytimeItems(scope('week'), now) : weekItems(scope('week'), now)).length,
+      week: (weekLayout === 'split' ? restOfWeekItems(scope('week'), now) : weekItems(scope('week'), now)).length,
       upcoming: upcomingItems(scope('upcoming')).filter((item) => {
         const date = dueDate(item);
         return date !== null && date <= endOfDay(addDays(now, prefs.upcomingHorizonDays));

@@ -52,7 +52,7 @@ import { useParentEstimates } from './hooks/useParentEstimates';
 import { useDesktopReminders } from './hooks/useDesktopReminders';
 import { CalendarView } from './views/CalendarView';
 import { ClaudePanel } from './components/ClaudePanel';
-import { anytimeItems, bucketOf, hasLabel, somedayItems, upcomingItems, weekItems } from './domain/views';
+import { bucketOf, restOfWeekItems, hasLabel, somedayItems, upcomingItems, weekItems } from './domain/views';
 import { effectiveEstimate } from './domain/estimates';
 import type { Item } from './domain/types';
 import type { TranslationKey } from './i18n';
@@ -666,7 +666,7 @@ function AppShell({
         return {
           /* The page's own scope, or the header and every dialog opened from
              it would describe a week this page is not showing. */
-          contextItems: weekLayout === 'split' ? anytimeItems(roots) : weekItems(roots),
+          contextItems: weekLayout === 'split' ? restOfWeekItems(roots) : weekItems(roots),
           contextLabel: t('nav.week'),
         };
       case 'today': {

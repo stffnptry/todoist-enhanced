@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ageInMonths, groupWeek, keptDay, pruneKept, readKept, splitDust, splitQuick,
+  ageInMonths, byDay, groupWeek, restOfWeekItems, weekItems, keptDay, pruneKept, readKept, splitDust, splitQuick,
 } from './views';
 import { due, item } from '@/test/items';
 
@@ -90,6 +90,30 @@ describe('groupWeek', () => {
     expect(ids(groups.overdue)).toEqual(['late']);
     expect(ids(groups.quick)).toEqual(['today']);
     expect(ids(groups.anytime)).toEqual(['anytime']);
+  });
+
+  /* NOW is Wednesday 7 October; the week runs to Sunday the 11th. */
+  it('takes the rest of the week by day and leaves next week to Upcoming', () => {
+    const tasks = [
+      item({ id: 'sun', due: due('2026-10-11') }),
+      item({ id: 'thu', due: due('2026-10-08') }),
+      item({ id: 'mon', due: due('2026-10-12') }),
+    ];
+    const groups = groupWeek(tasks, NOW);
+    expect(ids(groups.later)).toEqual(['thu', 'sun']);
+    expect(byDay(groups.later).map((d) => d.key)).toEqual(['2026-10-08', '2026-10-11']);
+  });
+
+  it('fills My week without Today from the rest of the week and the week label', () => {
+    const tasks = [
+      item({ id: 'today', due: due('2026-10-07') }),
+      item({ id: 'fri', due: due('2026-10-09') }),
+      item({ id: 'anytime', labels: ['week'] }),
+      item({ id: 'next', due: due('2026-10-14') }),
+      item({ id: 'someday' }),
+    ];
+    expect(ids(restOfWeekItems(tasks, NOW))).toEqual(['fri', 'anytime']);
+    expect(ids(weekItems(tasks, NOW))).toEqual(['today', 'fri', 'anytime']);
   });
 });
 
