@@ -22,6 +22,7 @@ import {
 } from '@/domain/shorthand';
 import { matchesSearch } from '@/domain/search';
 import { byLabelOrder } from '@/domain/orderKey';
+import { isHiddenLabel } from '@/domain/kanban';
 
 interface ComposerProps {
   open: boolean;
@@ -165,7 +166,7 @@ export function Composer({
   }, [open, projectId, responsibleUid, snapshot, t]);
 
   const tags = Object.values(snapshot.labels)
-    .filter((l) => !l.is_deleted && !l.name.startsWith('est-'))
+    .filter((l) => !l.is_deleted && !isHiddenLabel(l.name))
     .sort(byLabelOrder);
   const filteredTags = tags.filter((label) => matchesSearch(label.name, tagQuery));
 
@@ -525,7 +526,7 @@ export function Composer({
             }))}
           />
 
-          {allTags.map((label) => {
+          {allTags.filter((label) => !isHiddenLabel(label)).map((label) => {
             const known = tags.find((l) => l.name === label);
             return (
               <button

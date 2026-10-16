@@ -14,6 +14,7 @@ import { useT } from '@/hooks/useT';
 import type { Snapshot } from '@/domain/types';
 import { bySectionOrder } from '@/domain/orderKey';
 import { splitPastedList } from '@/domain/pastedList';
+import { isHiddenLabel } from '@/domain/kanban';
 
 /** A name with its spaces, case and accents set aside, as the parser reads it. */
 const squash = (text: string): string =>
@@ -260,7 +261,7 @@ export function TaskNameField({
       return [...withSections, ...elsewhere].slice(0, 60);
     }
     const known = Object.values(snapshot.labels)
-      .filter((l) => !l.is_deleted && !l.name.startsWith('est-'))
+      .filter((l) => !l.is_deleted && !isHiddenLabel(l.name))
       .filter((l) => l.name.toLowerCase().includes(token.query))
       .slice(0, 6)
       .map((l) => ({

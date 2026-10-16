@@ -665,6 +665,17 @@ export function DragProvider({ children }: { children: ReactNode }) {
     }
 
     const item = snapshot.items[taskIdOf(activeId)];
+    /* Kanban: Eine Status-Spalte ist kein Ort, sondern ein Zustand. Ob die
+       Karte auf der Spalte oder auf einer Karte darin landet, sie bekommt den
+       Status der Spalte; ihre Reihenfolge darin folgt der Sortierung. */
+    const overList = (event.over.data.current as { list?: RowList } | undefined)?.list;
+    const statusTarget = decodeTarget(String(event.over.id)) ?? overList?.target ?? null;
+    if (item && statusTarget?.kind === 'status') {
+      const block = carried.length > 1 && carried.includes(item.id) ? carried : [item.id];
+      if (block.length > 1) useStore.getState().clearSelection();
+      await useStore.getState().setTaskStatus(block, statusTarget.status);
+      return;
+    }
     /* One row, the two readings of it. Out to the right the task goes inside
        the row; straight onto it, the task takes its place. */
     const onRow = decodeRowTarget(String(event.over.id));

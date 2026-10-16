@@ -33,6 +33,7 @@ import type { ProjectSheetTarget } from './overlays/ProjectSheet';
 import { byChildOrder, byLabelOrder } from '@/domain/orderKey';
 import { visibleSidebarNav, type SidebarItemId } from '@/domain/sidebar';
 import { pointAnchor } from '@/lib/contextMenu';
+import { isHiddenLabel } from '@/domain/kanban';
 
 interface SidebarProps {
   route: Route;
@@ -172,7 +173,7 @@ export function Sidebar({
   /** Favourites are Todoist's own star, not a separate list this app keeps. */
   const favourites = useMemo(() => {
     const labels = Object.values(snapshot.labels)
-      .filter((l) => l.is_favorite && !l.name.startsWith('est-'))
+      .filter((l) => l.is_favorite && !isHiddenLabel(l.name))
       .sort(byLabelOrder);
     const projects = Object.values(snapshot.projects)
       .filter((p) => p.is_favorite && !p.is_archived && !p.is_deleted)

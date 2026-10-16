@@ -13,6 +13,7 @@ import type { DropTarget } from '@/domain/dnd';
 import { matchesSearch } from '@/domain/search';
 import { formatDayOrName, formatTime } from '@/domain/dates';
 import { byChildOrder, byLabelOrder, bySectionOrder } from '@/domain/orderKey';
+import { isHiddenLabel } from '@/domain/kanban';
 
 /**
  * One button in the bar, and the panel it opens.
@@ -350,7 +351,7 @@ export function BulkBar() {
      answer to that. Estimates are labels too, and are not tags — they have a
      field of their own everywhere else in the app. */
   const tags = Object.values(snapshot.labels)
-    .filter((l) => !l.is_deleted && !l.name.startsWith('est-'))
+    .filter((l) => !l.is_deleted && !isHiddenLabel(l.name))
     .sort(byLabelOrder);
   const filteredTags = tags.filter((label) => matchesSearch(label.name, tagQuery));
 

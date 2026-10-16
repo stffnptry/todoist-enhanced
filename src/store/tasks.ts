@@ -8,13 +8,14 @@ import { canStoreDurations, estimatePatch } from '@/domain/estimates';
 import { toApiDate } from '@/domain/dates';
 import { firstDayOfRule, ruleFromString } from '@/domain/repeatRule';
 import { readTime } from '@/domain/nlp';
+import { isKanbanView, labelsWithStatus, statusOf } from '@/domain/kanban';
 import { translate } from '@/i18n';
 import { byChildOrder, keyBetween, keysInOrder } from '@/domain/orderKey';
 import {
   UNDO_TOAST_MS, advanceDemoRecurrence, branchOf, deletionRoots, hidePending, patchItem, pendingDeletes,
   restoreOrder, schedulePersist, settleFromServer,
 } from './helpers';
-import type { Slice, TasksSlice } from './types';
+import type { AppState, Slice, TasksSlice } from './types';
 
 /** A subtask created with its parent: a title, and the labels it starts with. */
 interface NewSubtask { content: string; labels?: string[]; estimateMinutes?: number | null }
@@ -195,6 +196,24 @@ export function nextOrderKey(
   } catch {
     return null;
   }
+}
+
+/**
+ * Kanban: Wird eine Unteraufgabe abgehakt, ist die Aufgabe darüber „In Arbeit“.
+ * Nur in Projekten, deren Ansicht nach Status gruppiert ist – anderswo bekäme
+ * jede Aufgabe mit Unteraufgaben sonst ungefragt ein Status-Label.
+ */
+async function promoteParents(get: () => AppState, ids: string[]): Promise<void> {
+  const { snapshot, prefs } = get();
+  const parents = new Set<string>();
+  for (const id of ids) {
+    const parentId = snapshot.items[id]?.parent_id;
+    const parent = parentId ? snapshot.items[parentId] : undefined;
+    if (!parent || statusOf(parent) !== 'open') continue;
+    if (!isKanbanView(prefs.views[`project:${parent.project_id}`]?.group)) continue;
+    parents.add(parent.id);
+  }
+  if (parents.size > 0) await get().setTaskStatus([...parents], 'doing');
 }
 
 export const createTasksSlice: Slice<TasksSlice> = (set, get) => ({
@@ -416,6 +435,59 @@ export const createTasksSlice: Slice<TasksSlice> = (set, get) => ({
       await get().apply([back], (snapshot) => patchItem(snapshot, id, { checked: !checked }));
     });
     await done;
+    if (checked) await promoteParents(get, [id]);
+  },
+  async setTaskStatus(ids, status) {
+    const snapshot = get().snapshot;
+    const items = [...new Set(ids)]
+      .map((id) => snapshot.items[id])
+      .filter((item): item is Item => !!item && statusOf(item) !== status);
+    if (items.length === 0) return;
+
+    const commands: Command[] = [];
+    const patches: Array<[string, Partial<Item>]> = [];
+    const rolling: string[] = [];
+    for (const item of items) {
+      if (status === 'done') {
+        if (item.due?.is_recurring) {
+          /* Abschließen rückt eine Serie weiter; der nächste Termin ist wieder offen. */
+          const labels = labelsWithStatus(item.labels, 'open');
+          commands.push(updateItem(item.id, { labels }), command('item_close', { id: item.id }));
+          patches.push([item.id, { labels, checked: true }]);
+          rolling.push(item.id);
+        } else {
+          const labels = labelsWithStatus(item.labels, 'done');
+          commands.push(updateItem(item.id, { labels }), completeItem(item.id));
+          patches.push([item.id, { labels, checked: true }]);
+        }
+      } else {
+        const labels = labelsWithStatus(item.labels, status);
+        /* Erst wieder aufmachen, dann ändern: eine erledigte Aufgabe nimmt
+           Todoist nicht zuverlässig zur Bearbeitung an. */
+        if (item.checked) commands.push(uncompleteItem(item.id));
+        commands.push(updateItem(item.id, { labels }));
+        patches.push([item.id, { labels, checked: false }]);
+      }
+    }
+
+    const before = items.map((item) => ({ id: item.id, labels: item.labels, checked: item.checked }));
+    const done = get().apply(commands, (current) => patches.reduce((acc, [id, patch]) => patchItem(acc, id, patch), current));
+    const name = translate(get().prefs.locale, `status.${status}`);
+    const label = items.length === 1
+      ? translate(get().prefs.locale, 'status.set', { status: name })
+      : translate(get().prefs.locale, 'status.setMany', { count: items.length, status: name });
+    const undoable = before.filter(({ id }) => !rolling.includes(id));
+    get().toast(label, undoable.length === 0 ? undefined : async () => {
+      await done;
+      await get().apply(
+        undoable.flatMap(({ id, labels, checked }) => checked
+          ? [updateItem(id, { labels }), completeItem(id)]
+          : [...(status === 'done' ? [uncompleteItem(id)] : []), updateItem(id, { labels })]),
+        (current) => undoable.reduce((acc, { id, labels, checked }) => patchItem(acc, id, { labels, checked }), current),
+      );
+    });
+    await done;
+    for (const id of rolling) await settleFromServer(get, id, (current) => current.checked);
   },
   async completeTasks(ids) {
     const snapshot = get().snapshot;
@@ -453,6 +525,7 @@ export const createTasksSlice: Slice<TasksSlice> = (set, get) => ({
       get().toast(label);
     }
     await done;
+    await promoteParents(get, items.map((item) => item.id));
     const stillTicked = recurring.find((item) => get().snapshot.items[item.id]?.checked);
     if (stillTicked) await settleFromServer(get, stillTicked.id, (current) => current.checked);
   },

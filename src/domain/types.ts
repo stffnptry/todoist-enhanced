@@ -381,7 +381,9 @@ export type GroupKey =
   | 'section'
   | 'priority'
   | 'label'
-  | 'estimate';
+  | 'estimate'
+  /** Kanban: Offen, In Arbeit, Abgeschlossen (domain/kanban.ts). */
+  | 'status';
 
 export type SortKey =
   | 'assignee'

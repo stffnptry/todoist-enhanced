@@ -23,6 +23,7 @@ import { dateTone, deadlineDate, dueDate, formatRelativeDay, formatTime, hasTime
 import { markerStyle } from '@/domain/colors';
 import { renderInlineMarkdown, renderTitle } from '@/domain/markdown';
 import type { DetailChip } from '@/domain/taskDetails';
+import { isHiddenLabel, statusOf } from '@/domain/kanban';
 
 /**
  * Whether rows draw the subtasks nested under them.
@@ -228,7 +229,7 @@ export function TaskRow({
   };
 
   // Estimate labels are shown as a duration, never as an ordinary tag.
-  const visibleLabels = item.labels.filter((l) => !l.toLowerCase().startsWith('est-'));
+  const visibleLabels = item.labels.filter((l) => !isHiddenLabel(l));
 
   /* A tag carries a colour in Todoist, so it carries it here too. The task
      stores names, and the colour lives on the label, which is the lookup. */
@@ -289,6 +290,13 @@ export function TaskRow({
     ),
     labels: (
       <Fragment key="labels">
+        {/* Kanban: „In Arbeit“ ist kein Tag, aber gut zu sehen. */}
+        {!item.checked && statusOf(item) === 'doing' && (
+          <span className="tag status-doing">
+            <Icon name="board" size="sm" />
+            {t('status.doing')}
+          </span>
+        )}
         {visibleLabels.map((label) => (
           <span className="tag" key={label} style={markerStyle(labelColours.get(label))}>
             <Icon name="tag" size="sm" />

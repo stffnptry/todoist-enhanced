@@ -111,6 +111,7 @@ function useGrouped(props: ModeSurfaceProps) {
       },
       scheduled: t('section.scheduled'),
       available: t('section.available'),
+      status: (status) => t(`status.${status}` as TranslationKey),
     });
   }, [items, group, sort, childrenOf, order, snapshot, t, locale]);
 }

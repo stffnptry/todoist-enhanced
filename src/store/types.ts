@@ -7,6 +7,7 @@ import type { Locale } from '@/i18n';
 import type { DropTarget } from '@/domain/dnd';
 import type { DustLedger } from '@/domain/views';
 import type { Preferences } from './prefs';
+import type { TaskStatus } from '@/domain/kanban';
 
 export type SyncState = 'idle' | 'loading' | 'syncing' | 'error' | 'offline';
 
@@ -193,6 +194,12 @@ export interface AppState {
    * that puts them all back. A recurring task rolls on to its next date.
    */
   completeTasks: (ids: string[]) => Promise<void>;
+  /**
+   * Kanban-Status setzen (domain/kanban.ts): Offen und In Arbeit sind Labels,
+   * Abgeschlossen hakt ab. Eine wiederkehrende Aufgabe rückt beim Abschließen
+   * auf ihren nächsten Termin und ist dann wieder offen.
+   */
+  setTaskStatus: (ids: string[], status: TaskStatus) => Promise<void>;
   removeTask: (id: string) => Promise<void>;
   /** Deletes several tasks as one act, with one undo that puts them all back. */
   removeTasks: (ids: string[]) => Promise<void>;
@@ -392,7 +399,7 @@ export type SyncSlice = Pick<AppState, 'ready' | 'connected' | 'snapshot' | 'syn
 export type CollabSlice = Pick<AppState, 'markNotifications' | 'answerInvitation' | 'shareProject' | 'removeCollaborator' | 'leaveProject' | 'assignTask' | 'loadProjectPeople'>;
 export type DustSlice = Pick<AppState, 'dustKept' | 'keepInSomeday'>;
 export type PreferencesSlice = Pick<AppState, 'prefs' | 'walkthrough' | 'setPrefs' | 'setViewPrefs' | 'setLocale' | 'ensurePreferencesTask' | 'beginTourPreview' | 'endTourPreview' | 'setWalkthrough'>;
-export type TasksSlice = Pick<AppState, 'logbookEntry' | 'setLogbookEntry' | 'loadTask' | 'updateTask' | 'addComment' | 'updateComment' | 'deleteComment' | 'toggleReaction' | 'duplicateTask' | 'setRecurrence' | 'setEstimates' | 'toggleTask' | 'completeTasks' | 'removeTask' | 'removeTasks' | 'restoreTasks' | 'createTask' | 'createTasks' | 'setTaskLabels' | 'setTaskPriority' | 'skipOccurrence' | 'skipOccurrences' | 'reorderSubtasks'>;
+export type TasksSlice = Pick<AppState, 'logbookEntry' | 'setLogbookEntry' | 'loadTask' | 'updateTask' | 'addComment' | 'updateComment' | 'deleteComment' | 'toggleReaction' | 'duplicateTask' | 'setRecurrence' | 'setEstimates' | 'toggleTask' | 'completeTasks' | 'setTaskStatus' | 'removeTask' | 'removeTasks' | 'restoreTasks' | 'createTask' | 'createTasks' | 'setTaskLabels' | 'setTaskPriority' | 'skipOccurrence' | 'skipOccurrences' | 'reorderSubtasks'>;
 export type TasksMoveSlice = Pick<AppState, 'sendTo' | 'sendManyTo' | 'updateMany' | 'moveMany' | 'nestMany' | 'moveTask'>;
 export type StructureSlice = Pick<AppState, 'createLabel' | 'setLabelFavourite' | 'setLabelColour' | 'deleteLabel' | 'setFilterFavourite' | 'createFilter' | 'updateFilter' | 'deleteFilter' | 'reorderFilters' | 'reorderLabels' | 'reorderProjects' | 'nestProject' | 'moveProjectToWorkspace' | 'createProject' | 'archiveProject' | 'deleteProject' | 'duplicateProject' | 'updateProjectFields' | 'createSection' | 'moveSection' | 'removeSection' | 'archiveSection' | 'moveSectionToProject' | 'duplicateSection' | 'updateSectionFields'>;
 export type UiSlice = Pick<AppState, 'toasts' | 'undoStack' | 'draggingTaskId' | 'draggingSectionId' | 'nesting' | 'outdenting' | 'draggingProjectId' | 'draggingTag' | 'selection' | 'selectionAnchor' | 'toast' | 'dismissToast' | 'pushUndo' | 'undo' | 'consumeUndo' | 'setDraggingSection' | 'setDraggingTag' | 'setNesting' | 'setOutdenting' | 'setDraggingProject' | 'sidePanel' | 'openSidePanel' | 'closeSidePanel' | 'hireNote' | 'setHireNote' | 'timeFilter' | 'setTimeFilter' | 'toggleSelection' | 'setSelectionAnchor' | 'selectRange' | 'clearSelection' | 'setDragging'>;

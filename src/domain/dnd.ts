@@ -2,6 +2,7 @@ import { SYSTEM_LABELS, weekLabel, type Item } from './types';
 import { toApiDate } from './dates';
 import { dueForDate } from './recurrence';
 import { byChildOrder } from './orderKey';
+import { TASK_STATUSES, type TaskStatus } from './kanban';
 
 /**
  * What a drop means.
@@ -25,6 +26,8 @@ export type DropTarget =
   | { kind: 'project'; projectId: string }
   | { kind: 'section'; sectionId: string | null; projectId: string }
   | { kind: 'label'; label: string }
+  /** Eine Kanban-Spalte: setzt den Status (DragProvider → setTaskStatus), keine Ortsänderung. */
+  | { kind: 'status'; status: TaskStatus }
   /**
    * The Favourites heading in the sidebar.
    *
@@ -447,6 +450,7 @@ function encodeKind(target: DropTarget): string {
     case 'project': return `project:${target.projectId}`;
     case 'section': return `section:${target.projectId}:${target.sectionId ?? ''}`;
     case 'label': return `label:${target.label}`;
+    case 'status': return `status:${target.status}`;
     default: return target.kind;
   }
 }
@@ -466,5 +470,8 @@ export function decodeTarget(encoded: string): DropTarget | null {
     return { kind: 'section', projectId: rest[0], sectionId: rest[1] || null };
   }
   if (kind === 'label') return { kind: 'label', label: rest.join(':') };
+  if (kind === 'status' && (TASK_STATUSES as string[]).includes(rest[0])) {
+    return { kind: 'status', status: rest[0] as TaskStatus };
+  }
   return null;
 }

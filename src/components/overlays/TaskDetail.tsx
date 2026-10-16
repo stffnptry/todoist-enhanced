@@ -36,6 +36,9 @@ import { assignees } from '@/domain/sharing';
 import { displayTaskContent, isUncompletable, toDisplayPriority, toTodoistPriority, type Item } from '@/domain/types';
 import { matchesSearch } from '@/domain/search';
 import { byLabelOrder } from '@/domain/orderKey';
+import { Select } from '../Select';
+import type { TranslationKey } from '@/i18n';
+import { isHiddenLabel, isKanbanView, isStatusLabel, statusOf, TASK_STATUSES, type TaskStatus } from '@/domain/kanban';
 
 interface TaskDetailProps {
   taskId: string | null;
@@ -230,6 +233,8 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
   const setRecurrence = useStore((s) => s.setRecurrence);
   const skipOccurrence = useStore((s) => s.skipOccurrence);
   const naturalDates = useStore((s) => s.prefs.naturalDates);
+  const projectViews = useStore((s) => s.prefs.views);
+  const setTaskStatus = useStore((s) => s.setTaskStatus);
   const dateFormat = useStore((s) => s.prefs.dateFormat);
   const toast = useStore((s) => s.toast);
   const demo = useStore((s) => s.demo);
@@ -449,9 +454,10 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
 
   const project = snapshot.projects[item.project_id];
   const section = item.section_id ? snapshot.sections[item.section_id] : null;
-  const visibleLabels = item.labels.filter((l) => !l.toLowerCase().startsWith('est-'));
+  const kanbanProject = isKanbanView(projectViews[`project:${item.project_id}`]?.group);
+  const visibleLabels = item.labels.filter((l) => !isHiddenLabel(l));
   const allTags = Object.values(snapshot.labels)
-    .filter((l) => !l.is_deleted && !l.name.startsWith('est-'))
+    .filter((l) => !l.is_deleted && !isHiddenLabel(l.name))
     .sort(byLabelOrder);
   const filteredTags = allTags.filter((label) => matchesSearch(label.name, tagQuery));
 
@@ -1036,6 +1042,20 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
               ))}
             </div>
           </div>
+
+          {/* Kanban-Status: in Projekten mit Status-Board, oder wo eine
+              Aufgabe schon einen Status trägt. */}
+          {(kanbanProject || item.labels.some(isStatusLabel)) && (
+            <div className="prop" data-prop="status">
+              <span className="proplabel">{t('detail.status')}</span>
+              <Select
+                ariaLabel={t('detail.status')}
+                value={statusOf(item)}
+                options={TASK_STATUSES.map((status) => ({ value: status, label: t(`status.${status}` as TranslationKey) }))}
+                onChange={(next) => void setTaskStatus([item.id], next as TaskStatus)}
+              />
+            </div>
+          )}
 
           {/* Only where somebody else is in the project: elsewhere there is
               nobody to give it to. */}

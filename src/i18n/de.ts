@@ -325,6 +325,13 @@ export const de: Record<TranslationKey, string> = {
   'group.priority': 'Priorität',
   'group.label': 'Label',
   'group.estimate': 'Schätzung',
+  'group.status': 'Status (Kanban)',
+  'status.open': 'Offen',
+  'status.doing': 'In Arbeit',
+  'status.done': 'Abgeschlossen',
+  'detail.status': 'Status',
+  'status.set': 'Status: {status}',
+  'status.setMany': '{count} Aufgaben: {status}',
 
   'sort.manual': 'Manuelle Reihenfolge',
   'sort.priority': 'Priorität',

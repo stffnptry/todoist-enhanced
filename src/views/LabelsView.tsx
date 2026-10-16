@@ -19,6 +19,7 @@ import { hasLabel } from '@/domain/views';
 import { markerStyle } from '@/domain/colors';
 import type { Label } from '@/domain/types';
 import { byLabelOrder } from '@/domain/orderKey';
+import { isHiddenLabel } from '@/domain/kanban';
 
 /**
  * Every tag on the account, in the order Todoist keeps them.
@@ -38,7 +39,7 @@ export function LabelsView() {
   const labels = useMemo(
     () =>
       Object.values(snapshot.labels)
-        .filter((l) => !l.is_deleted && !l.name.startsWith('est-'))
+        .filter((l) => !l.is_deleted && !isHiddenLabel(l.name))
         .sort(byLabelOrder),
     [snapshot.labels],
   );

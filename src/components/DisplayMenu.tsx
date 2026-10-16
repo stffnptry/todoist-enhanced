@@ -17,6 +17,7 @@ import {
 import { markerStyle } from '@/domain/colors';
 import type { Item } from '@/domain/types';
 import type { TranslationKey } from '@/i18n';
+import { isHiddenLabel } from '@/domain/kanban';
 
 interface DisplayMenuProps {
   viewKey: string;
@@ -48,7 +49,7 @@ const MODE_ICON: Record<DisplayMode, IconName> = {
 const GROUP_ICON: Partial<Record<GroupKey, IconName>> = {
   none: 'list', scheduled: 'calendar', day: 'calendar', week: 'week', month: 'calendar',
   assignee: 'user', workspace: 'project', project: 'project', section: 'section', priority: 'flag',
-  label: 'tag', estimate: 'clock',
+  label: 'tag', estimate: 'clock', status: 'board',
 };
 const SORT_ICON: Record<SortKey, IconName> = {
   assignee: 'user',
@@ -120,7 +121,7 @@ export function DisplayMenu({
      already chosen, so a filter that no longer matches anything can still be
      turned off. */
   const tags = useMemo(() => {
-    const all = Object.values(snapshot.labels).filter((l) => !l.name.startsWith('est-'));
+    const all = Object.values(snapshot.labels).filter((l) => !isHiddenLabel(l.name));
     if (!pageItems) return all;
     const used = new Set<string>(current.filters.labels.map((name) => name.toLowerCase()));
     const seen = new Set<string>();

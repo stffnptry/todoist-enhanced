@@ -323,6 +323,13 @@ export const en = {
   'group.priority': 'Priority',
   'group.label': 'Tag',
   'group.estimate': 'Estimate',
+  'group.status': 'Status (Kanban)',
+  'status.open': 'Open',
+  'status.doing': 'In progress',
+  'status.done': 'Done',
+  'detail.status': 'Status',
+  'status.set': 'Status: {status}',
+  'status.setMany': '{count} tasks: {status}',
 
   'sort.manual': 'Manual order',
   'sort.priority': 'Priority',

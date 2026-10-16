@@ -12,6 +12,7 @@ import type { RowOrder } from '@/domain/dnd';
 import { PREFERENCES_TASK_CONTENT } from './prefs';
 import { byChildOrder, byLabelOrder, bySectionOrder } from '@/domain/orderKey';
 import { inProjects } from '@/domain/projectQuick';
+import { isHiddenLabel, statusOf, TASK_STATUSES, type TaskStatus } from '@/domain/kanban';
 
 /**
  * The workspace filter's stand-in for "My projects".
@@ -231,7 +232,7 @@ export function sortItems(
     : undefined;
   const labelPositions = snapshot ? labelOrderByName(snapshot) : new Map<string, number>();
   const labelRank = (item: Item): [bucket: number, position: number, unknown: string] => {
-    const labels = item.labels.filter((label) => !label.toLowerCase().startsWith('est-'));
+    const labels = item.labels.filter((label) => !isHiddenLabel(label));
     if (labels.length === 0) return [2, Number.POSITIVE_INFINITY, ''];
     const known = labels
       .map((label) => labelPositions.get(label.toLowerCase()))
@@ -347,6 +348,7 @@ export function groupItems(
     month?: (first: Date) => string;
     scheduled: string;
     available: string;
+    status?: (status: TaskStatus) => string;
   },
 ): Group[] {
   if (group === 'none') return [{ key: 'all', title: '', items }];
@@ -390,9 +392,14 @@ export function groupItems(
         push(item.due ? 'scheduled' : 'available', item.due ? labels.scheduled : labels.available, item);
         break;
       case 'label': {
-        const own = item.labels.filter((l) => !l.startsWith('est-'));
+        const own = item.labels.filter((l) => !isHiddenLabel(l));
         if (own.length === 0) push('none', labels.noLabel, item);
         else for (const label of own) push(label, label, item);
+        break;
+      }
+      case 'status': {
+        const status = statusOf(item);
+        push(status, labels.status?.(status) ?? status, item);
         break;
       }
       case 'estimate': {
@@ -436,6 +443,8 @@ export function groupItems(
     result.sort((a, b) => place(a.key) - place(b.key) || a.title.localeCompare(b.title));
   } else if (group === 'priority') {
     result.sort((a, b) => a.key.localeCompare(b.key));
+  } else if (group === 'status') {
+    result.sort((a, b) => TASK_STATUSES.indexOf(a.key as TaskStatus) - TASK_STATUSES.indexOf(b.key as TaskStatus));
   }
   // Date groups read chronologically; tag groups follow the order maintained in Todoist.
   if (group === 'day' || group === 'week' || group === 'month') {

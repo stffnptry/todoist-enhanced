@@ -21,6 +21,8 @@ import { useTimePill } from '@/hooks/useTimePill';
 import type { TaskPlacement } from '@/domain/dnd';
 import { useData } from '@/hooks/useData';
 import type { Item } from '@/domain/types';
+import type { TranslationKey } from '@/i18n';
+import { STATUS_LABELS, statusOf, TASK_STATUSES } from '@/domain/kanban';
 import { useStore } from '@/store/store';
 import { newUuid } from '@/api/commands';
 import { viewPrefs } from '@/store/prefs';
@@ -167,7 +169,8 @@ function ProjectBody({
    */
   const pool0 = useMemo(() => {
     const openRoots = rootItems(items).filter((i) => i.project_id === projectId);
-    const roots = current.filters.showCompleted
+    /* Auf dem Kanban-Board gehört Erledigtes in die Spalte „Abgeschlossen“. */
+    const roots = current.filters.showCompleted || current.group === 'status'
       ? [
           ...openRoots,
           ...Object.values(snapshot.items).filter(
@@ -176,7 +179,7 @@ function ProjectBody({
         ]
       : openRoots;
     return roots;
-  }, [items, projectId, current.filters.showCompleted, snapshot]);
+  }, [items, projectId, current.filters.showCompleted, current.group, snapshot]);
   const scoped = useMemo(
     () => applyFilters(pool0, current.filters, snapshot, childrenOf),
     [pool0, current.filters, snapshot, childrenOf],
@@ -283,6 +286,21 @@ function ProjectBody({
     [sectionGroups, looseItems, projectId, t, onAddTaskTo, split.quick, current.mode],
   );
 
+  /* Kanban: immer alle drei Spalten, auch leere – eine leere Spalte ist
+     trotzdem ein Ort, an den man eine Karte zieht. */
+  const statusColumns = useMemo(
+    () => TASK_STATUSES.map((status) => ({
+      id: status,
+      title: t(`status.${status}` as TranslationKey),
+      items: sorted(pool.filter((i) => statusOf(i) === status)),
+      dropTarget: { kind: 'status' as const, status },
+      onAddTask: status === 'done' ? undefined
+        : status === 'doing' ? () => onAddTaskTo({ projectId, labels: [STATUS_LABELS.doing] })
+        : () => onAddTaskTo({ projectId }),
+    })),
+    [pool, sorted, t, onAddTaskTo, projectId],
+  );
+
   if (!project) {
     return <div className="page"><p className="empty">{t('common.error')}</p></div>;
   }
@@ -381,7 +399,7 @@ function ProjectBody({
               viewKey={viewKey}
               pageItems={pool0}
               modes={['list', 'board']}
-              groups={['none', 'assignee', 'scheduled', 'priority', 'label', 'estimate', 'day']}
+              groups={['none', 'status', 'assignee', 'scheduled', 'priority', 'label', 'estimate', 'day']}
               completedToggle
               showWorkspaces={false}
             />
@@ -442,13 +460,19 @@ function ProjectBody({
           sort={current.sort}
           onOpen={onOpen}
           showProject={false}
-          boardColumns={current.group === 'none' ? boardColumns : undefined}
+          boardColumns={current.group === 'none' ? boardColumns
+            : current.group === 'status' ? statusColumns : undefined}
           /* The board is the project's sections side by side, so it can add
              one too, without a trip to the list (#108). */
           onAddSection={current.group === 'none'
             ? (name) => { void createSection(projectId, sections.length, name); }
             : undefined}
           addToGroup={(key) => {
+            /* Kanban: in „Abgeschlossen“ legt man nichts an. */
+            if (current.group === 'status') {
+              if (key === 'done') return undefined;
+              return () => onAddTaskTo(key === 'doing' ? { projectId, labels: [STATUS_LABELS.doing] } : { projectId });
+            }
             if (current.group === 'assignee') return () => onAddTaskTo({ projectId, responsibleUid: key === 'none' ? null : key });
             if (current.group === 'day' && key !== 'none') {
               return () => onAddTaskTo({ projectId, date: key });

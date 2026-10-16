@@ -2056,3 +2056,7 @@ html.reduce-transparency .claudepanel,html.more-contrast .claudepanel{box-shadow
 /* Schätzung per Rechtsklick: dieselbe Karte wie auf dem Handy, am Zeiger. */
 .rowmenu.estimatesheet.floating{width:300px;max-width:calc(100vw - 16px);padding:var(--s3)}
 .rowmenu.estimatesheet.floating .estchip{min-height:32px;padding:0 12px}
+
+/* Kanban-Status „In Arbeit“ an der Zeile (domain/kanban.ts): wie ein Tag, in
+   der Infofarbe, damit er sich von echten Tags abhebt. */
+.tag.status-doing{color:var(--info);background:color-mix(in srgb,var(--info) 12%,transparent)}

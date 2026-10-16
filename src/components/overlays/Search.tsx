@@ -8,6 +8,7 @@ import { navigate } from '@/hooks/useRoute';
 import { markerStyle } from '@/domain/colors';
 import { toDisplayPriority } from '@/domain/types';
 import { useStore } from '@/store/store';
+import { isHiddenLabel } from '@/domain/kanban';
 
 interface SearchProps {
   open: boolean;
@@ -197,7 +198,7 @@ export function Search({ open, onClose, onOpen, seed = '' }: SearchProps) {
     }
 
     for (const label of Object.values(snapshot.labels)) {
-      if (label.name.startsWith('est-')) continue;
+      if (isHiddenLabel(label.name)) continue;
       const score = rank(label.name);
       if (score < 0) continue;
       found.push({
