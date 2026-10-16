@@ -11,7 +11,6 @@ import { dueForDate } from '@/domain/recurrence';
 import { plainTitle } from '@/domain/reminders';
 import { useCompletedAround } from '@/hooks/useCompletedAround';
 import { uncompleteItem } from '@/api/commands';
-import { colorValue } from '@/domain/colors';
 import { loadOccurrences, pruneOccurrences, saveOccurrences, type DoneOccurrence } from '@/lib/doneOccurrences';
 import { intlLocale, type TranslationKey } from '@/i18n';
 import { toDisplayPriority } from '@/domain/types';
@@ -712,8 +711,8 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
                         return (
                           <div
                             key={`task-${task.id}-${occurrence ? start.getTime() : ''}`}
-                            className={`cal-event cal-taskblock${done ? ' done' : ''}${live ? ' resizing' : ''}`}
-                            style={{ ...sized, ['--ev' as string]: colorValue(snapshot.projects[task.project_id]?.color) }}
+                            className={`cal-event cal-taskblock p${toDisplayPriority(task.priority)}${done ? ' done' : ''}${live ? ' resizing' : ''}`}
+                            style={sized}
                             draggable={!done}
                             title={done ? t('cal.doneBlock') : t('cal.taskBlock')}
                             onDragStart={done ? undefined : (e) => {

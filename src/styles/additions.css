@@ -1987,22 +1987,26 @@ html.reduce-transparency .claudepanel,html.more-contrast .claudepanel{box-shadow
 :root.claude-open .sidebar .claudenav{background:var(--side-sel);box-shadow:var(--side-sel-shadow);color:var(--text);font-weight:600}
 :root.claude-open .sidebar .claudenav .ic,:root.claude-open .sidebar .claudenav svg{color:var(--side-icon-sel)}
 
-/* Kalender: Aufgaben stehen direkt aus Todoist im Raster, in der Farbe ihres
-   Projekts. Häkchen links erledigt sie; erledigte bleiben stehen, blass,
-   gestrichelt und durchgestrichen, damit offene sofort ins Auge fallen. */
-.cal-event.cal-taskblock{cursor:grab;background:color-mix(in srgb,var(--ev) 30%,var(--surface))}
+/* Kalender: Aufgaben stehen direkt aus Todoist im Raster. Termine sind farbig
+   gefüllt; Aufgaben bleiben farblos wie eine Karte der Aufgabenliste (weiß,
+   Rahmen, Schatten, Prioritätsstreifen links, Kreis zum Abhaken), damit man
+   beide auf einen Blick auseinanderhält. Erledigte bleiben blass, gestrichelt
+   und durchgestrichen stehen. */
+.cal-event.cal-taskblock{--ev:var(--border-strong);cursor:grab;background:var(--surface);color:var(--text);
+  border:1px solid var(--border-strong);border-left:3px solid var(--ev);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.cal-event.cal-taskblock.p1{--ev:#d1453b}.cal-event.cal-taskblock.p2{--ev:#eb8909}.cal-event.cal-taskblock.p3{--ev:#246fe0}
 .cal-event.cal-taskblock:active{cursor:grabbing}
 .cal-taskblock-head{display:flex;align-items:flex-start;gap:5px;min-width:0}
 .cal-taskblock-head .cal-event-title{flex:1;min-width:0}
-.cal-tick{flex:none;display:grid;place-items:center;width:13px;height:13px;margin-top:1px;padding:0;border:1.5px solid var(--ev);border-radius:50%;
-  background:var(--surface);color:#fff;cursor:pointer;transition:background .12s}
-.cal-tick:hover{background:color-mix(in srgb,var(--ev) 30%,var(--surface))}
-.cal-tick.on{background:var(--ev)}
+.cal-tick{flex:none;display:grid;place-items:center;width:13px;height:13px;margin-top:1px;padding:0;border:1.5px solid var(--muted);border-radius:50%;
+  background:var(--surface);color:var(--surface);cursor:pointer;transition:background .12s}
+.cal-tick:hover{background:var(--hover)}
+.cal-tick.on{background:var(--muted)}
 .cal-tick:disabled{cursor:default}
 .cal-tick svg{width:9px;height:9px}
 .cal-tick:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.cal-event.cal-taskblock.done{cursor:pointer;opacity:.6;background:color-mix(in srgb,var(--ev) 8%,transparent);
-  border:1.5px dashed color-mix(in srgb,var(--ev) 65%,var(--border-strong));border-left-width:3px}
+.cal-event.cal-taskblock.done{cursor:pointer;opacity:.6;background:transparent;box-shadow:none;
+  border:1.5px dashed var(--border-strong);border-left-width:3px}
 .cal-event.cal-taskblock.done .cal-event-title{font-weight:500;color:var(--muted);text-decoration:line-through}
 .cal-event.cal-taskblock.done:hover{opacity:.85}
 @media (prefers-reduced-motion:reduce){.cal-tick{transition:none}}
