@@ -216,6 +216,17 @@ export function SettingsView() {
               />
             </Row>
 
+            {/* Only the Mac app can put up a system notification. */}
+            {window.enhancedDesktop?.setReminders && (
+              <Row title={t('settings.desktopReminders')} hint={t('settings.desktopRemindersHint')}>
+                <Switch
+                  checked={prefs.desktopReminders}
+                  onChange={() => setPrefs({ desktopReminders: !prefs.desktopReminders })}
+                  label={t('settings.desktopReminders')}
+                />
+              </Row>
+            )}
+
             <Row title={t('settings.dateFormat')} hint={t('settings.dateFormatHint')}>
               <Select
                 value={prefs.dateFormat}

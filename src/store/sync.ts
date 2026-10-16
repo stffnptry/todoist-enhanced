@@ -26,6 +26,8 @@ import type { Slice, SyncSlice } from './types';
 
 /** How often the app asks Todoist what changed while the tab is in the foreground. */
 export const POLL_INTERVAL_MS = 45_000;
+/** How often the desktop app reads while its window is hidden. */
+const HIDDEN_POLL_MS = 5 * 60_000;
 
 /** Sends everything waiting in the outbox, oldest first. */
 export async function flushQueue(
@@ -329,8 +331,18 @@ export const createSyncSlice: Slice<SyncSlice> = (set, get) => ({
     }
   },
   startPolling() {
+    /* Inside the desktop app the window may be hidden for hours while its
+       notifications for due tasks still depend on fresh data: there it also
+       reads in the background, every few minutes rather than every tick. */
+    let lastHiddenRead = 0;
     const tick = () => {
-      if (document.visibilityState === 'visible' && navigator.onLine) void get().refresh();
+      if (!navigator.onLine) return;
+      if (document.visibilityState === 'visible') {
+        void get().refresh();
+      } else if (window.enhancedDesktop?.setReminders && Date.now() - lastHiddenRead >= HIDDEN_POLL_MS) {
+        lastHiddenRead = Date.now();
+        void get().refresh();
+      }
     };
     const interval = setInterval(tick, POLL_INTERVAL_MS);
     // Coming back to the tab or back online is the moment the user most

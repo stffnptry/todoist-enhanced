@@ -1262,7 +1262,7 @@ button.subprog[aria-expanded="false"]{background:var(--subtle)}
 }
 .dashboard-story .summary-head{align-items:flex-start;position:relative;z-index:1}
 .dashboard-story .story-value{
-  margin:12px 0 0;font-size:54px;font-weight:700;letter-spacing:-.055em;line-height:.95;
+  margin:12px 0 0;font-size:3.375rem;font-weight:700;letter-spacing:-.055em;line-height:.95;
   color:var(--text);font-variant-numeric:tabular-nums;
 }
 .dashboard-story .story-label{margin-top:7px;color:var(--muted);font-size:var(--fs-14)}
@@ -1314,7 +1314,7 @@ button.subprog[aria-expanded="false"]{background:var(--subtle)}
 .metric-card{padding:24px;min-height:132px;display:flex;align-items:center}
 .metric-card .stat{width:100%}
 .metric-card .stat strong{
-  font-size:40px;line-height:1;letter-spacing:-.045em;font-weight:700;
+  font-size:2.5rem;line-height:1;letter-spacing:-.045em;font-weight:700;
   font-variant-numeric:tabular-nums;
 }
 .priority-focus{display:grid;grid-template-columns:minmax(180px,.8fr) minmax(220px,1.2fr);gap:28px;align-items:center}
@@ -1326,7 +1326,7 @@ button.subprog[aria-expanded="false"]{background:var(--subtle)}
 @media (max-width:700px){
   .priority-focus{grid-template-columns:1fr}
   .metric-card{min-height:112px}
-  .metric-card .stat strong{font-size:34px}
+  .metric-card .stat strong{font-size:2.125rem}
 }
 
 /* ---------- Logbook ---------- */
@@ -1407,7 +1407,7 @@ button.subprog[aria-expanded="false"]{background:var(--subtle)}
   font-size:var(--fs-12);font-weight:500;color:var(--muted);
   text-transform:none;letter-spacing:-.01em;
 }
-.stat-value{font-size:28px;font-weight:600;letter-spacing:-.03em;line-height:1.05}
+.stat-value{font-size:1.75rem;font-weight:600;letter-spacing:-.03em;line-height:1.05}
 .stat-trailing{font-size:var(--fs-13);font-weight:500;color:var(--faint)}
 .stat-hint{font-size:var(--fs-12);color:var(--faint);line-height:1.45}
 
@@ -1416,7 +1416,7 @@ button.subprog[aria-expanded="false"]{background:var(--subtle)}
 .chead-row + *{margin-top:var(--s4)}
 .card .psub{margin-top:3px;font-size:var(--fs-12);color:var(--faint)}
 
-.focuscardv .hero{font-size:34px;letter-spacing:-.035em;font-weight:600}
+.focuscardv .hero{font-size:2.125rem;letter-spacing:-.035em;font-weight:600}
 .focuscardv h3{color:var(--muted);font-weight:500;font-size:var(--fs-12)}
 
 /* The attention rows read as one grouped list, the way a settings group does. */
@@ -1495,7 +1495,7 @@ button.subprog[aria-expanded="false"]{background:var(--subtle)}
 .searchfoot kbd{
   min-width:18px;padding:1px 5px;display:inline-grid;place-items:center;
   border:1px solid var(--border-strong);border-radius:var(--r-xs);
-  background:var(--subtle);font:inherit;font-size:10px;
+  background:var(--subtle);font:inherit;font-size:0.625rem;
 }
 
 /* ---------- Page header ---------- */
@@ -1631,7 +1631,7 @@ button.subprog[aria-expanded="false"]{background:var(--subtle)}
 .namefield{position:relative}
 .namefield .composer-name,
 .namemirror{
-  font:inherit;font-size:18px;font-weight:650;
+  font:inherit;font-size:1.125rem;font-weight:650;
   line-height:1.4;letter-spacing:normal;
   padding:9px 0;border:0;
   white-space:pre;overflow-x:auto;
@@ -2244,7 +2244,7 @@ button.subprog[aria-expanded="false"]{background:var(--subtle)}
 .reviewpip-dot{
   width:20px;height:20px;flex:0 0 auto;display:grid;place-items:center;
   border-radius:var(--r-full);border:1px solid var(--border-strong);
-  background:var(--surface);font-size:10px;font-weight:700;
+  background:var(--surface);font-size:0.625rem;font-weight:700;
 }
 .reviewpip-dot .ic{width:11px;height:11px}
 /* Still to come: an outlined circle carrying what it will ask about. */
@@ -2598,7 +2598,7 @@ button.subprog[aria-expanded="false"]{background:var(--subtle)}
 /* The card's own number, and only that one: a descendant selector here also
    caught every bold figure in the split bar's legend and set it at 32px. */
 .reviewfig > b{
-  font-size:32px;font-weight:700;letter-spacing:-.03em;line-height:1;
+  font-size:2rem;font-weight:700;letter-spacing:-.03em;line-height:1;
   font-variant-numeric:tabular-nums;
 }
 .reviewfig > span{
@@ -2832,9 +2832,9 @@ button.subprog[aria-expanded="false"]{background:var(--subtle)}
 .dashboard-bento .focus-metric .stat{padding-right:44px}
 .dashboard-bento .focus-metric .split{margin-top:auto;padding-top:12px}
 .dashboard-bento .focus-metric .legend.inline{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px}
-.dashboard-bento .focus-metric .legend.inline li{font-size:11px}
+.dashboard-bento .focus-metric .legend.inline li{font-size:0.6875rem}
 .dashboard-bento .priority-focus{display:grid;grid-template-columns:1fr;gap:5px;align-content:start}
-.dashboard-bento .priority-score{font-size:42px;line-height:1.05;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.dashboard-bento .priority-score{font-size:2.625rem;line-height:1.05;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
 .dashboard-bento .priority-focus .stat-hint{margin:3px 0 12px;max-width:42ch}
 .dashboard-bento .priority-focus .splitbar{height:13px}
 /* Even a stale completed snapshot must not paint a checkbox back onto a
@@ -2903,6 +2903,22 @@ html.desktop-app .app.collapsed .expand-wrap{top:8px;left:84px;-webkit-app-regio
 html.desktop-app.quickadd body::before{display:none}
 /* The demo banner sits under that strip; its button has to stay clickable. */
 html.desktop-app .demobanner button{-webkit-app-region:no-drag;app-region:no-drag}
+
+/* ---------- Mac-App: durchscheinende Seitenleiste ----------
+   Das Fenster trägt das macOS-Material „Seitenleiste“ (Vibrancy). Im
+   Standardlayout (Seite schwebt, neutraler Hintergrund) ist der Fensterrand,
+   auf dem die Seitenleiste liegt, nur noch halb deckend, damit das Material
+   durchscheint. Die Seite selbst bleibt eine feste Karte. Mit „Transparenz
+   reduzieren“ setzt die App die Klasse nicht. */
+@media (min-width:721px){
+  html.desktop-vibrant:not(.quickadd), html.desktop-vibrant:not(.quickadd) body{background:transparent}
+  html.desktop-vibrant:not([data-layout="sidebar-float"]):not([data-background="colored"]) .app{
+    background:color-mix(in srgb,var(--frame-app) 55%,transparent);
+  }
+  html.desktop-vibrant:not([data-layout="sidebar-float"]):not([data-background="colored"]) .sidebar .side-foot::before{
+    background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;
+  }
+}
 
 /* Display (v2): Reset all is the one destructive control, so it is red; the
    "Show on each task" block says it is not about this page; its chips can be

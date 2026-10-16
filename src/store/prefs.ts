@@ -305,6 +305,25 @@ export interface Preferences {
   dailyCapacity: DailyCapacity;
   weeklyCapacityOverride: number | null;
   showQuickGroup: boolean;
+  /** Desktop app: a system notification when a task is due or a reminder is set. */
+  desktopReminders: boolean;
+  /** Calendar view: the calendars shown (null = all) and the one tasks are written into. */
+  calendarIds: string[] | null;
+  calendarTarget: string | null;
+  /** Calendar view: the task list beside the grid, shown or folded, and how it is ordered. */
+  calendarTasksOpen: boolean;
+  /** Calendar view: tasks with a time are written into the target calendar on their own. */
+  calendarSync: boolean;
+  /** Calendar view: a colour chosen per calendar, over the calendar's own. */
+  calendarColors: Record<string, string>;
+  /** Calendar view: the height of an hour, in pixels (zoomed with ⌘ + scroll). */
+  calendarHourPx: number;
+  /** Calendar view: how many days the grid shows. */
+  calendarSpan: 'week' | 'day' | 'two';
+  /** Calendar view's task list: how it is grouped and sorted (P1 first by default). */
+  calendarGroupBy: 'none' | 'project' | 'due' | 'priority' | 'estimate';
+  calendarSortBy: 'priority' | 'due' | 'estimate' | 'title';
+  calendarSortDesc: boolean;
   /** The Gathering dust group at the top of Someday (#161). */
   showDustGroup: boolean;
   /** How many months a task sits in Someday before it is said to gather dust. */
@@ -420,6 +439,17 @@ export const defaultPreferences = (locale: Locale): Preferences => ({
   dailyCapacity: defaultCapacity(),
   weeklyCapacityOverride: null,
   showQuickGroup: true,
+  desktopReminders: true,
+  calendarIds: null,
+  calendarTarget: null,
+  calendarTasksOpen: true,
+  calendarSync: true,
+  calendarColors: {},
+  calendarHourPx: 64,
+  calendarSpan: 'week',
+  calendarGroupBy: 'project',
+  calendarSortBy: 'priority',
+  calendarSortDesc: true,
   showDustGroup: true,
   dustAfterMonths: DEFAULT_DUST_MONTHS,
   conflicts: defaultConflictSettings(),
@@ -506,6 +536,19 @@ export function hydratePreferences(stored: unknown, locale: Locale): Preferences
     taskOpen: isTaskOpen(s.taskOpen) ? s.taskOpen : base.taskOpen,
     sidebarNav: readSidebarNav(s.sidebarNav),
     sidebarSearch: s.sidebarSearch !== false,
+    desktopReminders: s.desktopReminders !== false,
+    calendarIds: Array.isArray(s.calendarIds) ? s.calendarIds.filter((id): id is string => typeof id === 'string') : null,
+    calendarTarget: typeof s.calendarTarget === 'string' ? s.calendarTarget : null,
+    calendarTasksOpen: s.calendarTasksOpen !== false,
+    calendarSync: s.calendarSync !== false,
+    calendarSpan: s.calendarSpan === 'day' || s.calendarSpan === 'two' ? s.calendarSpan : 'week',
+    calendarHourPx: typeof s.calendarHourPx === 'number' && s.calendarHourPx >= 24 && s.calendarHourPx <= 200 ? s.calendarHourPx : 64,
+    calendarColors: s.calendarColors && typeof s.calendarColors === 'object'
+      ? Object.fromEntries(Object.entries(s.calendarColors).filter(([, v]) => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)))
+      : {},
+    calendarGroupBy: (['none', 'project', 'due', 'priority', 'estimate'] as const).find((v) => v === s.calendarGroupBy) ?? 'project',
+    calendarSortBy: (['priority', 'due', 'estimate', 'title'] as const).find((v) => v === s.calendarSortBy) ?? 'priority',
+    calendarSortDesc: s.calendarSortDesc !== false,
     sidebarCounts: s.sidebarCounts !== false,
     taskFields: readTaskFields(s.taskFields),
     detailOrder: readDetailOrder(s.detailOrder),

@@ -18,6 +18,7 @@ export const ENTRY: Record<SidebarItemId, { icon: IconName; label: TranslationKe
   upcoming: { icon: 'upcoming', label: 'nav.upcoming' },
   someday: { icon: 'someday', label: 'nav.someday' },
   review: { icon: 'check', label: 'nav.review' },
+  calendar: { icon: 'calendar', label: 'nav.calendar' },
   dashboard: { icon: 'trend', label: 'nav.dashboard' },
   logbook: { icon: 'tasks', label: 'insights.logbook' },
   matrix: { icon: 'dashboard', label: 'nav.matrix' },
@@ -86,7 +87,8 @@ function Block({
     >
       <SortableContext items={entries.map((e) => e.id)} strategy={verticalListSortingStrategy}>
         <ul className="navedit-list">
-          {entries.map((entry) => (
+          {/* The calendar exists only in the desktop app. */}
+          {entries.filter((entry) => entry.id !== 'calendar' || window.enhancedDesktop?.calendar).map((entry) => (
             <EntryRow
               key={entry.id}
               entry={entry}

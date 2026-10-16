@@ -359,6 +359,8 @@ export type ViewId =
   /** Every saved filter, to open or star. */
   | 'filters'
   | 'matrix'
+  /** The desktop app's calendar: the Mac's calendars beside the week's tasks. */
+  | 'calendar'
   | 'insights';
 
 export type DisplayMode = 'list' | 'board' | 'focus';

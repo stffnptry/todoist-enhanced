@@ -44,7 +44,7 @@ export function WorkspacePreview({ stage, layout = 'inline' }: {
   const search = useStore((s) => s.prefs.sidebarSearch);
   const nav = useStore((s) => s.prefs.sidebarNav);
   const split = weekLayout === 'split';
-  const visible = visibleSidebarNav(nav, { splitToday: split, matrix: eisenhower });
+  const visible = visibleSidebarNav(nav, { splitToday: split, matrix: eisenhower, calendar: Boolean(window.enhancedDesktop?.calendar) });
 
   /* In a setup step the picture is the point of the step, so it is drawn closer
      (a narrower window, scaled up) and cropped: the sidebar, or the list, in

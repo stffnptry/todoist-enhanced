@@ -3,7 +3,8 @@ import {
   DndContext, DragOverlay, PointerSensor, pointerWithin, useSensor, useSensors,
   type CollisionDetection, type DragEndEvent, type DragMoveEvent, type DragStartEvent,
 } from '@dnd-kit/core';
-import type { Modifier } from '@dnd-kit/core';
+import type { DropAnimation, Modifier } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import { useStore } from '@/store/store';
 import {
   arrangeDrop, canNest, descendantsOf, decodeRowTarget, decodeTarget, dropMutation, moveArgs, siblingTasks,
@@ -224,6 +225,26 @@ const taskIdOf = (activeId: string): string =>
  * A drop is translated by the rules in `domain/dnd`, applied optimistically,
  * and offered back as an undo, because dragging is easy to do by accident.
  */
+
+/* Beim Loslassen löst sich die Vorschau dort auf, wo sie abgelegt wurde,
+   statt schlagartig zu verschwinden: kurz ausblenden und minimal schrumpfen.
+   Sie fliegt nicht zur Zeile zurück, denn die Zeile steht oft schon an ihrem
+   neuen Platz, und die Vorschau hat eine andere Form als die Zeile. */
+const DROP_ANIMATION: DropAnimation = {
+  duration: 140,
+  easing: 'cubic-bezier(.2,.8,.2,1)',
+  sideEffects: null,
+  keyframes: ({ transform }) => {
+    const at = CSS.Transform.toString(transform.initial);
+    // Mit „Bewegung reduzieren“ nur ausblenden, ohne zu schrumpfen.
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    return [
+      { transform: at, opacity: 1 },
+      { transform: still ? at : `${at} scale(.96)`, opacity: 0 },
+    ];
+  },
+};
+
 export function DragProvider({ children }: { children: ReactNode }) {
   const { t, locale } = useT();
   const snapshot = useStore((s) => s.snapshot);
@@ -1254,7 +1275,7 @@ export function DragProvider({ children }: { children: ReactNode }) {
       {children}
       {/* Without a modifier the preview stays at the row's original position
           instead of following the pointer. */}
-      <DragOverlay dropAnimation={null} modifiers={[anchorLeftOfCursor]}>
+      <DragOverlay dropAnimation={DROP_ANIMATION} modifiers={[anchorLeftOfCursor]}>
         {dragging && (
           <div
             className={`dragoverlay${outdenting ? ' outdent' : ''}${carrying.length > 1 ? ' stacked' : ''}`}

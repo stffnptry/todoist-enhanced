@@ -49,6 +49,10 @@ import { rootItems } from './store/selectors';
 import { detectConflicts } from './domain/conflicts';
 import { placementForPage } from './domain/dnd';
 import { useParentEstimates } from './hooks/useParentEstimates';
+import { useDesktopReminders } from './hooks/useDesktopReminders';
+import { useCalendarSync } from './hooks/useCalendarSync';
+import { CalendarView } from './views/CalendarView';
+import { ClaudePanel } from './components/ClaudePanel';
 import { anytimeItems, bucketOf, hasLabel, somedayItems, upcomingItems, weekItems } from './domain/views';
 import { effectiveEstimate } from './domain/estimates';
 import type { Item } from './domain/types';
@@ -536,7 +540,13 @@ function applyTheme(
     const resolved = theme === 'system' ? (media.matches ? 'dark' : 'light') : theme;
     root.dataset.theme = resolved;
     onResolved(resolved);
-    try { localStorage.setItem('theme', theme); } catch { /* storage may be blocked */ }
+    /* Only the main page records the choice for theme-boot.js. The desktop
+       app's quick-add window is a second copy of the app that may still hold
+       an older choice, and its write would make the next launch open in the
+       wrong theme. */
+    if (!new URLSearchParams(window.location.search).has('quickadd')) {
+      try { localStorage.setItem('theme', theme); } catch { /* storage may be blocked */ }
+    }
     paintBrowserChrome();
   };
   apply();
@@ -754,6 +764,28 @@ function AppShell({
   }, [route.view, route.id]);
 
   const openTask = (id: string) => setOpenTaskId(id);
+  useDesktopReminders(openTask);
+  useCalendarSync();
+  /* Claude's panel, desktop app only: the sidebar's button and ⌘J toggle it.
+     Like a task opened as a panel, the page makes room for it. */
+  const [claudeOpen, setClaudeOpen] = useState(false);
+  useEffect(() => {
+    document.documentElement.classList.toggle('claude-open', claudeOpen);
+    return () => document.documentElement.classList.remove('claude-open');
+  }, [claudeOpen]);
+  useEffect(() => {
+    if (!window.enhancedDesktop?.claude) return undefined;
+    const toggle = () => setClaudeOpen((v) => !v);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.metaKey && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'j') {
+        event.preventDefault();
+        toggle();
+      }
+    };
+    window.addEventListener('enhanced:toggle-claude', toggle);
+    window.addEventListener('keydown', onKey);
+    return () => { window.removeEventListener('enhanced:toggle-claude', toggle); window.removeEventListener('keydown', onKey); };
+  }, []);
   const addTask = () => {
     setPlacement(placementForPage(route, snapshot.user?.inbox_project_id));
     setComposerOpen(true);
@@ -856,6 +888,7 @@ function AppShell({
             <ProjectView projectId={route.id} revealSectionId={route.sectionId} {...viewProps} />
           )}
           {route.view === 'review' && <ReviewView onOpen={openTask} />}
+          {route.view === 'calendar' && <CalendarView onOpen={openTask} />}
           {route.view === 'insights' && <InsightsView onOpen={openTask} />}
           {route.view === 'settings' && <SettingsView />}
         </section>
@@ -911,6 +944,7 @@ function AppShell({
         defaultPriority={placement.priority}
         defaultResponsibleUid={placement.responsibleUid}
       />
+      <ClaudePanel open={claudeOpen} onClose={() => setClaudeOpen(false)} onOpenTask={openTask} />
       <TaskDetail
         taskId={openTaskId}
         onClose={() => setOpenTaskId(null)}

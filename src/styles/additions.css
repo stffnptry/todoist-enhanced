@@ -203,7 +203,7 @@
 .displaycount{
   min-width:16px;height:16px;padding:0 4px;margin-left:2px;
   display:inline-grid;place-items:center;border-radius:var(--r-full);
-  background:var(--text);color:var(--surface);font-size:10px;font-weight:700;
+  background:var(--text);color:var(--surface);font-size:0.625rem;font-weight:700;
 }
 .displaypanel{
   top:38px;right:0;left:auto;width:320px;max-height:70vh;overflow-y:auto;
@@ -455,7 +455,7 @@
 }
 .pcx-icon{
   position:relative;flex:none;width:52px;height:52px;display:grid;place-items:center;
-  border-radius:var(--r-lg);font-size:22px;font-weight:700;
+  border-radius:var(--r-lg);font-size:1.375rem;font-weight:700;
   background:color-mix(in srgb,var(--c) 14%,var(--surface));color:var(--c);
   transition:transform .15s;
 }
@@ -1730,3 +1730,265 @@ html.desktop-app .macapp,html.desktop-app .macapp-line{display:none}
 .maccallout{display:grid;gap:var(--s3);margin-top:var(--s2);padding:var(--s4);border:1px solid var(--border-strong);border-radius:var(--r-lg);background:var(--subtle)}
 .maccallout > strong{font-size:var(--fs-13);font-weight:600}
 @media (prefers-reduced-motion:reduce){.macfold,.macfold-in{transition:none}}
+
+/* ---------- Bedienungshilfen: Transparenz reduzieren, Kontrast erhöhen ----------
+   Die weichgezeichneten Flächen werden massiv, und Linien sowie Nebentext
+   kräftiger. Jede Regel steht zweimal: unter der Media-Query für Browser und
+   unter einer Klasse, die die Mac-App aus der Systemeinstellung setzt. */
+@media (prefers-reduced-transparency: reduce){
+.sidebar .side-foot::before{background:var(--frame-back);backdrop-filter:none;-webkit-backdrop-filter:none;-webkit-mask-image:none;mask-image:none}
+.setup-foot::before,
+.sheet-foot::before,
+.composerbox .composer-actions::before,
+.whatsnew-head::before{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none}
+}
+html.reduce-transparency .sidebar .side-foot::before{background:var(--frame-back);backdrop-filter:none;-webkit-backdrop-filter:none;-webkit-mask-image:none;mask-image:none}
+html.reduce-transparency .setup-foot::before,
+html.reduce-transparency .sheet-foot::before,
+html.reduce-transparency .composerbox .composer-actions::before,
+html.reduce-transparency .whatsnew-head::before{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none}
+
+@media (prefers-contrast: more){
+:root:not([data-theme="dark"]){--border:#c8c8c8;--border-strong:#8f8f8f;--muted:#474747;--faint:#575757}
+:root[data-theme="dark"]{--border:#6a6a6a;--border-strong:#8a8a8a;--muted:#d0d0d0;--faint:#bcbcbc}
+}
+html.more-contrast:not([data-theme="dark"]){--border:#c8c8c8;--border-strong:#8f8f8f;--muted:#474747;--faint:#575757}
+html.more-contrast[data-theme="dark"]{--border:#6a6a6a;--border-strong:#8a8a8a;--muted:#d0d0d0;--faint:#bcbcbc}
+
+/* ---------- Kalender (Mac-App) ----------
+   Eine Woche als Stundenraster mit den Terminen aus den Mac-Kalendern, links
+   die Aufgaben der Woche zum Hineinziehen. 48px pro Stunde (HOUR_PX). */
+.cal-full{display:flex;flex-direction:column;height:100%;min-height:0;padding:28px 24px 16px;box-sizing:border-box}
+.cal-head{display:flex;align-items:center;gap:var(--s4);margin-bottom:var(--s3);flex-wrap:wrap}
+.cal-head .ptitle{margin:0}
+.cal-nav{display:flex;align-items:center;gap:var(--s2);flex:1;min-width:0}
+.cal-range{font-weight:600;font-size:var(--fs-14);margin-left:var(--s2);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.cal-loading{font-size:var(--fs-12);color:var(--faint)}
+.btn.on{background:var(--hover)}
+.cal-gate{max-width:520px;display:grid;gap:var(--s3);color:var(--muted);line-height:1.5}
+.cal-gate .btn{justify-self:start}
+.cal-gate-actions{display:flex;gap:var(--s2)}
+
+.cal-panel{border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface);padding:var(--s4);margin-bottom:var(--s3);display:grid;gap:var(--s3);max-height:45vh;overflow:auto}
+.cal-panel-hint{margin:0;color:var(--muted);font-size:var(--fs-13)}
+.cal-panel-warn{margin:0;color:var(--late-dark,var(--accent));font-size:var(--fs-13);font-weight:600}
+.cal-source h3{margin:0 0 var(--s1);font-size:var(--fs-12);text-transform:uppercase;letter-spacing:.04em;color:var(--faint)}
+.cal-row{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);padding:3px 0}
+.cal-check,.cal-target{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-13);cursor:pointer}
+.cal-target{color:var(--muted)}
+.cal-dot{width:10px;height:10px;border-radius:50%;flex:none;display:inline-block}
+
+.cal-body{flex:1;min-height:0;display:grid;grid-template-columns:300px minmax(0,1fr);gap:var(--s4)}
+.cal-body.folded{grid-template-columns:minmax(0,1fr)}
+/* Die Aufgabenliste: eine Karte wie das geöffnete Aufgabendetail. */
+.cal-tasks{min-height:0;display:flex;flex-direction:column;overflow:hidden;border-radius:20px;background:var(--surface);
+  box-shadow:0 0 0 1px rgba(0,0,0,.05),0 10px 30px rgba(0,0,0,.08);animation:calTasksIn .28s cubic-bezier(.2,.8,.2,1) both}
+:root[data-theme="dark"] .cal-tasks{box-shadow:0 0 0 1px rgba(255,255,255,.06),0 10px 30px rgba(0,0,0,.35)}
+@keyframes calTasksIn{from{transform:translateX(-16px);opacity:0}to{transform:none;opacity:1}}
+.cal-tasks-head{flex:none;border-radius:20px 20px 0 0}
+.cal-tasks-tools{flex:none;display:grid;gap:var(--s2);padding:12px 16px 4px}
+.cal-tasks-search{font:inherit;font-size:var(--fs-13);padding:7px 14px;border:1px solid var(--border-strong);border-radius:999px;background:var(--surface);color:var(--text)}
+.cal-tasks-search:focus{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+.cal-tasks-group{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:2px;border-radius:999px;background:var(--hover)}
+.cal-tasks-group button{all:unset;cursor:pointer;text-align:center;font-size:var(--fs-12);padding:4px 0;border-radius:999px;color:var(--muted);white-space:nowrap}
+.cal-tasks-group button[aria-pressed="true"]{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.cal-tasks-hint,.cal-empty{font-size:var(--fs-12);color:var(--faint);margin:0;line-height:1.4}
+.cal-tasks-list{flex:1;min-height:0;overflow:auto;padding:4px 12px 16px}
+.cal-tasks-section h3{position:sticky;top:0;z-index:1;margin:0;padding:10px 4px 6px;background:var(--surface);font-size:var(--fs-12);font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.cal-tasks-section h3 span{color:var(--faint);font-weight:500;margin-left:4px}
+.cal-tasks ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.cal-task{display:flex;align-items:center;gap:var(--s2);padding:8px 10px;border:1px solid var(--border);border-left:3px solid var(--border-strong);border-radius:var(--r-md);background:var(--surface);cursor:grab;font-size:var(--fs-13);transition:transform .1s ease-out,box-shadow .1s ease-out}
+.cal-task.p1{border-left-color:#d1453b}.cal-task.p2{border-left-color:#eb8909}.cal-task.p3{border-left-color:#246fe0}
+.cal-task.planned{opacity:.6}
+.cal-task.planned > svg{color:var(--faint);flex:none}
+.cal-task:hover{box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.cal-task:active{cursor:grabbing;transform:scale(.98)}
+.cal-task-main{flex:1;min-width:0;display:grid}
+.cal-task-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-task-due{font-size:var(--fs-11);color:var(--faint)}
+.cal-task-est{flex:none;color:var(--faint);font-variant-numeric:tabular-nums;font-size:var(--fs-12)}
+@media (prefers-reduced-motion:reduce){.cal-tasks{animation:none}}
+.cal-grid-wrap{min-height:0;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface);overflow:hidden}
+.cal-days,.cal-allday,.cal-grid{display:grid;grid-template-columns:52px repeat(var(--days,7),minmax(0,1fr))}
+.cal-days{border-bottom:1px solid var(--border)}
+.cal-dayhead{display:flex;align-items:baseline;justify-content:center;gap:6px;padding:8px 0;font-size:var(--fs-12);color:var(--muted)}
+.cal-dom{font-size:var(--fs-16);font-weight:600;color:var(--text)}
+.cal-dayhead.today .cal-dom{background:var(--accent);color:#fff;border-radius:999px;min-width:26px;text-align:center;padding:1px 6px}
+.cal-allday{border-bottom:1px solid var(--border);min-height:26px}
+.cal-allday .cal-gutter{font-size:var(--fs-11);color:var(--faint);display:flex;align-items:center;justify-content:center}
+.cal-allday-cell{padding:3px;display:grid;gap:2px;align-content:start;border-left:1px solid var(--border)}
+.cal-chip{all:unset;cursor:pointer;font-size:var(--fs-11);padding:1px 6px;border-radius:4px;background:color-mix(in srgb,var(--ev) 22%,var(--surface));color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-scroll{flex:1;min-height:0;overflow:auto}
+.cal-grid{position:relative}
+.cal-hours{position:relative}
+.cal-hours span{position:absolute;right:8px;transform:translateY(-50%);font-size:var(--fs-11);color:var(--faint);font-variant-numeric:tabular-nums}
+.cal-col{position:relative;border-left:1px solid var(--border);
+  background-image:repeating-linear-gradient(to bottom,var(--border) 0 1px,transparent 1px var(--hour,48px))}
+.cal-col.today{background-color:color-mix(in srgb,var(--accent) 4%,transparent)}
+.cal-event{position:absolute;box-sizing:border-box;border-radius:6px;padding:3px 6px;overflow:hidden;cursor:default;font-size:var(--fs-12);line-height:1.25;
+  background:color-mix(in srgb,var(--ev) 20%,var(--surface));border-left:3px solid var(--ev);color:var(--text)}
+.cal-event.from-task{cursor:grab;background:color-mix(in srgb,var(--ev) 32%,var(--surface))}
+.cal-event.from-task:active{cursor:grabbing}
+.cal-event-task{cursor:grab;background:transparent;border:1.5px dashed var(--border-strong);border-left-width:1.5px;color:var(--muted)}
+.cal-event-title{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.cal-event-time{display:block;color:var(--muted);font-variant-numeric:tabular-nums}
+.cal-ghost{position:absolute;left:2px;right:2px;border-radius:6px;background:color-mix(in srgb,var(--accent) 18%,transparent);border:1.5px solid var(--accent);
+  font-size:var(--fs-11);font-weight:600;color:var(--accent);padding:2px 6px;box-sizing:border-box;pointer-events:none;z-index:3}
+.cal-now{position:absolute;left:0;right:0;height:2px;background:var(--accent);z-index:2;pointer-events:none}
+.cal-now::before{content:"";position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+
+.cal-card{position:fixed;z-index:90;width:280px;box-sizing:border-box;padding:var(--s3) var(--s4);border-radius:var(--r-lg);background:var(--surface);
+  box-shadow:0 0 0 1px rgba(0,0,0,.06),0 12px 36px rgba(0,0,0,.18);display:grid;gap:4px;font-size:var(--fs-13)}
+.cal-card p{margin:0;color:var(--muted)}
+.cal-card-head{display:flex;align-items:center;gap:var(--s2)}
+.cal-card-actions{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s2)}
+@media (prefers-reduced-motion:reduce){.cal-task{transition:none}}
+@media (max-width:900px){.cal-body{grid-template-columns:1fr}.cal-tasks{max-height:30vh}}
+
+/* ---------- Claude (Mac-App) ----------
+   Ein Chat am rechten Rand, über der Seite wie „Ich habe Zeit“. */
+.claudepanel{position:fixed;top:var(--frame-gap,12px);right:var(--frame-gap,12px);bottom:var(--frame-gap,12px);z-index:56;
+  width:min(420px,calc(100vw - 24px));box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;
+  background:var(--surface);border-radius:20px;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 18px 50px rgba(0,0,0,.18);
+  animation:claudeIn .32s cubic-bezier(.2,.8,.2,1) both}
+@keyframes claudeIn{from{transform:translateX(calc(100% + 28px))}to{transform:none}}
+:root[data-theme="dark"] .claudepanel{box-shadow:0 0 0 1px rgba(255,255,255,.06),0 18px 50px rgba(0,0,0,.45)}
+/* Beside the page, as an opened task's panel is: the page makes room. */
+:root:not([data-layout="sidebar-float"]).claude-open:not(.panel-open) .app{padding-right:444px;box-sizing:border-box;transition:padding-right .3s cubic-bezier(.2,.8,.2,1)}
+@media (max-width:1100px){:root.claude-open .app{padding-right:0 !important}}
+.claude-head{flex:none;border-radius:20px 20px 0 0}
+.claude-head .crumb svg{color:var(--accent)}
+.claude-head-actions{display:flex;align-items:center;gap:2px}
+.claude-list{flex:1;min-height:0;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:var(--s3)}
+.claude-empty{display:grid;gap:var(--s3);color:var(--muted);font-size:var(--fs-13);line-height:1.5}
+.claude-empty p{margin:0}
+.claude-quick{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.claude-note{font-size:var(--fs-12);color:var(--faint);margin:0}
+.claude-note.error{color:var(--late-dark,var(--accent));font-size:var(--fs-13)}
+.claude-msg{font-size:var(--fs-13);line-height:1.5;max-width:100%}
+.claude-msg p{margin:0}
+.claude-msg.user{align-self:flex-end;max-width:85%;background:var(--hover);padding:8px 12px;border-radius:14px 14px 4px 14px;white-space:pre-wrap}
+.claude-msg.assistant .md > :first-child{margin-top:0}
+.claude-msg.assistant .md > :last-child{margin-bottom:0}
+.claude-msg.error{color:var(--late-dark,var(--accent))}
+.claude-thinking{color:var(--faint);animation:pulse 1.6s ease-in-out infinite}
+.claude-actions{margin-top:var(--s3);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s3);display:grid;gap:var(--s2)}
+.claude-actions h3{margin:0;font-size:var(--fs-12);text-transform:uppercase;letter-spacing:.04em;color:var(--faint)}
+.claude-actions ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.claude-actions label{display:grid;grid-template-columns:auto auto 1fr;align-items:baseline;gap:var(--s2);cursor:pointer}
+.claude-when{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.claude-task{all:unset;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.claude-task:hover{text-decoration:underline}
+.claude-actions .btn{justify-self:start}
+.claude-applied{display:flex;align-items:center;gap:6px;color:var(--muted);margin:0}
+.claude-input{display:flex;gap:var(--s2);align-items:center;padding:12px 18px 16px;border-top:1px solid var(--border)}
+.claude-input textarea{flex:1;resize:none;font:inherit;font-size:var(--fs-13);padding:10px 16px;border:1px solid var(--border-strong);border-radius:22px;background:var(--surface);color:var(--text);max-height:160px}
+.claude-input textarea:focus{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);outline-offset:0}
+@media (prefers-reduced-motion:reduce){.claudepanel{animation:none}.claude-thinking{animation:none}}
+html.reduce-transparency .claudepanel,html.more-contrast .claudepanel{box-shadow:0 0 0 1px var(--border-strong)}
+
+
+/* Ein Termin, geöffnet wie eine Aufgabe: dieselbe schwebende Karte rechts. */
+.cal-eventsheet{position:fixed;top:var(--frame-gap,12px);right:var(--frame-gap,12px);bottom:var(--frame-gap,12px);z-index:57;
+  width:min(420px,calc(100vw - 24px));box-sizing:border-box;display:flex;flex-direction:column;overflow:auto;
+  background:var(--surface);border-radius:20px;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 18px 50px rgba(0,0,0,.18);
+  animation:claudeIn .32s cubic-bezier(.2,.8,.2,1) both}
+:root[data-theme="dark"] .cal-eventsheet{box-shadow:0 0 0 1px rgba(255,255,255,.06),0 18px 50px rgba(0,0,0,.45)}
+.cal-eventsheet .detail-top{flex:none;border-radius:20px 20px 0 0}
+.cal-eventsheet .crumb .cal-dot{width:9px;height:9px}
+.cal-eventsheet-main{padding:20px 22px 18px;border-bottom:1px solid var(--border)}
+.cal-eventsheet-title{margin:0;font-size:var(--fs-20);font-weight:700;letter-spacing:-.02em;line-height:1.2;text-wrap:balance}
+.cal-eventsheet-notes{margin:12px 0 0;color:var(--muted);font-size:var(--fs-13);line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.cal-eventsheet-side{flex:1;border:0}
+.cal-propvalue{display:flex;align-items:center;gap:8px;min-height:36px;box-sizing:border-box;padding:6px 14px;border:1px solid var(--border);border-radius:999px;
+  font-size:var(--fs-13);color:var(--text);background:var(--surface);overflow-wrap:anywhere}
+.cal-proplink{color:var(--accent);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;line-height:22px}
+.cal-eventsheet-actions{display:flex;flex-wrap:wrap;gap:var(--s2);padding-top:var(--s3)}
+:root:not([data-layout="sidebar-float"]).event-open:not(.panel-open) .app{padding-right:444px;box-sizing:border-box;transition:padding-right .3s cubic-bezier(.2,.8,.2,1)}
+@media (prefers-reduced-motion:reduce){.cal-eventsheet{animation:none}}
+@media (max-width:1100px){:root.event-open .app{padding-right:0 !important}}
+/* Ist rechts ein Panel offen (Termin, Aufgabe, Claude), hat das Wochenraster
+   Vorrang: Unter 1700px Fensterbreite tritt die Aufgabenliste so lange zurück. */
+@media (max-width:1700px){
+  :root:is(.event-open,.panel-open,.claude-open) .cal-body{grid-template-columns:minmax(0,1fr)}
+  :root:is(.event-open,.panel-open,.claude-open) .cal-tasks{display:none}
+}
+/* Schmales Raster: Wochentag über dem Datum, damit die Kopfzeile lesbar bleibt. */
+.cal-grid-wrap{container-type:inline-size}
+@container (max-width:640px){
+  .cal-dayhead{flex-direction:column;align-items:center;gap:0;padding:4px 0}
+  .cal-dow{font-size:var(--fs-11)}
+  .cal-dom{font-size:var(--fs-14)}
+  .cal-event{padding:2px 4px;font-size:var(--fs-11)}
+}
+
+.cal-sync{align-items:flex-start;padding:10px 12px;border-radius:var(--r-md);background:var(--hover)}
+.cal-sync > span{display:grid;gap:2px}
+.cal-sync-hint{font-size:var(--fs-12);color:var(--muted);line-height:1.4}
+
+/* Was beim Ziehen am Mauszeiger hängt: eine eigene kleine Karte statt eines
+   Bildschirmausschnitts. Kurz außerhalb des Fensters gezeichnet. */
+.cal-dragcard{position:fixed;top:-200px;left:-400px;z-index:-1;display:flex;align-items:baseline;gap:8px;max-width:240px;
+  padding:7px 12px;border-radius:10px;border-left:3px solid var(--ev,var(--accent));
+  background:var(--surface);color:var(--text);font:600 var(--fs-13)/1.3 -apple-system,BlinkMacSystemFont,sans-serif;
+  box-shadow:0 0 0 1px rgba(0,0,0,.06),0 6px 18px rgba(0,0,0,.16)}
+.cal-dragcard strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-dragcard span{flex:none;font-weight:500;color:var(--faint);font-variant-numeric:tabular-nums}
+/* Das gezogene Original bleibt ruhig stehen und wird nur blasser. */
+.cal-event.dragging,.cal-task.dragging{opacity:.35}
+
+/* Farbwahl je Kalender: der Punkt ist der Knopf, darunter eine kleine Palette. */
+.cal-row{position:relative}
+.cal-color{position:relative;display:flex;align-items:center;margin-left:auto;margin-right:var(--s3)}
+.cal-dot-btn{all:unset;cursor:pointer;width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 2px var(--surface),0 0 0 3px var(--border-strong)}
+.cal-dot-btn:hover{transform:scale(1.15)}
+.cal-palette{position:absolute;top:22px;right:-8px;z-index:20;display:grid;grid-template-columns:repeat(6,22px);gap:8px;padding:12px;border-radius:14px;
+  background:var(--surface);box-shadow:0 0 0 1px rgba(0,0,0,.06),0 10px 30px rgba(0,0,0,.18)}
+.cal-swatch{all:unset;cursor:pointer;width:22px;height:22px;border-radius:50%}
+.cal-swatch:hover{transform:scale(1.12)}
+.cal-swatch[aria-selected="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--text)}
+.cal-swatch-reset{grid-column:1 / -1;all:unset;grid-column:1 / -1;cursor:pointer;font-size:var(--fs-12);color:var(--muted);text-align:center;padding-top:4px}
+.cal-swatch-reset:hover{color:var(--text)}
+/* Die Palette klappt unter ihrem Kalender auf, statt über dem Rand der
+   (scrollenden) Auswahl zu schweben, wo sie abgeschnitten würde. */
+.cal-row{flex-wrap:wrap}
+.cal-color{display:contents}
+.cal-dot-btn{margin-left:auto;margin-right:var(--s3)}
+.cal-palette{position:static;order:10;flex-basis:100%;grid-template-columns:repeat(12,22px);justify-content:end;
+  margin:6px 0 4px;padding:10px 12px;box-shadow:none;background:var(--hover)}
+.cal-swatch-reset{grid-column:1 / -1;text-align:right}
+
+/* Zoom (⌘ + Mausrad) und Längenziehen von Aufgaben-Terminen. */
+.cal-zoom{display:inline-flex;gap:2px;margin-left:var(--s2);flex:none}
+.cal-zoom .iconbtn{font-size:var(--fs-16);font-weight:600;line-height:1;width:28px;height:28px}
+.cal-resize{position:absolute;left:0;right:0;height:8px;cursor:ns-resize;z-index:2;touch-action:none}
+.cal-resize.top{top:-3px}
+.cal-resize.bottom{bottom:-3px}
+.cal-resize::after{content:"";position:absolute;left:50%;width:18px;height:3px;margin-left:-9px;border-radius:2px;background:var(--ev);opacity:0;transition:opacity .12s}
+.cal-resize.top::after{top:3px}
+.cal-resize.bottom::after{bottom:3px}
+.cal-event.from-task:hover .cal-resize::after,.cal-event.resizing .cal-resize::after{opacity:.8}
+.cal-event.resizing{z-index:4;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+
+/* Ansicht: Woche · 2 Tage · Tag, im Stil des Ordnen-Schalters. */
+.cal-span{display:inline-flex;gap:2px;padding:2px;border-radius:999px;background:var(--hover);flex:none}
+.cal-span button{all:unset;cursor:pointer;font-size:var(--fs-13);padding:5px 12px;border-radius:999px;color:var(--muted);white-space:nowrap}
+.cal-span button[aria-pressed="true"]{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+/* Aufgabenliste: Gruppieren und Sortieren als zwei kleine Auswahlen. */
+.cal-tasks-order{display:grid;grid-template-columns:1fr 1fr auto;gap:var(--s2);align-items:end}
+.cal-tasks-order label{display:grid;gap:3px;min-width:0}
+.cal-tasks-order label > span{font-size:var(--fs-11);color:var(--faint)}
+.cal-tasks-order select{font:inherit;font-size:var(--fs-13);min-width:0;padding:5px 26px 5px 12px;border:1px solid var(--border-strong);border-radius:999px;
+  background:var(--surface);color:var(--text);appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 14px) 52%,calc(100% - 10px) 52%;background-size:4px 4px;background-repeat:no-repeat}
+.cal-sortdir{width:32px;height:32px;font-size:var(--fs-16);border:1px solid var(--border-strong);border-radius:999px}
+
+/* „Mit Claude planen“: ein Menüpunkt wie die anderen, mit Abstand darunter,
+   ausgewählt (weiß hinterlegt) nur solange das Claude-Fenster offen ist. */
+.sidebar .claudenav{width:100%;margin-bottom:14px}
+.sidebar .claudenav .navkbd{margin-left:auto;font:inherit;font-size:var(--fs-11);color:var(--faint);opacity:0;transition:opacity .12s}
+.sidebar .claudenav:hover .navkbd,.sidebar .claudenav:focus-visible .navkbd{opacity:1}
+:root.claude-open .sidebar .claudenav{background:var(--side-sel);box-shadow:var(--side-sel-shadow);color:var(--text);font-weight:600}
+:root.claude-open .sidebar .claudenav .ic,:root.claude-open .sidebar .claudenav svg{color:var(--side-icon-sel)}

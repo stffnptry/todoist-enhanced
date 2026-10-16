@@ -270,6 +270,7 @@ export function Sidebar({
   const visibleNav = visibleSidebarNav(sidebarNav, {
     splitToday: weekLayout !== 'unified',
     matrix: eisenhowerEnabled,
+    calendar: Boolean(window.enhancedDesktop?.calendar),
   });
   const insightsOnLogbook = route.view === 'insights' && route.id === 'logbook';
 
@@ -285,6 +286,7 @@ export function Sidebar({
       case 'upcoming': return navItem('upcoming', 'upcoming', 'nav.upcoming', counts.upcoming);
       case 'someday': return navItem('someday', 'someday', 'nav.someday', counts.someday, { kind: 'someday' });
       case 'review': return navItem('review', 'check', 'nav.review', 0);
+      case 'calendar': return navItem('calendar', 'calendar', 'nav.calendar', 0);
       case 'dashboard':
         return navItem('insights', 'trend', 'nav.dashboard', 0, undefined,
           { current: route.view === 'insights' && !insightsOnLogbook });
@@ -550,6 +552,16 @@ export function Sidebar({
             <Icon name="search" />
             <span>{t('nav.search')}</span>
             <kbd>⌘K</kbd>
+          </button>
+        )}
+        {/* Planning with Claude: only the desktop app can reach the Claude CLI. */}
+        {window.enhancedDesktop?.claude && (
+          /* A menu entry like the others, a little apart from them; it reads
+             as selected only while Claude's panel is open (html.claude-open). */
+          <button className="navitem claudenav" onClick={() => window.dispatchEvent(new CustomEvent('enhanced:toggle-claude'))}>
+            <Icon name="sparkles" />
+            <span className="label">{t('claude.open')}</span>
+            <kbd className="navkbd">⌘J</kbd>
           </button>
         )}
 

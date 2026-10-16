@@ -14,7 +14,7 @@
 
 export const SIDEBAR_ITEMS = [
   'inbox', 'today', 'week', 'upcoming', 'someday',
-  'review', 'dashboard', 'logbook', 'matrix', 'labels', 'filters',
+  'review', 'calendar', 'dashboard', 'logbook', 'matrix', 'labels', 'filters',
 ] as const;
 export type SidebarItemId = (typeof SIDEBAR_ITEMS)[number];
 
@@ -29,7 +29,7 @@ export interface SidebarNav {
 }
 
 const MAIN: SidebarItemId[] = ['inbox', 'today', 'week', 'upcoming', 'someday'];
-const OTHER: SidebarItemId[] = ['review', 'dashboard', 'logbook', 'matrix', 'labels', 'filters'];
+const OTHER: SidebarItemId[] = ['review', 'calendar', 'dashboard', 'logbook', 'matrix', 'labels', 'filters'];
 
 export const defaultSidebarNav = (): SidebarNav => ({
   main: MAIN.map((id) => ({ id, on: true })),
@@ -84,10 +84,12 @@ export function readSidebarNav(stored: unknown): SidebarNav {
  */
 export function visibleSidebarNav(
   nav: SidebarNav,
-  context: { splitToday: boolean; matrix: boolean },
+  context: { splitToday: boolean; matrix: boolean; calendar?: boolean },
 ): { main: SidebarItemId[]; other: SidebarItemId[] } {
   const keep = (e: SidebarEntry) =>
-    e.on && (e.id !== 'today' || context.splitToday) && (e.id !== 'matrix' || context.matrix);
+    e.on && (e.id !== 'today' || context.splitToday) && (e.id !== 'matrix' || context.matrix)
+    // The calendar needs the desktop app, which reads the Mac's calendars.
+    && (e.id !== 'calendar' || context.calendar === true);
   return {
     main: nav.main.filter(keep).map((e) => e.id),
     other: nav.other.filter(keep).map((e) => e.id),

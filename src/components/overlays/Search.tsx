@@ -90,6 +90,9 @@ export function Search({ open, onClose, onOpen, seed = '' }: SearchProps) {
           if (!eisenhowerEnabled) setPrefs({ eisenhowerEnabled: true });
           navigate('matrix');
         }) },
+      ...(window.enhancedDesktop?.calendar
+        ? [{ key: 'go-calendar', icon: 'calendar' as const, title: t('nav.calendar'), run: go(() => navigate('calendar')) }]
+        : []),
       { key: 'go-labels', icon: 'tag', title: t('nav.labels'),
         run: go(() => navigate('labels')) },
       { key: 'go-filters', icon: 'filter', title: t('nav.filters'),
