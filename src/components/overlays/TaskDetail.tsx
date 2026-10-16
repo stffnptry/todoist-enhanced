@@ -1039,7 +1039,8 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
 
           {/* Only where somebody else is in the project: elsewhere there is
               nobody to give it to. */}
-          {(assignees(snapshot, item.project_id).length > 0 || item.responsible_uid) && (
+          {(item.responsible_uid || (assignees(snapshot, item.project_id).length > 0
+            && snapshot.projects[item.project_id]?.can_assign_tasks !== false)) && (
             <div className="prop" data-prop="assignee">
               <span className="proplabel">{t('detail.assignee')}</span>
               <AssigneeField projectId={item.project_id} value={item.responsible_uid}

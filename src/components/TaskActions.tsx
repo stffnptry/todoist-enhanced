@@ -815,7 +815,8 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep }: TaskActionsPro
         <Icon name="project" size="sm" />
       </button>
 
-      {(assignees(snapshot, item.project_id).length > 0 || item.responsible_uid) && (
+      {(item.responsible_uid || (assignees(snapshot, item.project_id).length > 0
+            && snapshot.projects[item.project_id]?.can_assign_tasks !== false)) && (
         <span className={`row-assignee${item.responsible_uid ? ' assigned' : ''}`}>
           <AssigneeField projectId={item.project_id} value={item.responsible_uid}
             onChange={(next) => void assignTask(item.id, next)} iconOnly />

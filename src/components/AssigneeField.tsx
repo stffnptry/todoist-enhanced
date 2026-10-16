@@ -15,9 +15,12 @@ export function AssigneeField({ projectId, value, onChange, chip = false, iconOn
   const snapshot = useStore((state) => state.snapshot);
   const people = assignees(snapshot, projectId);
   if (snapshot.projects[projectId]?.can_assign_tasks === false) {
-    return iconOnly ? (value ? <PersonAvatar id={value} /> : null) : <span className="assignee-readonly">
+    /* Wo niemand zugewiesen werden kann (eigene Projekte, Eingang), ist ein
+       „Niemand“ nur Lärm: das Feld erscheint nur, wenn doch jemand eingetragen ist. */
+    if (!value) return null;
+    return iconOnly ? <PersonAvatar id={value} /> : <span className="assignee-readonly">
       <PersonAvatar id={value} decorative />
-      {value ? assigneeName(snapshot, value, t('assignee.unavailable')) : t('detail.unassigned')}
+      {assigneeName(snapshot, value, t('assignee.unavailable'))}
     </span>;
   }
   if (!people.length && !value) return null;
