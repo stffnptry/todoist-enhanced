@@ -73,6 +73,13 @@ const GO_KEYS: Partial<Record<ViewId, string>> = {
 /** How long the pointer has to actually stay on a row before it is told. */
 const HINT_DELAY_MS = 550;
 
+/* The glyph for each kind of list in an area, so the sidebar needs no tag marks. */
+const LIST_ICON: Record<string, IconName> = {
+  eingang: 'inbox',
+  wiederholend: 'repeat',
+  geplant: 'upcoming',
+};
+
 export function Sidebar({
   route, onAddTask, onSearch, onIssues, onProjectSheet, issuesCount, variant = 'rail',
 }: SidebarProps) {
@@ -235,6 +242,9 @@ export function Sidebar({
 
   const toggleGroup = (key: string) =>
     setOpenGroups((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
+
+  /* The area whose "+" was pressed; its add form stays open until it is closed. */
+  const [addingArea, setAddingArea] = useState<string | null>(null);
 
   const workspaceOrder = useStore((s) => s.prefs.workspaceOrder);
   const workspaces = useMemo(() => projectTree(snapshot, workspaceOrder), [snapshot, workspaceOrder]);
@@ -646,25 +656,31 @@ export function Sidebar({
               title={areaTitle(area)}
               open={openGroups[key] ?? true}
               onToggle={() => toggleGroup(key)}
+              onAdd={() => setAddingArea(addingArea === area ? null : area)}
+              addLabel={t('area.add')}
             >
               {rows.map((row) => (
                 <button
                   key={row.key}
-                  className="navitem tagitem"
+                  className="navitem"
                   aria-current={route.view === row.view && route.id === row.id ? 'page' : undefined}
                   onClick={() => navigate(row.view, row.id)}
                 >
-                  <Icon name="tag" className="taglabel" style={markerStyle(row.color, false)} />
+                  <Icon name={LIST_ICON[row.list] ?? 'tag'} />
                   <span className="label">{row.name}</span>
                 </button>
               ))}
-              <AreaAdd area={area} />
+              {addingArea === area && <AreaAdd area={area} onClose={() => setAddingArea(null)} />}
             </SideGroup>
           );
         })}
 
         {workspaces.map((workspace) => {
           const key = workspace.workspaceId ?? 'personal';
+          const projects = workspace.roots.filter((node) => !splitListName(node.project.name));
+          /* On the personal workspace the lists are the content; an empty "Meine
+             Projekte" heading under them is noise. Team workspaces keep theirs. */
+          if (!workspace.workspaceId && projects.length === 0) return null;
           return (
             <SideGroup
               key={key}
@@ -679,7 +695,7 @@ export function Sidebar({
               addLabel={t('nav.addProject')}
             >
               {workspace.roots.length > 0
-                ? workspace.roots.filter((node) => !splitListName(node.project.name)).map((node) => projectNode(node))
+                ? projects.map((node) => projectNode(node))
                 : <p className="side-empty">{t('nav.noProjectsYet')}</p>}
             </SideGroup>
           );

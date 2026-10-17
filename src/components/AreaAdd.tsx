@@ -7,16 +7,17 @@ import { useCreateList } from '@/hooks/useCreateList';
  *
  * Beides wird ein Label im Bereich („privat_einkauf“). Todoist-Projekte legt
  * die App hier nicht an: Der kostenlose Tarif hat nur fünf davon, und die sind
- * belegt.
+ * belegt. Geöffnet wird das Formular über das „+“ in der Überschrift des
+ * Bereichs, damit die Seitenleiste im Ruhezustand ruhig bleibt.
  */
-export function AreaAdd({ area }: { area: string }) {
+export function AreaAdd({ area, onClose }: { area: string; onClose: () => void }) {
   const { t } = useT();
   const [mode, setMode] = useState<'list' | 'project' | null>(null);
   const [name, setName] = useState('');
   const list = useCreateList(area, name);
   const busy = list.busy;
 
-  const close = () => { setMode(null); setName(''); };
+  const close = () => { setMode(null); setName(''); onClose(); };
 
   async function submit(event: FormEvent) {
     event.preventDefault();
