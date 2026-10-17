@@ -68,3 +68,14 @@ export function listOf(labels: string[], areas: string[]): ListLabel | null {
   }
   return null;
 }
+
+/**
+ * Das Label für eine neue Liste im Bereich, oder `null`, wenn der Name keinen
+ * brauchbaren Teil hergibt („!!!“). Ein Label ohne Aufgaben ist in Todoist
+ * trotzdem ein richtiges Label, also ist eine leere Liste nur ein angelegtes
+ * Label.
+ */
+export function newListLabel(area: string, name: string): string | null {
+  const label = listLabel(area, name);
+  return labelSlug(area) && labelSlug(name) ? label : null;
+}

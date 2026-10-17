@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isListLabel, listDisplayName, listLabel, listOf, parseListLabel } from './lists';
+import { isListLabel, listDisplayName, listLabel, listOf, newListLabel, parseListLabel } from './lists';
 
 describe('Listen über Labels', () => {
   it('baut das Label aus Bereich und Liste, ohne Umlaute und Groß-/Kleinschreibung', () => {
@@ -30,5 +30,13 @@ describe('Listen über Labels', () => {
   it('gibt Listen lesbare Namen', () => {
     expect(listDisplayName('wiederholend')).toBe('Wiederholende Aufgaben');
     expect(listDisplayName('projekte')).toBe('Projekte');
+  });
+});
+
+describe('Neue Liste im Bereich', () => {
+  it('gibt das Label für eine neue Liste, ohne Namen mit Sonderzeichen', () => {
+    expect(newListLabel('Privat', 'Einkauf')).toBe('privat_einkauf');
+    expect(newListLabel('Privat', '!!!')).toBeNull();
+    expect(newListLabel('', 'Einkauf')).toBeNull();
   });
 });
