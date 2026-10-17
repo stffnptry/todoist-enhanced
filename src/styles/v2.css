@@ -266,7 +266,6 @@
 .sidebar .karmabar{height:3px;width:78px;background:var(--side-bar)}
 .sidebar .side-top .iconbtn{width:30px;height:30px;border-radius:50%}
 .sidebar .side-top .iconbtn:hover{background:var(--side-hover)}
-.sidebar .side-scroll{padding:0 10px calc(var(--side-foot-h,96px) + 8px);scroll-padding-bottom:calc(var(--side-foot-h,96px) + 8px)}
 .sidebar .searchbtn{height:34px;min-height:34px;border-radius:999px;margin:2px 0 14px;padding:0 13px}
 .sidebar .navitem{height:32px;min-height:32px;gap:10px;padding-block:0;padding-left:10px;border-radius:12px;font-size:0.8438rem;font-weight:400}
 .sidebar .navitem:hover{background:var(--side-hover)}
@@ -277,9 +276,10 @@
 .sidebar .nav-gap{height:14px}
 .sidebar .side-head{display:flex;padding:20px 6px 4px 10px;font-size:0.7188rem;font-weight:600;color:var(--muted);letter-spacing:.01em}
 .sidebar .side-head > span{padding-left:0;font-size:inherit}
-.sidebar .side-foot{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;flex-direction:column;align-items:center;gap:8px;padding:40px 14px 12px;pointer-events:none}
-.sidebar .side-foot::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--side-blur);backdrop-filter:blur(10px) saturate(1.1);-webkit-backdrop-filter:blur(10px) saturate(1.1);-webkit-mask-image:linear-gradient(to top,#000 55%,transparent);mask-image:linear-gradient(to top,#000 55%,transparent);border-radius:0 0 var(--frame-r) var(--frame-r)}
-.sidebar .side-foot > *{pointer-events:auto}
+/* The foot is a row of its own below the list, not a layer over it: the list
+   scrolls inside the space above, so a project can never sit under the button
+   or the sync line. */
+.sidebar .side-foot{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 14px 4px}
 .sidebar .side-foot .addbtn{width:100%;height:40px;min-height:40px;border-radius:999px;font-size:0.8438rem;box-shadow:0 6px 18px -4px rgba(0,0,0,.28),0 1px 2px rgba(0,0,0,.12)}
 .sidebar .side-foot .addbtn:hover{filter:brightness(1.05);background:var(--accent)}
 .sidebar .footrow{width:100%;justify-content:center}
