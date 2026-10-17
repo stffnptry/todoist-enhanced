@@ -10,6 +10,7 @@ import { createPortal } from 'react-dom';
 import { Icon, type IconName } from './Icon';
 import { useT } from '@/hooks/useT';
 import { AreaAdd } from './AreaAdd';
+import { isListProject } from '@/domain/lists';
 import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
 import { navigate, type Route } from '@/hooks/useRoute';
@@ -626,7 +627,7 @@ export function Sidebar({
               addLabel={t('nav.addProject')}
             >
               {workspace.roots.length > 0
-                ? workspace.roots.map((node) => projectNode(node))
+                ? workspace.roots.filter((node) => !isListProject(node.project.name)).map((node) => projectNode(node))
                 : <p className="side-empty">{t('nav.noProjectsYet')}</p>}
             </SideGroup>
           );

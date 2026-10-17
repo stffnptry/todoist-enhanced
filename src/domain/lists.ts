@@ -71,6 +71,15 @@ export function parseListLabel(name: string): ListLabel | null {
   return { area: match[1], list: match[2] };
 }
 
+/**
+ * Ein Todoist-Projekt, das eigentlich eine Liste ist („privat_geplant“,
+ * „Claude_Eingang“). Der kostenlose Tarif hat nur fünf Projekte, deshalb liegen
+ * die Listen dort als Projekte; die Seitenleiste zeigt sie nicht.
+ */
+export function isListProject(name: string): boolean {
+  return /^[a-z0-9]+(_[a-z0-9]+)*_(wiederholend|geplant|eingang)$/i.test(name.trim());
+}
+
 /** Ein Listen-Label wird als Tag ausgeblendet. */
 export const isListLabel = (name: string): boolean => parseListLabel(name) !== null;
 

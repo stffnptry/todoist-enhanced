@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isListLabel, listDisplayName, listLabel, listOf, newListLabel, parseListLabel, setKnownAreas } from './lists';
+import { isListLabel, isListProject, listDisplayName, listLabel, listOf, newListLabel, parseListLabel, setKnownAreas } from './lists';
 
 describe('Listen über Labels', () => {
   it('baut das Label aus Bereich und Liste, ohne Umlaute und Groß-/Kleinschreibung', () => {
@@ -21,6 +21,13 @@ describe('Listen über Labels', () => {
     expect(isListLabel('privat_team_urlaub')).toBe(true);
     expect(isListLabel('privat_urlaub')).toBe(false);
     setKnownAreas([]);
+  });
+
+  it('erkennt Listen-Projekte in Todoist, Groß- und Kleinschreibung egal', () => {
+    expect(isListProject('privat_wiederholend')).toBe(true);
+    expect(isListProject('Claude_Eingang')).toBe(true);
+    expect(isListProject('Einkaufsliste')).toBe(false);
+    expect(isListProject('Inbox')).toBe(false);
   });
 
   it('blendet nur Listen-Labels aus, andere Tags bleiben', () => {
