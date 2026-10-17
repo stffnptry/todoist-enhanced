@@ -11,8 +11,20 @@
  * streiten.
  */
 
-/** Listen, deren Label es als Liste erkennt. Anderes bleibt ein normaler Tag. */
+/** Listen, deren Label es als Liste erkennt, auch ohne bekannten Bereich. */
 const KNOWN_LISTS = new Set(['wiederholend', 'geplant', 'eingang']);
+
+/*
+ * Die Namen der Bereiche (Ordner) in Slug-Form. Der Store hält sie aktuell:
+ * jedes Label, das mit einem Bereich beginnt, ist ein Listen- oder Projekt-
+ * Label und wird nicht als Tag gezeigt, auch wenn der Rest frei gewählt ist.
+ */
+let knownAreas = new Set<string>();
+
+/** Die Bereichsnamen, die gerade gelten; der Store ruft das bei jeder Änderung auf. */
+export function setKnownAreas(names: string[]): void {
+  knownAreas = new Set(names.map(labelSlug).filter(Boolean));
+}
 
 const DISPLAY_NAMES: Record<string, string> = {
   wiederholend: 'Wiederholende Aufgaben',
@@ -48,7 +60,13 @@ export interface ListLabel {
 
 /** Zerlegt ein Label in Bereich und Liste, wenn es die Form `bereich_liste` hat. */
 export function parseListLabel(name: string): ListLabel | null {
-  const match = /^([a-z0-9]+)_([a-z0-9]+)$/.exec(name.trim().toLowerCase());
+  const label = name.trim().toLowerCase();
+  for (const area of knownAreas) {
+    if (label.startsWith(`${area}_`) && label.length > area.length + 1) {
+      return { area, list: label.slice(area.length + 1) };
+    }
+  }
+  const match = /^([a-z0-9]+)_([a-z0-9]+)$/.exec(label);
   if (!match || !KNOWN_LISTS.has(match[2])) return null;
   return { area: match[1], list: match[2] };
 }
@@ -75,6 +93,13 @@ export function listOf(labels: string[], areas: string[]): ListLabel | null {
  * trotzdem ein richtiges Label, also ist eine leere Liste nur ein angelegtes
  * Label.
  */
+/** The Bereich names of a snapshot's folders: top-level ones that are still in use. */
+export function areaNames(projects: Record<string, { name: string; is_folder?: boolean; parent_id?: string | null; is_deleted?: boolean; is_archived?: boolean }>): string[] {
+  return Object.values(projects)
+    .filter((p) => p.is_folder && !p.parent_id && !p.is_deleted && !p.is_archived)
+    .map((p) => p.name);
+}
+
 export function newListLabel(area: string, name: string): string | null {
   const label = listLabel(area, name);
   return labelSlug(area) && labelSlug(name) ? label : null;
