@@ -10,6 +10,7 @@ import { createPortal } from 'react-dom';
 import { Icon, type IconName } from './Icon';
 import { useT } from '@/hooks/useT';
 import { AreaAdd } from './AreaAdd';
+import { ListIcon } from './ListTitle';
 import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
 import { navigate, type Route } from '@/hooks/useRoute';
@@ -72,13 +73,6 @@ const GO_KEYS: Partial<Record<ViewId, string>> = {
 
 /** How long the pointer has to actually stay on a row before it is told. */
 const HINT_DELAY_MS = 550;
-
-/* The glyph for each kind of list in an area, so the sidebar needs no tag marks. */
-const LIST_ICON: Record<string, IconName> = {
-  eingang: 'inbox',
-  wiederholend: 'repeat',
-  geplant: 'upcoming',
-};
 
 export function Sidebar({
   route, onAddTask, onSearch, onIssues, onProjectSheet, issuesCount, variant = 'rail',
@@ -666,7 +660,7 @@ export function Sidebar({
                   aria-current={route.view === row.view && route.id === row.id ? 'page' : undefined}
                   onClick={() => navigate(row.view, row.id)}
                 >
-                  <Icon name={LIST_ICON[row.list] ?? 'tag'} />
+                  <ListIcon list={row.list} />
                   <span className="label">{row.name}</span>
                 </button>
               ))}

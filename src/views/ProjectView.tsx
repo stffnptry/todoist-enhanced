@@ -13,6 +13,8 @@ import type { ProjectSheetTarget } from '@/components/overlays/ProjectSheet';
 import { AddSectionLine } from '@/components/AddSectionLine';
 import { useConfirm } from '@/components/overlays/Confirm';
 import { Icon } from '@/components/Icon';
+import { ListTitle } from '@/components/ListTitle';
+import { splitListName } from '@/domain/lists';
 import { ProjectIcon, ProjectIconGrid } from '@/components/ProjectIconPicker';
 import { markerStyle } from '@/domain/colors';
 import { TimePanel } from '@/components/TimePanel';
@@ -322,12 +324,16 @@ function ProjectBody({
     />
   ) : undefined;
 
+  /* A list kept as a project shows its plain name, and it is not renamed or
+     given an icon here: the name is what the list is called by its label. */
+  const listParts = splitListName(project.name);
+
   return (
     <div className="page">
       <PageHeader
         hireNote={!hireInList}
         onContextMenu={(event) => setMenuAnchor(pointAnchor(event))}
-        title={
+        title={listParts ? <ListTitle list={listParts.list} /> :
           <span className="ptitle-row">
             {/* The project's mark, in front of its name: pressing it opens the
                 same icon choice the project sheet has. */}
