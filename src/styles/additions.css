@@ -2074,3 +2074,28 @@ html.reduce-transparency .claudepanel,html.more-contrast .claudepanel{box-shadow
   padding:4px 6px;border-radius:6px;border:1.5px dashed var(--accent);
   background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--text);font-size:var(--fs-12)}
 .cal-event.cal-draft span{color:var(--muted)}
+
+/* Unter einem Bereich: Liste oder Projekt anlegen (AreaAdd.tsx). */
+.area-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px 8px 6px 24px;
+}
+.area-addbtn {
+  font-size: 12px;
+  opacity: 0.7;
+}
+.area-addfield {
+  flex: 1 1 100%;
+  font: inherit;
+  font-size: 13px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: inherit;
+}
+.area-addfield[aria-invalid='true'] {
+  border-color: var(--text-danger);
+}

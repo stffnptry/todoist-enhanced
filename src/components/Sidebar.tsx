@@ -9,6 +9,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon, type IconName } from './Icon';
 import { useT } from '@/hooks/useT';
+import { AreaAdd } from './AreaAdd';
 import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
 import { navigate, type Route } from '@/hooks/useRoute';
@@ -328,6 +329,7 @@ export function Sidebar({
             </button>
           </ProjectDropRow>
           {isOpen && children.map((child) => projectNode(child, keyPrefix, depth + 1))}
+          {isOpen && depth === 0 && <AreaAdd area={project} />}
         </div>
       );
     }
