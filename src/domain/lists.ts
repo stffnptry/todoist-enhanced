@@ -104,3 +104,21 @@ export function newListLabel(area: string, name: string): string | null {
   const label = listLabel(area, name);
   return labelSlug(area) && labelSlug(name) ? label : null;
 }
+
+/** Die Reihenfolge der Listen in einem Bereich: Eingang, dann die Wiederholenden, dann die Geplanten. */
+export const LIST_ORDER = ['eingang', 'wiederholend', 'geplant'];
+
+/**
+ * Bereich und Liste aus dem Namen eines Labels oder Projekts („privat_geplant“,
+ * „Claude_Eingang“), unabhängig davon, welche Bereiche es gibt. Der Bereich ist
+ * klein geschrieben, die Liste ist eine der drei bekannten.
+ */
+export function splitListName(name: string): ListLabel | null {
+  const match = /^([a-z0-9]+)_(wiederholend|geplant|eingang)$/i.exec(name.trim());
+  return match ? { area: match[1].toLowerCase(), list: match[2].toLowerCase() } : null;
+}
+
+/** Ein Bereichsname für die Anzeige: „privat“ wird „Privat“. */
+export function areaTitle(area: string): string {
+  return area.charAt(0).toUpperCase() + area.slice(1);
+}

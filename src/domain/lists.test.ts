@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isListLabel, listDisplayName, listLabel, listOf, newListLabel, parseListLabel, setKnownAreas } from './lists';
+import { areaTitle, isListLabel, listDisplayName, listLabel, listOf, newListLabel, parseListLabel, setKnownAreas, splitListName } from './lists';
 
 describe('Listen über Labels', () => {
   it('baut das Label aus Bereich und Liste, ohne Umlaute und Groß-/Kleinschreibung', () => {
@@ -46,5 +46,14 @@ describe('Neue Liste im Bereich', () => {
     expect(newListLabel('Privat', 'Einkauf')).toBe('privat_einkauf');
     expect(newListLabel('Privat', '!!!')).toBeNull();
     expect(newListLabel('', 'Einkauf')).toBeNull();
+  });
+});
+
+describe('Bereiche und Listen in der Seitenleiste', () => {
+  it('liest Bereich und Liste aus Projekt- und Label-Namen', () => {
+    expect(splitListName('Claude_Eingang')).toEqual({ area: 'claude', list: 'eingang' });
+    expect(splitListName('arbeit_geplant')).toEqual({ area: 'arbeit', list: 'geplant' });
+    expect(splitListName('Einkaufsliste')).toBeNull();
+    expect(areaTitle('privat')).toBe('Privat');
   });
 });

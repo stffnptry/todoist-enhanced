@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useT } from '@/hooks/useT';
 import { useCreateList } from '@/hooks/useCreateList';
-import type { Project } from '@/domain/types';
 
 /**
  * Unter einem Bereich: eine neue Liste oder ein neues Projekt anlegen.
@@ -10,11 +9,11 @@ import type { Project } from '@/domain/types';
  * die App hier nicht an: Der kostenlose Tarif hat nur fünf davon, und die sind
  * belegt.
  */
-export function AreaAdd({ area }: { area: Project }) {
+export function AreaAdd({ area }: { area: string }) {
   const { t } = useT();
   const [mode, setMode] = useState<'list' | 'project' | null>(null);
   const [name, setName] = useState('');
-  const list = useCreateList(area.name, name);
+  const list = useCreateList(area, name);
   const busy = list.busy;
 
   const close = () => { setMode(null); setName(''); };
