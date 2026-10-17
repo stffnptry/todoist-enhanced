@@ -182,14 +182,14 @@ describe('the sidebar settings', () => {
     const hydrated = hydratePreferences({ homepage: 'week' }, 'en');
     expect(hydrated.sidebarSearch).toBe(true);
     expect(hydrated.sidebarCounts).toBe(true);
-    expect(hydrated.sidebarNav.main.map((e) => e.id)).toEqual(['inbox', 'today', 'week', 'upcoming', 'someday']);
+    expect(hydrated.sidebarNav.main.map((e) => e.id)).toEqual(['focus', 'inbox', 'today', 'week', 'upcoming', 'someday']);
     expect(hydrated.sidebarNav.other.map((e) => e.id)).toContain('logbook');
   });
 
   it('survive a round trip through the settings comment', () => {
     const nav = hydratePreferences({
       sidebarNav: {
-        main: ['week', 'inbox', 'today', 'upcoming', 'someday'].map((id) => ({ id, on: true })),
+        main: ['focus', 'week', 'inbox', 'today', 'upcoming', 'someday'].map((id) => ({ id, on: true })),
         other: [{ id: 'review', on: false }],
       },
       sidebarSearch: false, sidebarCounts: false,
@@ -198,7 +198,7 @@ describe('the sidebar settings', () => {
     const merged = mergeSynced(prefs(), stored!, 'en');
     expect(merged.sidebarSearch).toBe(false);
     expect(merged.sidebarCounts).toBe(false);
-    expect(merged.sidebarNav.main[0].id).toBe('week');
+    expect(merged.sidebarNav.main[0].id).toBe('focus');
     expect(merged.sidebarNav.other.find((e) => e.id === 'review')?.on).toBe(false);
   });
 

@@ -12,6 +12,7 @@ import {
 
 /** What each entry is called and drawn as; the same pair the sidebar uses. */
 export const ENTRY: Record<SidebarItemId, { icon: IconName; label: TranslationKey }> = {
+  focus: { icon: 'deadline', label: 'nav.focus' },
   inbox: { icon: 'inbox', label: 'nav.inbox' },
   today: { icon: 'calendar', label: 'nav.today' },
   week: { icon: 'week', label: 'nav.week' },

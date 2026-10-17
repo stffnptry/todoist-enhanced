@@ -22,6 +22,7 @@ import { QUICK_ADD, QuickAdd } from './QuickAdd';
 import { WeekView } from './views/WeekView';
 import { UpcomingView } from './views/UpcomingView';
 import { SimpleListView } from './views/SimpleListView';
+import { FocusView } from './views/FocusView';
 import { ProjectView } from './views/ProjectView';
 import { LabelsView } from './views/LabelsView';
 import { FiltersView } from './views/FiltersView';
@@ -866,6 +867,7 @@ function AppShell({
           {route.view === 'week' && (
             <WeekView {...viewProps} scope={weekLayout === 'split' ? 'anytime' : 'all'} />
           )}
+          {route.view === 'focus' && <FocusView onOpen={openTask} onAddTaskTo={addTaskTo} />}
           {route.view === 'today' && <WeekView {...viewProps} scope="today" />}
           {route.view === 'upcoming' && <UpcomingView {...viewProps} />}
           {route.view === 'someday' && <SimpleListView kind="someday" {...viewProps} />}

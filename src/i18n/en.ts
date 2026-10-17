@@ -1228,6 +1228,16 @@ export const en = {
 
   /* 1.1.1 */
   'nav.today': 'Today',
+  'nav.focus': 'Focus',
+  'focus.title': 'Focus',
+  'focus.hint': 'A calm start for the day. Only a few tasks at a time.',
+  'focus.now': 'Start with these',
+  'focus.empty': 'Nothing is due today. Enjoy the space.',
+  'focus.add': 'Add a task for today',
+  'focus.restLabel': 'Overview of today',
+  'focus.todayCount': 'Due today: {count}',
+  'focus.overdue': '{count} overdue, waiting for a new date',
+  'focus.replan': 'Plan overdue tasks',
   'nav.weekHintUnified': 'Includes today’s tasks',
   'nav.weekHintSplit': 'Does not include today’s tasks',
   'settings.weekLayout': 'Today and My week',

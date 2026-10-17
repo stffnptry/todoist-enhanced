@@ -346,6 +346,8 @@ export type Bucket = 'overdue' | 'today' | 'upcoming' | 'anytime' | 'someday';
 export type ViewId =
   | 'inbox'
   | 'week'
+  /** A calm start page for the day: a few tasks to begin with, overdue ones in one line. */
+  | 'focus'
   /** Today on its own, when the sidebar is set to separate it from the week. */
   | 'today'
   | 'upcoming'

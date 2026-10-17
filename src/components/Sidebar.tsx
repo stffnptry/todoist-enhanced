@@ -283,6 +283,7 @@ export function Sidebar({
         // Dropping on Inbox means filing there, which is a plain project move.
         return navItem('inbox', 'inbox', 'nav.inbox', counts.inbox,
           inboxId ? { kind: 'project', projectId: inboxId } : undefined);
+      case 'focus': return navItem('focus', 'deadline', 'nav.focus', 0);
       case 'today': return navItem('today', 'calendar', 'nav.today', counts.today, { kind: 'today' });
       case 'week': return navItem('week', 'week', 'nav.week', counts.week, { kind: 'anytime' });
       case 'upcoming': return navItem('upcoming', 'upcoming', 'nav.upcoming', counts.upcoming);

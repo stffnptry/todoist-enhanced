@@ -1230,6 +1230,16 @@ export const de: Record<TranslationKey, string> = {
 
   /* 1.1.1 */
   'nav.today': 'Heute',
+  'nav.focus': 'Fokus',
+  'focus.title': 'Fokus',
+  'focus.hint': 'Ein ruhiger Start in den Tag. Immer nur wenige Aufgaben.',
+  'focus.now': 'Fang hiermit an',
+  'focus.empty': 'Heute ist nichts fällig. Genieß den freien Raum.',
+  'focus.add': 'Aufgabe für heute hinzufügen',
+  'focus.restLabel': 'Überblick für heute',
+  'focus.todayCount': 'Heute fällig: {count}',
+  'focus.overdue': '{count} überfällig, warten auf einen neuen Termin',
+  'focus.replan': 'Überfälliges umplanen',
   'nav.weekHintUnified': 'Enthält die heutigen Aufgaben',
   'nav.weekHintSplit': 'Enthält die heutigen Aufgaben nicht',
   'settings.weekLayout': 'Heute und Meine Woche',

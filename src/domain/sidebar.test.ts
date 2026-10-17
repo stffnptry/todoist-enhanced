@@ -18,7 +18,8 @@ describe('readSidebarNav', () => {
       other: [{ id: 'labels', on: true }, { id: 'review', on: true }, { id: 'dashboard', on: true },
         { id: 'logbook', on: true }, { id: 'matrix', on: true }],
     });
-    expect(ids(nav.main)).toEqual(['week', 'inbox', 'today', 'upcoming', 'someday']);
+    // Focus was not in the stored list, so it comes back at the top of the block.
+    expect(ids(nav.main)).toEqual(['focus', 'week', 'inbox', 'today', 'upcoming', 'someday']);
     expect(nav.main.find((e) => e.id === 'inbox')?.on).toBe(false);
     expect(ids(nav.other)[0]).toBe('labels');
   });
@@ -44,7 +45,7 @@ describe('readSidebarNav', () => {
     const nav = readSidebarNav({ main: [{ id: 'review' }], other: [{ id: 'inbox' }] });
     const all = ids([...nav.main, ...nav.other]);
     expect(new Set(all).size).toBe(all.length);
-    expect(all).toHaveLength(12);
+    expect(all).toHaveLength(13);
     // Moved across blocks: it stays where the user put it.
     expect(ids(nav.main)).toContain('review');
     expect(ids(nav.other)).toContain('inbox');
