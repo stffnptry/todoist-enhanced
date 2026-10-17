@@ -51,6 +51,13 @@ describe('groupItems', () => {
     expect(keys('project')).toEqual(['inbox', 'home', 'site', 'work']);
   });
 
+  it('names a project in a Bereich after its Bereich, and a loose project by itself', () => {
+    const groups = groupItems(sorted, 'areaProject', snapshot, labels);
+    expect(groups.map((g) => g.key)).toEqual(['inbox', 'home', 'site', 'work']);
+    expect(groups.find((g) => g.key === 'site')!.title).toBe('folder · site');
+    expect(groups.find((g) => g.key === 'home')!.title).toBe('home');
+  });
+
   it('sorts the tasks inside each project', () => {
     const home = groupItems(sorted, 'project', snapshot, labels).find((g) => g.key === 'home')!;
     expect(home.items.map((task) => task.id)).toEqual(['h2', 'h1', 'h3']);

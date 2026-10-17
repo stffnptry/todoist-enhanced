@@ -319,6 +319,7 @@ export const en = {
   'group.weekOf': 'Week of {date}',
   'group.workspace': 'Workspace',
   'group.project': 'Project',
+  'group.areaProject': 'Area and project',
   'group.section': 'Section',
   'group.priority': 'Priority',
   'group.label': 'Tag',

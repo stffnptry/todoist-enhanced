@@ -372,6 +372,16 @@ export function groupItems(
         push(item.project_id, project?.name ?? labels.noProject, item);
         break;
       }
+      case 'areaProject': {
+        // Each project is its own group; the title says which Bereich it belongs to.
+        const project = snapshot.projects[item.project_id];
+        const area = project && topLevelProject(snapshot, project.id);
+        const title = project && area && area.id !== project.id
+          ? `${area.name} · ${project.name}`
+          : (project?.name ?? labels.noProject);
+        push(item.project_id, title, item);
+        break;
+      }
       case 'section': {
         const section = item.section_id ? snapshot.sections[item.section_id] : undefined;
         push(item.section_id ?? 'none', section?.name ?? labels.noSection, item);
@@ -437,9 +447,9 @@ export function groupItems(
   if (group === 'assignee') {
     result.sort((a, b) => a.key === 'none' ? (b.key === 'none' ? 0 : 1) : b.key === 'none' ? -1 : a.title.localeCompare(b.title) || a.key.localeCompare(b.key));
   }
-  if (group === 'project' || group === 'section' || group === 'workspace') {
+  if (group === 'project' || group === 'areaProject' || group === 'section' || group === 'workspace') {
     const rank = placeRanks(snapshot);
-    const place = group === 'project' ? rank.project : group === 'section' ? rank.section : rank.workspace;
+    const place = group === 'section' ? rank.section : group === 'workspace' ? rank.workspace : rank.project;
     result.sort((a, b) => place(a.key) - place(b.key) || a.title.localeCompare(b.title));
   } else if (group === 'priority') {
     result.sort((a, b) => a.key.localeCompare(b.key));
@@ -465,6 +475,17 @@ export function groupItems(
     });
   }
   return result;
+}
+
+/** The project at the top of a project's branch: its Bereich, or itself when it has none. */
+function topLevelProject(snapshot: Snapshot, id: string): Project | undefined {
+  let project = snapshot.projects[id];
+  const seen = new Set<string>();
+  while (project?.parent_id && snapshot.projects[project.parent_id] && !seen.has(project.id)) {
+    seen.add(project.id);
+    project = snapshot.projects[project.parent_id];
+  }
+  return project;
 }
 
 function bucketDateKey(date: Date, group: 'day' | 'week' | 'month'): string {

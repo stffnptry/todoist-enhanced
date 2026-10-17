@@ -321,6 +321,7 @@ export const fr: Record<TranslationKey, string> = {
   'group.weekOf': 'Semaine du {date}',
   'group.workspace': 'Espace de travail',
   'group.project': 'Projet',
+  'group.areaProject': 'Domaine et projet',
   'group.section': 'Section',
   'group.priority': 'Priorité',
   'group.label': 'Tag',

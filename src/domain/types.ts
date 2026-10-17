@@ -378,6 +378,8 @@ export type GroupKey =
   | 'month'
   | 'workspace'
   | 'project'
+  /** Bereich und Projekt: the project, named after the top-level Bereich it sits in. */
+  | 'areaProject'
   | 'section'
   | 'priority'
   | 'label'
