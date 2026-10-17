@@ -15,7 +15,7 @@ import { useStore } from '@/store/store';
 import { useConfirm } from '@/components/overlays/Confirm';
 import { viewPrefs } from '@/store/prefs';
 import { applyFilters, datedRoots, sortItems } from '@/store/selectors';
-import { bucketOf, byDay, groupWeek, restOfWeekItems, weekItems } from '@/domain/views';
+import { bucketOf, byDay, groupWeek, weekItems } from '@/domain/views';
 import { summariseLoad, weeklyCapacity } from '@/domain/load';
 import { formatDayHeading, toApiDate } from '@/domain/dates';
 import { dueForDate } from '@/domain/recurrence';
@@ -91,9 +91,7 @@ function WeekBody({
             const bucket = bucketOf(i, now);
             return bucket === 'overdue' || bucket === 'today';
           })
-        : scope === 'anytime'
-          ? restOfWeekItems(roots, now)
-          : weekItems(roots, now);
+        : weekItems(roots, now);
     return inScope;
   }, [items, snapshot, scope]);
   const scoped = useMemo(
@@ -188,7 +186,7 @@ function WeekBody({
         dropTarget: { kind: 'anytime' as const } },
     ];
     const columns =
-      scope === 'today' ? today : scope === 'anytime' ? anytime : [...today, ...anytime];
+      scope === 'today' ? today : [...today, ...anytime];
     return columns
       .filter((column) => column.items.length > 0 || column.dropTarget)
       .map((column) => {
@@ -207,7 +205,7 @@ function WeekBody({
   }, [groups, laterDays, prefs.showQuickGroup, current.sort, childrenOf, snapshot, t, scope]);
 
   /* Whether one of the groups below is drawn with its own "Add task" line. */
-  const hasAddLine = (scope !== 'anytime' && (
+  const hasAddLine = ((
     (prefs.showQuickGroup && groups.quick.length > 0) || groups.untimed.length > 0 || groups.timed.length > 0 || hireNoteOpen
   )) || (scope !== 'today' && (groups.anytime.length > 0 || groups.later.length > 0));
 
@@ -244,7 +242,6 @@ function WeekBody({
 
       {current.mode === 'list' && current.group === 'none' ? (
         <div className="mode">
-          {scope !== 'anytime' && (
           <>
           <TaskGroup
             title={t('group.overdue')}
@@ -302,7 +299,6 @@ function WeekBody({
             onAddTask={() => onAddTaskTo(placementFor({ kind: 'today' }))}
           />
           </>
-          )}
 
           {scope !== 'today' && laterDays.map((day) => (
             <TaskGroup
