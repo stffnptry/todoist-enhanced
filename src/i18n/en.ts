@@ -320,6 +320,8 @@ export const en = {
   'group.workspace': 'Workspace',
   'group.project': 'Project',
   'group.areaProject': 'Area and project',
+  'group.list': 'List',
+  'group.noList': 'No list',
   'group.section': 'Section',
   'group.priority': 'Priority',
   'group.label': 'Tag',

@@ -12,6 +12,7 @@ import type { RowOrder } from '@/domain/dnd';
 import { PREFERENCES_TASK_CONTENT } from './prefs';
 import { byChildOrder, byLabelOrder, bySectionOrder } from '@/domain/orderKey';
 import { inProjects } from '@/domain/projectQuick';
+import { listDisplayName, listOf } from '@/domain/lists';
 import { isHiddenLabel, statusOf, TASK_STATUSES, type TaskStatus } from '@/domain/kanban';
 
 /**
@@ -339,6 +340,8 @@ export function groupItems(
     noSection: string;
     noEstimate: string;
     noLabel: string;
+    /** The title of tasks that are in no list, when the page has a list grouping. */
+    noList?: string;
     unassigned?: string;
     unavailable?: string;
     priority: (p: number) => string;
@@ -380,6 +383,14 @@ export function groupItems(
           ? `${area.name} · ${project.name}`
           : (project?.name ?? labels.noProject);
         push(item.project_id, title, item);
+        break;
+      }
+      case 'list': {
+        // A task's list is its list-label inside its Bereich; without one it sits in no list.
+        const area = topLevelProject(snapshot, item.project_id);
+        const found = area ? listOf(item.labels, [area.name]) : null;
+        if (!area || !found) push('none', labels.noList ?? labels.noLabel, item);
+        else push(`${found.area}_${found.list}`, `${area.name} · ${listDisplayName(found.list)}`, item);
         break;
       }
       case 'section': {
@@ -451,6 +462,8 @@ export function groupItems(
     const rank = placeRanks(snapshot);
     const place = group === 'section' ? rank.section : group === 'workspace' ? rank.workspace : rank.project;
     result.sort((a, b) => place(a.key) - place(b.key) || a.title.localeCompare(b.title));
+  } else if (group === 'list') {
+    result.sort((a, b) => (a.key === 'none' ? 1 : b.key === 'none' ? -1 : a.title.localeCompare(b.title)));
   } else if (group === 'priority') {
     result.sort((a, b) => a.key.localeCompare(b.key));
   } else if (group === 'status') {

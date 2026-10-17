@@ -220,7 +220,7 @@ function WeekBody({
               viewKey={viewKey}
               pageItems={pool}
               modes={['list', 'board']}
-              groups={['none', 'project', 'areaProject', 'priority', 'label', 'estimate']}
+              groups={['none', 'project', 'areaProject', 'list', 'priority', 'label', 'estimate']}
             />
             <button className="btn accent" onClick={onInsights}>
               <Icon name="trend" />

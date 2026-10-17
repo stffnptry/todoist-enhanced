@@ -322,6 +322,8 @@ export const fr: Record<TranslationKey, string> = {
   'group.workspace': 'Espace de travail',
   'group.project': 'Projet',
   'group.areaProject': 'Domaine et projet',
+  'group.list': 'Liste',
+  'group.noList': 'Sans liste',
   'group.section': 'Section',
   'group.priority': 'Priorité',
   'group.label': 'Tag',
