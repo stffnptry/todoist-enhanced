@@ -9,6 +9,8 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon, type IconName } from './Icon';
 import { useT } from '@/hooks/useT';
+import { AreaAdd } from './AreaAdd';
+import { ListIcon } from './ListTitle';
 import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
 import { navigate, type Route } from '@/hooks/useRoute';
@@ -34,6 +36,7 @@ import { byChildOrder, byLabelOrder } from '@/domain/orderKey';
 import { visibleSidebarNav, type SidebarItemId } from '@/domain/sidebar';
 import { pointAnchor } from '@/lib/contextMenu';
 import { isHiddenLabel } from '@/domain/kanban';
+import { LIST_ORDER, areaTitle, listDisplayName, splitListName, type ListLabel } from '@/domain/lists';
 
 interface SidebarProps {
   route: Route;
@@ -185,6 +188,34 @@ export function Sidebar({
   }, [snapshot.labels, snapshot.projects, snapshot.filters]);
   const filterCounts = useFilterCounts(favourites.filters);
 
+  /*
+   * The Bereiche as drawn: each holds its lists. A list is a label (privat_geplant)
+   * or, on Todoist's free plan, a project (Claude_Eingang). Both show here by their
+   * plain names and are hidden from the other sections.
+   */
+  const areas = useMemo(() => {
+    type Row = { key: string; list: string; name: string; color: string; view: ViewId; id: string };
+    const byArea = new Map<string, Row[]>();
+    const add = (parts: ListLabel, row: Row) => {
+      byArea.set(parts.area, [...(byArea.get(parts.area) ?? []), row]);
+    };
+    for (const label of Object.values(snapshot.labels)) {
+      const parts = label.is_deleted ? null : splitListName(label.name);
+      if (parts) add(parts, { key: `label-${label.name}`, list: parts.list, name: listDisplayName(parts.list), color: label.color, view: 'label', id: label.name });
+    }
+    for (const project of Object.values(snapshot.projects)) {
+      const parts = project.is_archived || project.is_deleted ? null : splitListName(project.name);
+      if (parts) add(parts, { key: `project-${project.id}`, list: parts.list, name: listDisplayName(parts.list), color: project.color, view: 'project', id: project.id });
+    }
+    const rank = (area: string) => ['privat', 'arbeit', 'claude'].indexOf(area) + 1 || 99;
+    return [...byArea.entries()]
+      .sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
+      .map(([area, rows]) => ({
+        area,
+        rows: [...rows].sort((a, b) => LIST_ORDER.indexOf(a.list) - LIST_ORDER.indexOf(b.list)),
+      }));
+  }, [snapshot.labels, snapshot.projects]);
+
   /* A menu that only closes by pressing its own button is a menu that follows
      you around the app. Anywhere else, and Escape, put it away. */
   useEffect(() => {
@@ -205,6 +236,9 @@ export function Sidebar({
 
   const toggleGroup = (key: string) =>
     setOpenGroups((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
+
+  /* The area whose "+" was pressed; its add form stays open until it is closed. */
+  const [addingArea, setAddingArea] = useState<string | null>(null);
 
   const workspaceOrder = useStore((s) => s.prefs.workspaceOrder);
   const workspaces = useMemo(() => projectTree(snapshot, workspaceOrder), [snapshot, workspaceOrder]);
@@ -609,8 +643,39 @@ export function Sidebar({
           </SideGroup>
         )}
 
+        {areas.map(({ area, rows }) => {
+          const key = `area-${area}`;
+          return (
+            <SideGroup
+              key={key}
+              title={areaTitle(area)}
+              open={openGroups[key] ?? true}
+              onToggle={() => toggleGroup(key)}
+              onAdd={() => setAddingArea(addingArea === area ? null : area)}
+              addLabel={t('area.add')}
+            >
+              {rows.map((row) => (
+                <button
+                  key={row.key}
+                  className="navitem"
+                  aria-current={route.view === row.view && route.id === row.id ? 'page' : undefined}
+                  onClick={() => navigate(row.view, row.id)}
+                >
+                  <ListIcon list={row.list} />
+                  <span className="label">{row.name}</span>
+                </button>
+              ))}
+              {addingArea === area && <AreaAdd area={area} onClose={() => setAddingArea(null)} />}
+            </SideGroup>
+          );
+        })}
+
         {workspaces.map((workspace) => {
           const key = workspace.workspaceId ?? 'personal';
+          const projects = workspace.roots.filter((node) => !splitListName(node.project.name));
+          /* On the personal workspace the lists are the content; an empty "Meine
+             Projekte" heading under them is noise. Team workspaces keep theirs. */
+          if (!workspace.workspaceId && projects.length === 0) return null;
           return (
             <SideGroup
               key={key}
@@ -625,7 +690,7 @@ export function Sidebar({
               addLabel={t('nav.addProject')}
             >
               {workspace.roots.length > 0
-                ? workspace.roots.map((node) => projectNode(node))
+                ? projects.map((node) => projectNode(node))
                 : <p className="side-empty">{t('nav.noProjectsYet')}</p>}
             </SideGroup>
           );

@@ -380,6 +380,10 @@ export type GroupKey =
   | 'month'
   | 'workspace'
   | 'project'
+  /** Bereich und Projekt: the project, named after the top-level Bereich it sits in. */
+  | 'areaProject'
+  /** Liste: the Bereich and list a task's list-label names, e.g. Privat · Geplante Aufgaben. */
+  | 'list'
   | 'section'
   | 'priority'
   | 'label'

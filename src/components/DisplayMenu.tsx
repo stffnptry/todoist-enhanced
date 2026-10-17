@@ -48,7 +48,7 @@ const MODE_ICON: Record<DisplayMode, IconName> = {
 /** An icon for every grouping and sort, so the list reads at a glance. */
 const GROUP_ICON: Partial<Record<GroupKey, IconName>> = {
   none: 'list', scheduled: 'calendar', day: 'calendar', week: 'week', month: 'calendar',
-  assignee: 'user', workspace: 'project', project: 'project', section: 'section', priority: 'flag',
+  assignee: 'user', workspace: 'project', project: 'project', areaProject: 'project', list: 'tag', section: 'section', priority: 'flag',
   label: 'tag', estimate: 'clock', status: 'board',
 };
 const SORT_ICON: Record<SortKey, IconName> = {

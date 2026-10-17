@@ -12,6 +12,7 @@ import type { RowOrder } from '@/domain/dnd';
 import { PREFERENCES_TASK_CONTENT } from './prefs';
 import { byChildOrder, byLabelOrder, bySectionOrder } from '@/domain/orderKey';
 import { inProjects } from '@/domain/projectQuick';
+import { listDisplayName, listOf } from '@/domain/lists';
 import { isHiddenLabel, statusOf, TASK_STATUSES, type TaskStatus } from '@/domain/kanban';
 
 /**
@@ -339,6 +340,8 @@ export function groupItems(
     noSection: string;
     noEstimate: string;
     noLabel: string;
+    /** The title of tasks that are in no list, when the page has a list grouping. */
+    noList?: string;
     unassigned?: string;
     unavailable?: string;
     priority: (p: number) => string;
@@ -370,6 +373,24 @@ export function groupItems(
       case 'project': {
         const project: Project | undefined = snapshot.projects[item.project_id];
         push(item.project_id, project?.name ?? labels.noProject, item);
+        break;
+      }
+      case 'areaProject': {
+        // Each project is its own group; the title says which Bereich it belongs to.
+        const project = snapshot.projects[item.project_id];
+        const area = project && topLevelProject(snapshot, project.id);
+        const title = project && area && area.id !== project.id
+          ? `${area.name} · ${project.name}`
+          : (project?.name ?? labels.noProject);
+        push(item.project_id, title, item);
+        break;
+      }
+      case 'list': {
+        // A task's list is its list-label inside its Bereich; without one it sits in no list.
+        const area = topLevelProject(snapshot, item.project_id);
+        const found = area ? listOf(item.labels, [area.name]) : null;
+        if (!area || !found) push('none', labels.noList ?? labels.noLabel, item);
+        else push(`${found.area}_${found.list}`, `${area.name} · ${listDisplayName(found.list)}`, item);
         break;
       }
       case 'section': {
@@ -429,7 +450,12 @@ export function groupItems(
     }
   }
 
-  const result = [...buckets.entries()].map(([key, value]) => ({ key, ...value }));
+  const result = [...buckets.entries()].map(([key, value]) => {
+    /* A list or project's title says how far along it is: done of all its tasks. */
+    if (group !== 'list' || key === 'none') return { key, ...value };
+    const done = value.items.filter((task) => task.checked).length;
+    return { key, ...value, title: `${value.title} · ${done}/${value.items.length}` };
+  });
   /* Groups keep their own order, whatever the sort: the sort is for the tasks
      inside each group. Taken from the order the tasks arrived in, the groups
      followed the sort — sorted by priority, the project holding a P1 jumped
@@ -437,10 +463,12 @@ export function groupItems(
   if (group === 'assignee') {
     result.sort((a, b) => a.key === 'none' ? (b.key === 'none' ? 0 : 1) : b.key === 'none' ? -1 : a.title.localeCompare(b.title) || a.key.localeCompare(b.key));
   }
-  if (group === 'project' || group === 'section' || group === 'workspace') {
+  if (group === 'project' || group === 'areaProject' || group === 'section' || group === 'workspace') {
     const rank = placeRanks(snapshot);
-    const place = group === 'project' ? rank.project : group === 'section' ? rank.section : rank.workspace;
+    const place = group === 'section' ? rank.section : group === 'workspace' ? rank.workspace : rank.project;
     result.sort((a, b) => place(a.key) - place(b.key) || a.title.localeCompare(b.title));
+  } else if (group === 'list') {
+    result.sort((a, b) => (a.key === 'none' ? 1 : b.key === 'none' ? -1 : a.title.localeCompare(b.title)));
   } else if (group === 'priority') {
     result.sort((a, b) => a.key.localeCompare(b.key));
   } else if (group === 'status') {
@@ -465,6 +493,17 @@ export function groupItems(
     });
   }
   return result;
+}
+
+/** The project at the top of a project's branch: its Bereich, or itself when it has none. */
+function topLevelProject(snapshot: Snapshot, id: string): Project | undefined {
+  let project = snapshot.projects[id];
+  const seen = new Set<string>();
+  while (project?.parent_id && snapshot.projects[project.parent_id] && !seen.has(project.id)) {
+    seen.add(project.id);
+    project = snapshot.projects[project.parent_id];
+  }
+  return project;
 }
 
 function bucketDateKey(date: Date, group: 'day' | 'week' | 'month'): string {
