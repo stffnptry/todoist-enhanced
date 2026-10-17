@@ -320,6 +320,7 @@ export const en = {
   'group.workspace': 'Workspace',
   'group.project': 'Project',
   'group.areaProject': 'Area and project',
+  'area.addProject': 'Add project',
   'area.addList': 'Add list',
   'area.listName': 'List name',
   'area.projectName': 'Project name',

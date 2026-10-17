@@ -322,6 +322,7 @@ export const de: Record<TranslationKey, string> = {
   'group.workspace': 'Workspace',
   'group.project': 'Projekt',
   'group.areaProject': 'Bereich und Projekt',
+  'area.addProject': 'Projekt hinzufügen',
   'area.addList': 'Liste hinzufügen',
   'area.listName': 'Listenname',
   'area.projectName': 'Projektname',

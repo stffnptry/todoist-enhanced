@@ -66,7 +66,7 @@ describe('groupItems', () => {
     ];
     const groups = groupItems(tagged, 'list', snapshot, { ...labels, noList: 'Ohne Liste' });
     expect(groups.map((g) => [g.key, g.title])).toEqual([
-      ['folder_geplant', 'folder · Geplante Aufgaben'],
+      ['folder_geplant', 'folder · Geplante Aufgaben · 0/1'],
       ['none', 'Ohne Liste'],
     ]);
     expect(groups[1].items.map((t) => t.id)).toEqual(['b', 'c']);

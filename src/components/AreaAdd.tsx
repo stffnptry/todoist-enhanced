@@ -1,18 +1,17 @@
 import { useState, type FormEvent } from 'react';
 import { useT } from '@/hooks/useT';
 import { useCreateList } from '@/hooks/useCreateList';
-import { useStore } from '@/store/store';
 import type { Project } from '@/domain/types';
 
 /**
  * Unter einem Bereich: eine neue Liste oder ein neues Projekt anlegen.
  *
- * Eine Liste wird ein Label im Bereich („privat_einkauf“), ein Projekt wird
- * ein Todoist-Projekt, das im Ordner des Bereichs liegt.
+ * Beides wird ein Label im Bereich („privat_einkauf“). Todoist-Projekte legt
+ * die App hier nicht an: Der kostenlose Tarif hat nur fünf davon, und die sind
+ * belegt.
  */
 export function AreaAdd({ area }: { area: Project }) {
   const { t } = useT();
-  const createProject = useStore((s) => s.createProject);
   const [mode, setMode] = useState<'list' | 'project' | null>(null);
   const [name, setName] = useState('');
   const list = useCreateList(area.name, name);
@@ -24,26 +23,19 @@ export function AreaAdd({ area }: { area: Project }) {
     event.preventDefault();
     const trimmed = name.trim();
     if (!trimmed || busy) return;
-    if (mode === 'list') {
-      if (await list.create()) close();
-      return;
-    }
-    if (mode === 'project') {
-      await createProject(trimmed, 'charcoal', area.workspace_id ?? null, null, { parentId: area.id });
-      close();
-    }
+    if (await list.create()) close();
   }
 
   if (!mode) {
     return (
       <div className="area-add">
         <button className="navitem area-addbtn" onClick={() => setMode('list')}>{t('area.addList')}</button>
-        <button className="navitem area-addbtn" onClick={() => setMode('project')}>{t('nav.addProject')}</button>
+        <button className="navitem area-addbtn" onClick={() => setMode('project')}>{t('area.addProject')}</button>
       </div>
     );
   }
 
-  const invalid = mode === 'list' && name.trim() !== '' && !list.label;
+  const invalid = name.trim() !== '' && !list.label;
   return (
     <form className="area-add" onSubmit={submit}>
       <input

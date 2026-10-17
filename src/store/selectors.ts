@@ -450,7 +450,12 @@ export function groupItems(
     }
   }
 
-  const result = [...buckets.entries()].map(([key, value]) => ({ key, ...value }));
+  const result = [...buckets.entries()].map(([key, value]) => {
+    /* A list or project's title says how far along it is: done of all its tasks. */
+    if (group !== 'list' || key === 'none') return { key, ...value };
+    const done = value.items.filter((task) => task.checked).length;
+    return { key, ...value, title: `${value.title} · ${done}/${value.items.length}` };
+  });
   /* Groups keep their own order, whatever the sort: the sort is for the tasks
      inside each group. Taken from the order the tasks arrived in, the groups
      followed the sort — sorted by priority, the project holding a P1 jumped
