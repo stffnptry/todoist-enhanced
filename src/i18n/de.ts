@@ -725,7 +725,7 @@ export const de: Record<TranslationKey, string> = {
   'macApp.moreDetails': 'Details auf GitHub',
   'macApp.lineLink': 'Herunterladen und installieren',
   'macApp.title': 'Mac-App',
-  'macApp.about': 'Ein Fenster für Enhanced for Todoist auf deinem Mac. Drücke ⇧⌃⌥⌘T (Umschalt + Control + Wahl + Befehl + T) über jeder App, um eine Aufgabe hinzuzufügen, ohne einen Browser zu öffnen.',
+  'macApp.about': 'Ein Fenster für Enhanced for Todoist auf deinem Mac. Drücke ⇧⌃⌥⌘E (Umschalt + Control + Wahl + Befehl + E) über jeder App, um eine Aufgabe hinzuzufügen, ohne einen Browser zu öffnen.',
   'macApp.download': 'Für Mac herunterladen',
   'macApp.appleSilicon': 'Apple Silicon (M1 und neuer)',
   'macApp.intel': 'Intel',
