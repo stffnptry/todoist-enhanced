@@ -2168,27 +2168,15 @@ html.reduce-transparency .claudepanel,html.more-contrast .claudepanel{box-shadow
 .arearow .pagemenu .iconbtn[aria-expanded='true'] { opacity: 1; }
 
 /* ---------- Mac-App: Fenster verschieben ----------
-   Die Zieh-Leiste oben (theme.css) war 28 px hoch; sichtbar davon war nur der
-   12 px schmale Rand über der Seite – schwer zu treffen. Jetzt reicht sie bis
-   zum Inhalt der Seitenleiste (44 px) und damit über den leeren Kopf der Seite.
-   Sie liegt hinter dem Inhalt: Ob das Fenster gezogen wird, entscheidet allein
-   app-region (unabhängig von der Stapelreihenfolge), Klicks auf Knöpfe darunter
-   kommen so aber an. Bedienelemente nehmen sich überall aus der Leiste aus.
+   Das Ziehen steuert die Mac-App selbst (preload.js/main.js der Hülle): Maus
+   gedrückt im Kopf → das Fenster folgt dem Zeiger. Die CSS-Zieh-Flächen
+   (app-region) griffen am Mac nur unzuverlässig und würden die Maus vor der
+   Seite abfangen; deshalb hier abgeschaltet. Die Leiste aus theme.css liegt
+   hinter dem Inhalt, damit sie keine Klicks schluckt.
    (:not(.quickadd) nur, um theme.css zu überstimmen, das später geladen wird.) */
-html.desktop-app:not(.quickadd) body::before { height: 44px; z-index: -1; }
-/* Dazu der ganze Kopf: die Zeile mit Profil in der Seitenleiste und die
-   Titelzeile der Seite (Titel bis zu den Knöpfen „Anzeige“/„Statistiken“). */
-html.desktop-app:not(.quickadd) :is(.sidebar .side-top, .page .phead) {
-  -webkit-app-region: drag;
-  app-region: drag;
-}
-html.desktop-app :is(
-  .menu, [role='menu'], [role='dialog'], [role='listbox'],
-  button, a[href], input, textarea, select, label, summary,
-  [role='button'], [role='tab'], [role='menuitem'], [role='checkbox'],
-  [role='switch'], [role='option'], [role='link'],
-  [contenteditable]:not([contenteditable='false']), [draggable='true']
-) {
+html.desktop-app:not(.quickadd) body::before {
+  height: 44px;
+  z-index: -1;
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
