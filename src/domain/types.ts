@@ -365,6 +365,8 @@ export type ViewId =
   | 'matrix'
   /** The desktop app's calendar: the Mac's calendars beside the week's tasks. */
   | 'calendar'
+  /** Rückblick auf einen Zeitraum: Statistik, Umgeplantes, Learnings, Export. */
+  | 'report'
   | 'insights';
 
 export type DisplayMode = 'list' | 'board' | 'focus';

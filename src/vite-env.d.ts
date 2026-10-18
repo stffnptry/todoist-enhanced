@@ -27,6 +27,12 @@ interface Window {
       /** Eine .eml-Datei lesen, deren Pfad auf der Drag-Ablage lag. */
       readEml: (file: string) => Promise<{ ok: boolean; error?: string; text?: string }>;
     };
+    /** Report exportieren (views/ReportView.tsx): Sichern-Dialog, dann Datei; PDF per printToPDF. */
+    report?: {
+      saveMarkdown: (name: string, content: string) => Promise<{ ok: boolean; path?: string; cancelled?: boolean }>;
+      savePdf: (name: string, html: string) => Promise<{ ok: boolean; path?: string; cancelled?: boolean }>;
+      reveal: (file: string) => Promise<void>;
+    };
     /** Claude through the Claude CLI on this Mac (newer desktop builds only). */
     claude?: {
       available: () => Promise<boolean>;

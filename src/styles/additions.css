@@ -2240,3 +2240,46 @@ html.desktop-app :is(
   font-size: 0.6875rem; font-weight: 600; color: var(--accent-dark, var(--accent));
   padding: 1px 6px; border-radius: 999px; background: var(--accent-soft, transparent);
 }
+
+/* ---------- Report (views/ReportView.tsx) ---------- */
+.report-rangebar{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+.report-quick{display:flex;flex-wrap:wrap;gap:6px}
+.report-rangeline{display:flex;flex-wrap:wrap;align-items:center;gap:12px;min-height:32px}
+.report-rangeline .pagerlabel{font-weight:600;color:var(--text)}
+/* Kennzahlen als Kacheln in einer Reihe, auf schmalen Fenstern umbrechend. */
+.report-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--s3);margin-top:var(--s4)}
+.report-kpis .stat{border:1px solid var(--border);border-radius:var(--r-lg,12px);padding:12px 14px;background:var(--surface,transparent)}
+.report-page .card h3{margin:0 0 10px}
+.report-analysis p{margin:0;line-height:1.6;color:var(--text);font-size:var(--fs-14,14px)}
+.report-learnings{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px}
+.report-learning{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;border-left:3px solid var(--border-strong);background:var(--btn-soft)}
+.report-learning{font-size:var(--fs-13,13px)}
+.report-learning p{margin:3px 0 0;color:var(--muted);line-height:1.5;font-size:inherit}
+.report-learning svg{flex:0 0 auto;margin-top:2px}
+.report-learning.warn{border-left-color:#d9822b}
+.report-learning.warn svg{color:#d9822b}
+.report-learning.good{border-left-color:#2e9e5b}
+.report-learning.good svg{color:#2e9e5b}
+.report-learning.tip{border-left-color:var(--accent)}
+.report-learning.tip svg{color:var(--accent)}
+.report-table{width:100%;border-collapse:collapse;font-size:var(--fs-13,13px)}
+.report-table th,.report-table td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+.report-table th{color:var(--muted);font-weight:600;font-size:var(--fs-12)}
+.report-table .n{text-align:right;white-space:nowrap;width:1%}
+.report-reasons{color:var(--muted)}
+.report-count{display:inline-block;min-width:28px;padding:1px 7px;border-radius:var(--r-full);background:var(--btn-soft);text-align:center;font-weight:600}
+.report-count.hot{background:#fdebd8;color:#a35a12}
+.report-state{font-size:var(--fs-12);color:var(--muted)}
+.report-state.done{color:#2e9e5b}
+.report-link{background:none;border:0;padding:0;color:var(--text);text-align:left;cursor:pointer;font:inherit}
+.report-link:hover{color:var(--accent);text-decoration:underline}
+.report-plain{list-style:none;margin:0;padding:0;display:grid;gap:5px;font-size:var(--fs-13)}
+.report-plain .muted{color:var(--muted)}
+.report-tick{color:#2e9e5b}
+.report-done summary{cursor:pointer;list-style:none}
+.report-done summary::-webkit-details-marker{display:none}
+.report-done summary h3{display:inline}
+.report-done summary::after{content:" ▸";color:var(--muted)}
+.report-done[open] summary::after{content:" ▾"}
+.report-note{margin-top:var(--s4)}
+[data-theme="dark"] .report-count.hot{background:#4a2e12;color:#f0b47a}

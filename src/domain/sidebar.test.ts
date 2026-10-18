@@ -38,14 +38,14 @@ describe('readSidebarNav', () => {
     const nav = readSidebarNav({
       other: [{ id: 'review', on: true }, { id: 'dashboard', on: true }, { id: 'matrix', on: true }, { id: 'labels', on: true }],
     });
-    expect(ids(nav.other)).toEqual(['review', 'calendar', 'dashboard', 'logbook', 'matrix', 'labels', 'filters']);
+    expect(ids(nav.other)).toEqual(['review', 'calendar', 'dashboard', 'logbook', 'report', 'matrix', 'labels', 'filters']);
   });
 
   it('lists every entry exactly once, whatever it is given', () => {
     const nav = readSidebarNav({ main: [{ id: 'review' }], other: [{ id: 'inbox' }] });
     const all = ids([...nav.main, ...nav.other]);
     expect(new Set(all).size).toBe(all.length);
-    expect(all).toHaveLength(13);
+    expect(all).toHaveLength(14);
     // Moved across blocks: it stays where the user put it.
     expect(ids(nav.main)).toContain('review');
     expect(ids(nav.other)).toContain('inbox');

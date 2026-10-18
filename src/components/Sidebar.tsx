@@ -341,6 +341,7 @@ export function Sidebar({
       case 'logbook':
         return navItem('insights', 'tasks', 'insights.logbook', 0, undefined,
           { id: 'logbook', current: insightsOnLogbook });
+      case 'report': return navItem('report', 'file', 'nav.report', 0);
       case 'matrix': return navItem('matrix', 'dashboard', 'nav.matrix', 0);
       case 'labels': return navItem('labels', 'tag', 'nav.labels', 0);
       case 'filters':

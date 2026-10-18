@@ -27,6 +27,7 @@ import { ProjectView } from './views/ProjectView';
 import { LabelsView } from './views/LabelsView';
 import { FiltersView } from './views/FiltersView';
 import { InsightsView } from './views/InsightsView';
+import { ReportView } from './views/ReportView';
 import { ReviewView } from './views/ReviewView';
 import { SettingsView } from './views/SettingsView';
 import { EisenhowerView } from './views/EisenhowerView';
@@ -893,6 +894,7 @@ function AppShell({
           {route.view === 'review' && <ReviewView onOpen={openTask} />}
           {route.view === 'calendar' && <CalendarView onOpen={openTask} onAddTask={addTaskTo} />}
           {route.view === 'insights' && <InsightsView onOpen={openTask} />}
+          {route.view === 'report' && <ReportView onOpen={openTask} />}
           {route.view === 'settings' && <SettingsView />}
         </section>
 

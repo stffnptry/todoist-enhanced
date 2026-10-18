@@ -22,6 +22,7 @@ export const ENTRY: Record<SidebarItemId, { icon: IconName; label: TranslationKe
   calendar: { icon: 'calendar', label: 'nav.calendar' },
   dashboard: { icon: 'trend', label: 'nav.dashboard' },
   logbook: { icon: 'tasks', label: 'insights.logbook' },
+  report: { icon: 'file', label: 'nav.report' },
   matrix: { icon: 'dashboard', label: 'nav.matrix' },
   labels: { icon: 'tag', label: 'nav.labels' },
   filters: { icon: 'filter', label: 'nav.filters' },

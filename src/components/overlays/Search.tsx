@@ -102,6 +102,8 @@ export function Search({ open, onClose, onOpen, seed = '' }: SearchProps) {
         run: go(() => navigate('insights')) },
       { key: 'go-logbook', icon: 'tasks', title: t('insights.logbook'),
         run: go(() => navigate('insights', 'logbook')) },
+      { key: 'go-report', icon: 'file', title: t('nav.report'),
+        run: go(() => navigate('report')) },
       { key: 'go-settings', icon: 'settings', title: t('nav.settings'),
         run: go(() => navigate('settings')) },
     ];
