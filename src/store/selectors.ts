@@ -11,7 +11,7 @@ import { bucketOf, hasLabel, isOpen, splitQuick } from '@/domain/views';
 import type { RowOrder } from '@/domain/dnd';
 import { PREFERENCES_TASK_CONTENT } from './prefs';
 import { byChildOrder, byLabelOrder, bySectionOrder } from '@/domain/orderKey';
-import { inProjects } from '@/domain/projectQuick';
+import { chosenAreas, inAreas } from '@/domain/projectQuick';
 import { listDisplayName, listOf } from '@/domain/lists';
 import { isHiddenLabel, statusOf, TASK_STATUSES, type TaskStatus } from '@/domain/kanban';
 
@@ -93,10 +93,11 @@ export function applyFilters(
   snapshot: Snapshot,
   childrenOf: (id: string) => Item[],
 ): Item[] {
+  const areas = chosenAreas(filters.projects);
   return items.filter((item) => {
     if (!matchesAssignee(item, filters.assignees, snapshot)) return false;
-    /* Ein gewähltes Projekt schließt seine Unterprojekte ein (Schnellfilter im Seitenkopf). */
-    if (filters.projects.length > 0 && !inProjects(snapshot, item.project_id, filters.projects)) return false;
+    /* Schnellfilter im Seitenkopf: nur die gewählten Bereiche (Privat, Arbeit, Claude). */
+    if (areas.length > 0 && !inAreas(item, snapshot, areas)) return false;
 
     if (filters.workspaces.length > 0) {
       const workspaceId = snapshot.projects[item.project_id]?.workspace_id ?? null;
@@ -128,7 +129,7 @@ export function applyFilters(
 export function countActiveFilters(filters: ViewFilters): number {
   let count = 0;
   if (filters.assignees != null) count += 1;
-  if (filters.projects.length) count += 1;
+  if (chosenAreas(filters.projects).length) count += 1;
   if (filters.workspaces.length) count += 1;
   if (filters.labels.length) count += 1;
   if (filters.priorities.length) count += 1;

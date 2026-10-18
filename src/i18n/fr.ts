@@ -1440,9 +1440,9 @@ export const fr: Record<TranslationKey, string> = {
 
   /* 1.19 — J'ai du temps (#159) */
   'time.pill': 'J’ai du temps',
-  'pquick.label': 'Filtrer par projet',
+  'pquick.label': 'Filtrer par domaine',
   'pquick.all': 'Tous',
-  'pquick.hint': 'Afficher seulement « {name} » (cliquer d’autres projets pour les ajouter)',
+  'pquick.hint': 'Afficher seulement « {name} » (cliquer d’autres domaines pour les ajouter)',
   'time.sort': 'Ordre',
   'time.sortDuration': 'Plus court d’abord',
   'time.sortPriority': 'Priorité d’abord',

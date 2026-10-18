@@ -1442,9 +1442,9 @@ export const de: Record<TranslationKey, string> = {
 
   /* 1.19 — I have time (#159) */
   'time.pill': 'Ich habe Zeit',
-  'pquick.label': 'Nach Projekt filtern',
+  'pquick.label': 'Nach Bereich filtern',
   'pquick.all': 'Alle',
-  'pquick.hint': 'Nur „{name}“ zeigen (Klick auf weitere Projekte nimmt sie dazu)',
+  'pquick.hint': 'Nur „{name}“ zeigen (Klick auf weitere Bereiche nimmt sie dazu)',
   'time.sort': 'Reihenfolge',
   'time.sortDuration': 'Kürzeste zuerst',
   'time.sortPriority': 'Priorität zuerst',

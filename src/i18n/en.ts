@@ -1440,9 +1440,9 @@ export const en = {
 
   /* 1.19 — I have time (#159) */
   'time.pill': 'I have time',
-  'pquick.label': 'Filter by project',
+  'pquick.label': 'Filter by area',
   'pquick.all': 'All',
-  'pquick.hint': 'Show only “{name}” (click more projects to add them)',
+  'pquick.hint': 'Show only “{name}” (click more areas to add them)',
   'time.sort': 'Order',
   'time.sortDuration': 'Shortest first',
   'time.sortPriority': 'Priority first',
