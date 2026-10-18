@@ -11,7 +11,11 @@ interface Window {
   enhancedDesktop?: {
     hideQuickAdd: () => void;
     /** Hands the app the notifications to show for due tasks (newer desktop builds only). */
-    setReminders?: (list: Array<{ key: string; itemId: string; at: number; title: string; body: string }>) => void;
+    setReminders?: (list: Array<{
+      key: string; itemId: string; at: number; title: string; body: string;
+      /** Labels of the buttons, in the order done, +15 min, +1 hour; then the close button. */
+      actions?: string[]; closeText?: string;
+    }>) => void;
     /** The Mac's calendars, through the desktop app's EventKit helper (newer desktop builds only). */
     calendar?: (command: string, input?: Record<string, unknown>) => Promise<{ ok: boolean; error?: string; [key: string]: unknown }>;
     /** E-Mails als Aufgaben (components/MailDrop.tsx; neuere Mac-App-Versionen). */

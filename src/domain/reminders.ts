@@ -1,6 +1,7 @@
 import { parseISO } from 'date-fns';
-import type { Item, Snapshot } from './types';
-import { hasTime } from './dates';
+import type { Item, Snapshot, TodoistDue } from './types';
+import { hasTime, toApiDateTime } from './dates';
+import { dueForDate } from './recurrence';
 
 /**
  * When the desktop app should put up a notification, worked out from the
@@ -78,4 +79,19 @@ export function upcomingReminders(
   }
 
   return out.sort((a, b) => a.at - b.at);
+}
+
+/** What the buttons on a notification can do with its task. */
+export type ReminderAction = 'done' | 'snooze15' | 'snooze60';
+
+export const SNOOZE_MINUTES: Record<Exclude<ReminderAction, 'done'>, number> = { snooze15: 15, snooze60: 60 };
+
+/**
+ * Where "later" on a notification puts a task: that many minutes from now,
+ * rounded up to the whole minute. A repeating task keeps its rule, the way a
+ * drag in the calendar keeps it.
+ */
+export function snoozedDue(due: TodoistDue | null, now: number, minutes: number): TodoistDue {
+  const at = Math.ceil((now + minutes * 60_000) / 60_000) * 60_000;
+  return dueForDate(due, toApiDateTime(new Date(at)));
 }

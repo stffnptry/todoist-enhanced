@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GRACE_MS, plainTitle, upcomingReminders } from './reminders';
+import { GRACE_MS, plainTitle, snoozedDue, upcomingReminders } from './reminders';
 import type { Item, Reminder, Snapshot } from './types';
 import { item } from '@/test/items';
 
@@ -75,5 +75,18 @@ describe('desktop notifications for due tasks', () => {
 
   it('shows the words of a title, not its formatting', () => {
     expect(plainTitle('**Read** [the brief](https://example.com) _today_')).toBe('Read the brief today');
+  });
+});
+
+describe('later, from a notification', () => {
+  it('moves the task to now plus the minutes, on the minute', () => {
+    const due = snoozedDue(timed('2026-10-14T09:30:00'), now + 20_000, 15);
+    expect(due).toMatchObject({ date: '2026-10-14T10:16:00', string: '2026-10-14T10:16:00', is_recurring: false });
+    expect(snoozedDue(null, now, 60).date).toBe('2026-10-14T11:00:00');
+  });
+
+  it('keeps the rule of a repeating task', () => {
+    const due = snoozedDue({ ...timed('2026-10-14T09:30:00'), string: 'every day at 9:30', is_recurring: true }, now, 60);
+    expect(due).toMatchObject({ date: '2026-10-14T11:00:00', string: 'every day at 9:30', is_recurring: true });
   });
 });
