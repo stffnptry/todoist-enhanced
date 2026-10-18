@@ -2166,3 +2166,22 @@ html.reduce-transparency .claudepanel,html.more-contrast .claudepanel{box-shadow
 .arearow:hover .pagemenu .iconbtn,
 .arearow:focus-within .pagemenu .iconbtn,
 .arearow .pagemenu .iconbtn[aria-expanded='true'] { opacity: 1; }
+
+/* ---------- Mac-App: Fenster verschieben ----------
+   Die Zieh-Leiste oben (theme.css) war 28 px hoch; sichtbar davon war nur der
+   12 px schmale Rand über der Seite – schwer zu treffen. Jetzt reicht sie bis
+   zum Inhalt der Seitenleiste (44 px) und damit über den leeren Kopf der Seite.
+   Sie liegt hinter dem Inhalt: Ob das Fenster gezogen wird, entscheidet allein
+   app-region (unabhängig von der Stapelreihenfolge), Klicks auf Knöpfe darunter
+   kommen so aber an. Bedienelemente nehmen sich überall aus der Leiste aus.
+   (:not(.quickadd) nur, um theme.css zu überstimmen, das später geladen wird.) */
+html.desktop-app:not(.quickadd) body::before { height: 44px; z-index: -1; }
+html.desktop-app :is(
+  button, a[href], input, textarea, select, label, summary,
+  [role='button'], [role='tab'], [role='menuitem'], [role='checkbox'],
+  [role='switch'], [role='option'], [role='link'],
+  [contenteditable]:not([contenteditable='false']), [draggable='true']
+) {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
