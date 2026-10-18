@@ -1,5 +1,5 @@
 import { HireNote } from '@/components/HireNote';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { ProjectQuickFilter } from '@/components/ProjectQuickFilter';
 import { SubtasksProvider } from '@/components/TaskRow';
@@ -13,6 +13,7 @@ import { useTimePill } from '@/hooks/useTimePill';
 import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
 import { useConfirm } from '@/components/overlays/Confirm';
+import { ReplanDialog } from '@/components/overlays/ReplanDialog';
 import { viewPrefs } from '@/store/prefs';
 import { applyFilters, datedRoots, sortItems } from '@/store/selectors';
 import { bucketOf, byDay, groupWeek, weekItems } from '@/domain/views';
@@ -119,6 +120,17 @@ function WeekBody({
     [scoped, childrenOf, capacity],
   );
 
+  /* „Neu planen“ geht die Seite in der Reihenfolge durch, in der sie
+     gezeichnet ist: erst Überfälliges, dann Schnelles, ohne und mit Uhrzeit. */
+  const [replanOpen, setReplanOpen] = useState(false);
+  const replanItems = useMemo(() => {
+    if (scope !== 'today') return [];
+    const seen = new Set<string>();
+    return [groups.overdue, groups.quick, groups.untimed, groups.timed]
+      .flatMap((list) => sortItems(list, current.sort, childrenOf, 'day', snapshot, true))
+      .filter((item) => !seen.has(item.id) && !!seen.add(item.id));
+  }, [scope, groups, current.sort, childrenOf, snapshot]);
+
   async function rescheduleOverdue() {
     const affected = groups.overdue;
     if (affected.length === 0) return;
@@ -216,6 +228,12 @@ function WeekBody({
         title={t(scope === 'today' ? 'nav.today' : 'nav.week')}
         actions={
           <>
+            {scope === 'today' && (
+              <button className="btn" onClick={() => setReplanOpen(true)} title={t('replan.title')}>
+                <Icon name="calendar" />
+                {t('replan.button')}
+              </button>
+            )}
             <DisplayMenu
               viewKey={viewKey}
               pageItems={pool}
@@ -372,6 +390,9 @@ function WeekBody({
             return place && (() => onAddTaskTo(place));
           }}
         />
+      )}
+      {scope === 'today' && (
+        <ReplanDialog open={replanOpen} onClose={() => setReplanOpen(false)} items={replanItems} />
       )}
     </div>
   );

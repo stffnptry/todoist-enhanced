@@ -2185,3 +2185,51 @@ html.desktop-app :is(
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
+
+/* ---------- Neu planen (Heute, Fokus) ----------
+   Eine Aufgabe nach der anderen: oben die Aufgabe, darunter drei gleich große
+   Knöpfe; beim Umplanen Schnellwahl, Datum/Uhrzeit und der Pflicht-Grund. */
+.focus-titleline { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.focus-titleline h1 { margin: 0; }
+.focus-head h1 { margin-bottom: 0.25rem; }
+.replan-progress { margin-left: 10px; font-size: var(--fs-12, 0.75rem); font-weight: 400; color: var(--muted); }
+.replan-body { display: grid; gap: 16px; }
+.replan-task {
+  padding: 12px 14px; border-radius: 10px;
+  background: var(--btn-soft, rgba(127,127,127,.08));
+}
+.replan-name { margin: 0; font-size: 1rem; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.replan-meta { margin: 6px 0 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.8125rem; color: var(--muted); }
+.replan-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.replan-meta .late { color: var(--late-dark, #d1453b); }
+.replan-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.replan-choices .btn.replan-choice {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; height: auto; min-height: 72px; padding: 10px 6px;
+}
+.replan-move { display: grid; gap: 12px; }
+.replan-quick { display: flex; flex-wrap: wrap; gap: 6px; }
+.replan-when { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.replan-when label, .replan-reason { display: grid; gap: 4px; }
+.replan-when input, .replan-reason textarea {
+  width: 100%; box-sizing: border-box; font: inherit; color: var(--text);
+  background: var(--bg, transparent); border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px;
+}
+.replan-reason textarea { resize: vertical; min-height: 64px; }
+.replan-mark { color: var(--accent); font-weight: 700; margin-right: 4px; }
+.replan-hint { font-size: 0.75rem; color: var(--muted); }
+.replan-done { display: grid; justify-items: center; gap: 4px; text-align: center; padding-top: 12px; padding-bottom: 12px; }
+.replan-done p { margin: 0; }
+.replan-done-mark { font-size: 2rem; color: var(--accent); }
+
+/* Verschiebe-Kommentar: farbiger Rand links und ein Hinweis im Kopf. */
+.comment.comment-reschedule {
+  border-left: 3px solid var(--accent);
+  padding-left: 8px;
+  background: var(--accent-soft, transparent);
+  border-radius: 6px;
+}
+.comment-badge.reschedule {
+  font-size: 0.6875rem; font-weight: 600; color: var(--accent-dark, var(--accent));
+  padding: 1px 6px; border-radius: 999px; background: var(--accent-soft, transparent);
+}

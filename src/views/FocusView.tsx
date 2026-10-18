@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { ReplanDialog } from '@/components/overlays/ReplanDialog';
 import { Icon } from '@/components/Icon';
 import { SubtasksProvider, TaskRow } from '@/components/TaskRow';
 import { useT } from '@/hooks/useT';
@@ -29,7 +30,9 @@ export function FocusView({ onOpen, onAddTaskTo }: FocusViewProps) {
   const { t } = useT();
   const { items, childrenOf } = useData('focus');
 
-  const { focus, overdueCount, todayCount } = useMemo(() => {
+  const [replanOpen, setReplanOpen] = useState(false);
+
+  const { focus, ordered, overdueCount, todayCount } = useMemo(() => {
     const today = new Date();
     const open = rootItems(items).filter((item) => !item.checked);
     const due = open.filter((item) => {
@@ -41,6 +44,8 @@ export function FocusView({ onOpen, onAddTaskTo }: FocusViewProps) {
     const ordered = [...due].sort((a, b) => rank(a, today) - rank(b, today) || toDisplayPriority(a.priority) - toDisplayPriority(b.priority));
     return {
       focus: ordered.slice(0, FOCUS_LIMIT),
+      /* „Neu planen“ geht alles durch, was heute ansteht, nicht nur die drei. */
+      ordered,
       overdueCount: due.filter((item) => bucketOf(item, today) === 'overdue').length,
       todayCount: due.filter((item) => bucketOf(item, today) === 'today').length,
     };
@@ -49,7 +54,13 @@ export function FocusView({ onOpen, onAddTaskTo }: FocusViewProps) {
   return (
     <div className="focus-view">
       <header className="focus-head">
-        <h1>{t('focus.title')}</h1>
+        <div className="focus-titleline">
+          <h1>{t('focus.title')}</h1>
+          <button className="btn" onClick={() => setReplanOpen(true)}>
+            <Icon name="calendar" />
+            {t('replan.button')}
+          </button>
+        </div>
         <p className="focus-hint">{t('focus.hint')}</p>
       </header>
 
@@ -83,6 +94,8 @@ export function FocusView({ onOpen, onAddTaskTo }: FocusViewProps) {
           </div>
         )}
       </section>
+
+      <ReplanDialog open={replanOpen} onClose={() => setReplanOpen(false)} items={ordered} />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { useMenuKeys } from '@/hooks/useMenuKeys';
 import { useStore } from '@/store/store';
 import { copyText, isTemporaryId, todoistTaskUrl } from '@/api/links';
 import { uploadAttachment } from '@/api/uploads';
+import { isRescheduleComment } from '@/domain/replan';
 import { avatarUrl } from '@/domain/colors';
 import { formatRelativeDay } from '@/domain/dates';
 import { renderMarkdown } from '@/domain/markdown';
@@ -155,7 +156,7 @@ function CommentRow({ note, itemId }: { note: Note; itemId: string }) {
 
   return (
     <article
-      className="comment"
+      className={`comment${isRescheduleComment(note.content) ? ' comment-reschedule' : ''}`}
       data-note-id={note.id}
       onContextMenu={editing ? undefined : (event) => {
         if (event.defaultPrevented || leaveToText(event.nativeEvent)) return;
@@ -169,6 +170,11 @@ function CommentRow({ note, itemId }: { note: Note; itemId: string }) {
         <header>
           <strong>{author ?? t('detail.someone')}</strong>
           <time dateTime={note.posted_at}>{commentTime(note.posted_at, locale)}</time>
+          {/* Von „Neu planen“ geschrieben: steht als solcher da, damit man beim
+              Durchsehen sieht, wie oft und warum etwas geschoben wurde. */}
+          {isRescheduleComment(note.content) && (
+            <span className="comment-badge reschedule">↻ {t('replan.commentBadge')}</span>
+          )}
         </header>
 
         {editing ? (
