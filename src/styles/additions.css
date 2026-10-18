@@ -1,3 +1,2080 @@
+/* ==========================================================================
+   Additions — components the prototype did not contain, written against the
+   same tokens so nothing here introduces a second visual system.
+   ========================================================================== */
+
+/* Inline estimate editing inside a task row */
+.estinput{
+  width:110px;height:30px;padding:0 8px;border:1px solid var(--border-strong);
+  border-radius:var(--r-sm);background:var(--surface);color:var(--text);
+  font-size:var(--fs-12);font-family:inherit;
+}
+.estinput:focus{outline:2px solid var(--accent);outline-offset:1px}
+
+/* ==========================================================================
+   Connect — the sign-in screen from the design file
+   ========================================================================== */
+.connect{
+  min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:var(--s6);padding:var(--s6) var(--s5);box-sizing:border-box;
+  /* The only place in the app that carries the brand at full strength. */
+  background:linear-gradient(180deg,var(--accent) 0%,#770800 100%);
+}
+.gettingready p{margin:0;color:#fff;font-size:var(--fs-16,16px);font-weight:600;text-align:center}
+.readybar{width:min(220px,60vw);height:5px;border-radius:999px;background:rgba(255,255,255,.28);overflow:hidden}
+.readybar span{display:block;height:100%;width:40%;border-radius:inherit;background:#fff;animation:readyslide 1.2s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes readyslide{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@media (prefers-reduced-motion:reduce){.readybar span{animation:none;width:100%;opacity:.7}}
+.connect-card{
+  box-sizing:border-box;width:100%;max-width:531px;
+  background:var(--surface);border-radius:60px;
+  padding:58px 68px;box-shadow:0 24px 64px rgba(69,8,0,.28);
+}
+.connect-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--s4)}
+.connect-card h1{font-size:var(--fs-20);font-weight:700;letter-spacing:-.022em}
+.connect-version{color:var(--faint);font-size:var(--fs-14);font-weight:600;white-space:nowrap}
+.connect-intro{
+  margin-top:var(--s5);color:var(--muted);font-size:var(--fs-13);line-height:1.55;
+}
+.connect-card input{
+  width:100%;height:40px;margin-top:var(--s6);padding:0 var(--s3);
+  border:1px solid var(--border-strong);border-radius:var(--r-sm);
+  background:var(--surface);color:var(--text);font-size:var(--fs-14);font-family:inherit;
+}
+.connect-card input::placeholder{color:var(--placeholder)}
+.connect-card input:focus{outline:2px solid var(--accent);outline-offset:1px}
+
+/* The privacy note sits between the field and the button, where it is read. */
+.connect-privacy{
+  margin-top:var(--s3);padding:11px 12px;border-radius:9px;
+  background:var(--privacy-bg);color:var(--privacy-text);font-size:var(--fs-12);line-height:18px;
+}
+.connect-privacy strong{font-weight:700}
+.connect-privacy a{
+  display:inline-flex;align-items:center;gap:4px;
+  color:inherit;font-weight:700;text-decoration:underline;
+}
+.connect-privacy a .ic{width:14px;height:14px}
+
+.connect-submit{width:100%;margin-top:var(--s3)}
+/* The token route, folded under the sign-in: there for whoever wants it, not
+   a second first step for everyone else. */
+.connect-token{margin-top:var(--s4);border-top:1px solid var(--border);padding-top:var(--s3)}
+.connect-token summary{cursor:pointer;color:var(--muted);font-size:var(--fs-13);font-weight:600;list-style-position:inside}
+.connect-token summary:hover{color:var(--text)}
+.connect-token[open] summary{margin-bottom:var(--s3)}
+.connect-token-submit{width:100%;margin-top:var(--s2);justify-content:center}
+.connect-demo{width:100%;margin-top:var(--s2);justify-content:center}
+.connect-apikey{
+  display:block;margin-top:var(--s4);text-align:center;
+  color:var(--accent);font-size:var(--fs-13);font-weight:600;text-decoration:none;
+}
+.connect-apikey:hover{text-decoration:underline}
+
+.connect-langs{display:flex;justify-content:center;gap:var(--s2);margin-top:var(--s5)}
+
+.connect-error{
+  margin-top:var(--s3);padding:var(--s3);border-radius:var(--r-sm);
+  background:var(--accent-tint);color:var(--accent-dark);font-size:var(--fs-12);
+}
+
+/* On the gradient, not on the card. */
+.connect-legal{
+  max-width:428px;color:#fff;font-size:var(--fs-14);line-height:21px;text-wrap:pretty;
+}
+.connect-legal strong{font-weight:700}
+
+@media (max-width:560px){
+  .connect{gap:var(--s5);padding:var(--s4)}
+  .connect-card{border-radius:32px;padding:var(--s6) var(--s5)}
+  .connect-head{flex-wrap:wrap;gap:var(--s1)}
+  .connect-legal{font-size:var(--fs-12);line-height:1.5}
+}
+
+/* Sync status strip in the sidebar footer */
+.syncstatus{
+  display:flex;align-items:center;gap:6px;padding:6px 8px;
+  font-size:var(--fs-11);color:var(--faint);
+}
+.syncstatus.warn{color:var(--warn)}
+.syncstatus.err{color:var(--accent-dark)}
+.syncdot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto}
+.syncstatus.busy .syncdot{animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+
+/* Popover menus for Group / Filter / Sort */
+.popover{
+  position:absolute;z-index:60;min-width:220px;padding:var(--s2);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-md);box-shadow:var(--sh-md);
+}
+.popover h5{
+  font-size:var(--fs-11);font-weight:600;color:var(--faint);
+  text-transform:uppercase;letter-spacing:.04em;padding:6px 8px 4px;
+}
+.popover button.opt{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+  min-height:32px;padding:0 8px;border-radius:var(--r-sm);
+  font-size:var(--fs-13);color:var(--text);text-align:left;
+}
+.popover button.opt:hover{background:var(--hover)}
+.popover button.opt[aria-checked="true"]{color:var(--accent-dark);font-weight:600}
+.popover hr{border:0;border-top:1px solid var(--border);margin:var(--s2) 0}
+.popover .optrow{display:flex;align-items:center;justify-content:space-between;
+  gap:var(--s3);min-height:32px;padding:0 8px;font-size:var(--fs-13)}
+
+/* Toolbar shell */
+.toolbar{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;
+  margin-top:var(--s4);position:relative}
+.toolbar .spacer{flex:1 1 auto}
+.modeswitch{display:inline-flex;gap:2px;padding:2px;background:var(--subtle);
+  border-radius:var(--r-sm)}
+.modeswitch button{
+  display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;
+  border-radius:var(--r-xs);font-size:var(--fs-12);color:var(--muted);
+}
+.modeswitch button[aria-pressed="true"]{background:var(--surface);color:var(--text);
+  font-weight:600;box-shadow:var(--sh-sm)}
+
+/* Toasts */
+/* While the bulk-edit bar is up, the toasts stand just above it rather than
+   over its buttons. `--bulkbar-room` is set by the bar itself. */
+.toasts{position:fixed;left:50%;bottom:max(24px, calc(var(--bulkbar-room, 0px) + 10px));transform:translateX(-50%);
+  z-index:200;display:grid;width:max-content;max-width:min(520px,92vw)}
+/* Two live regions, one stack (#136): each lane spaces its own toasts, and a
+   second lane in use sits a gap below the first. An empty lane takes no room. */
+.toastlane{display:grid;gap:8px}
+.toastlane:not(:empty) ~ .toastlane:not(:empty){margin-top:8px}
+/* The stack owns the placement now, so every property the older single-toast
+   rule still sets has to be handed back — including the opacity:0 and the
+   pointer-events:none it used to lift with a `show` class that nothing adds.
+   Without this every toast in the product renders and is invisible, which is
+   also why no error, and no undo, has ever reached anyone. */
+.toast{
+  position:static;transform:none;
+  opacity:1;pointer-events:auto;
+  display:flex;align-items:center;gap:var(--s4);padding:10px var(--s4);
+  background:var(--text);color:var(--surface);border-radius:var(--r-md);
+  font-size:var(--fs-13);line-height:1.45;box-shadow:var(--sh-lg);
+  animation:toastIn .18s ease-out;
+}
+.toast > span{min-width:0}
+.toast button{flex:0 0 auto}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}}
+.toast button{color:var(--surface);font-weight:600;font-size:var(--fs-12);text-decoration:underline}
+/* The way out of any toast (#140): in the toast's own colours, at its right end
+   on a phone, where the toast is as wide as the screen. */
+.toast .toastclose{flex:0 0 auto;width:24px;height:24px;padding:0;margin-left:auto;margin-right:-4px;
+  display:grid;place-items:center;border-radius:var(--r-sm);color:var(--surface);opacity:.7;text-decoration:none}
+.toast .toastclose:hover,.toast .toastclose:focus-visible{opacity:1;
+  background:color-mix(in srgb,var(--surface) 14%,transparent)}
+/* A phone puts the navigation bar where the toast was going to sit. */
+@media (max-width:720px){
+  .toasts{bottom:max(calc(76px + env(safe-area-inset-bottom)), calc(var(--bulkbar-room, 0px) + 10px));
+    width:auto;left:var(--s3);right:var(--s3);transform:none}
+}
+
+/* Empty states */
+.empty{
+  padding:var(--s6) var(--s4);text-align:center;color:var(--faint);
+  font-size:var(--fs-13);
+}
+
+/* Focus mode */
+.focusstage{max-width:640px;margin:var(--s5) auto 0}
+.focuscard{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:var(--s6);box-shadow:var(--sh-sm);
+}
+.focuscard h2{font-size:var(--fs-26);font-weight:700;line-height:1.25;margin-bottom:var(--s3)}
+.focuscard .meta{margin-bottom:var(--s5)}
+.focusactions{display:flex;gap:var(--s2);flex-wrap:wrap}
+.focusqueue{margin-top:var(--s5)}
+.focusqueue h5{font-size:var(--fs-11);font-weight:600;color:var(--faint);
+  text-transform:uppercase;letter-spacing:.04em;margin-bottom:var(--s2)}
+
+/* ---------- Display menu ---------- */
+.displaywrap{position:relative}
+/* The count is the page's own colours turned over: the text colour behind it,
+   and the surface colour on top. It used to be white on `--text`, which is
+   near-white in the dark theme — a number you could only read by selecting
+   it. */
+.displaycount{
+  min-width:16px;height:16px;padding:0 4px;margin-left:2px;
+  display:inline-grid;place-items:center;border-radius:var(--r-full);
+  background:var(--text);color:var(--surface);font-size:0.625rem;font-weight:700;
+}
+.displaypanel{
+  top:38px;right:0;left:auto;width:320px;max-height:70vh;overflow-y:auto;
+  padding:var(--s4);
+}
+/* A trigger at the left of its row opens its panel to the right, or the panel
+   hangs off the page. */
+.displaypanel.anchor-left{left:0;right:auto}
+.panelhead{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:var(--s3);margin-bottom:var(--s3);
+}
+.panelhead h5{padding:0}
+/* The reset sits at the top of the panel, where it is found before scrolling. */
+.resetbtn{color:var(--accent);font-size:var(--fs-12);font-weight:600}
+.resetbtn:hover{text-decoration:underline}
+
+.segmented{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;
+  padding:3px;border-radius:var(--r-ctl);background:var(--subtle)}
+.segmented button{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  min-height:32px;padding:0 8px;border-radius:7px;
+  color:var(--muted);background:transparent;
+  transition:background .14s ease-out,color .14s ease-out;
+}
+.segmented button small{font-size:var(--fs-12)}
+.segmented button:hover{color:var(--text)}
+.segmented button[aria-pressed="true"]{
+  color:var(--text);background:var(--surface);font-weight:600;box-shadow:var(--sh-sm);
+}
+.segmented.small button{min-height:28px}
+
+/* Two selects side by side, with the panel's own label above each. */
+.panelgrid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);margin-top:var(--s3)}
+
+.displaypanel h5{
+  padding:0;margin-top:var(--s4);margin-bottom:6px;
+  font-size:var(--fs-11);font-weight:600;color:var(--faint);
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.displaypanel hr{border:0;border-top:1px solid var(--border);margin:var(--s4) 0 0}
+
+/* A filter you can read the state of without parsing a checkbox column. */
+.chiprow{display:flex;flex-wrap:wrap;gap:6px}
+.chiprow.scroll{max-height:112px;overflow-y:auto;padding:2px 0}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 10px;
+  border:1px solid var(--border-strong);border-radius:var(--r-full);
+  color:var(--muted);font-size:var(--fs-12);font-weight:600;white-space:nowrap;
+  transition:border-color .14s ease-out,background .14s ease-out,color .14s ease-out;
+}
+.chip:hover{border-color:var(--accent);color:var(--text)}
+.chip[aria-pressed="true"]{
+  border-color:var(--accent);background:var(--accent-tint);color:var(--accent-dark);
+}
+.flagdot{width:9px;height:9px;border-radius:var(--r-full);flex:0 0 auto}
+
+.panelrow{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+  min-height:38px;font-size:var(--fs-13);
+}
+
+/* ---------- Row menus ---------- */
+.rowmenu{top:32px;right:0;left:auto;min-width:230px;text-align:left}
+/* Opened upwards, when there is no room for it below. The offset is the
+   same 32px, measured from the other edge, so the menu sits the same
+   distance from the row either way. */
+.rowmenu.up{top:auto;bottom:32px}
+.rowmenu .opt{justify-content:flex-start}
+.rowmenu .opt .opthint{margin-left:auto;padding-left:var(--s4);color:var(--faint);font-size:var(--fs-12);white-space:nowrap}
+.rowmenu .opt > span{display:inline-flex;align-items:center;gap:8px}
+.rowmenu .opt.danger{color:var(--accent-dark)}
+.rowmenu .opt.danger:hover{background:var(--accent-soft)}
+.menuhint{padding:2px 8px 6px;color:var(--faint);font-size:var(--fs-11);line-height:1.4}
+
+/* Row actions need a positioning context for their menus. */
+.trow-actions{position:relative}
+
+/* Insights cards are links, not buttons to press; the nudge was noise. */
+.icard:active{transform:none}
+
+/* ---------- Filling in missing estimates ---------- */
+.estlist{display:grid}
+/* The window that asks for them is a little wider than a dialog, and airier:
+   a column of fields wants room to be walked down (v2). */
+.sheet-sm:has(.estlist){width:min(620px,calc(100vw - 32px))}
+.unest-head h2{margin-bottom:2px}
+.unest-head .psub{margin:0;max-width:44ch}
+.estrow{
+  display:grid;grid-template-columns:18px minmax(0,1fr) auto;
+  gap:14px;align-items:center;padding:14px 0;
+  border-bottom:1px solid var(--border);
+}
+.estrow:last-child{border-bottom:0}
+/* A row that has been answered says so, so the eye can find the gaps left. */
+.estrow.filled{background:linear-gradient(90deg,var(--subtle),transparent 60%)}
+.estrow.filled .estname .ttitle{color:var(--muted)}
+.estname{text-align:left;min-width:0}
+.estname .ttitle{display:block}
+.estname .meta{margin-top:2px}
+.estfield{display:inline-flex;align-items:center;gap:6px}
+.estfield .estunit{color:var(--faint);font-size:var(--fs-12)}
+.estinput.invalid{border-color:var(--accent);color:var(--accent-dark)}
+/* Said once, above the list: what the keyboard does and when writing happens. */
+.estlist-hint{
+  margin:0 0 var(--s3);color:var(--faint);font-size:var(--fs-12);line-height:1.5;
+}
+/* The tally holds the left of the action bar; the buttons keep the right. */
+.estfoot{justify-content:flex-end;gap:var(--s3)}
+.estfoot-tally{
+  margin-right:auto;display:inline-flex;align-items:baseline;gap:8px;
+  color:var(--faint);font-size:var(--fs-12);
+}
+.estfoot-tally b{color:var(--text);font-size:var(--fs-13);font-weight:700}
+.estfoot-hint{flex-basis:100%;color:var(--faint)}
+.estfoot-tally{flex-wrap:wrap}
+.estrow .estinput{height:38px;width:96px;font-size:var(--fs-14)}
+
+/* The unestimated count in a page header is a way in, so it looks like one. */
+.metric-link{
+  color:var(--faint);border-bottom:1px dashed var(--border-strong);
+}
+.metric-link:hover{color:var(--accent-dark);border-bottom-color:var(--accent)}
+
+/* ==========================================================================
+   Settings — one page, read downwards
+   ========================================================================== */
+.setbody{min-width:0}
+
+/* The account row leads with the picture, so it breaks the two-column rhythm. */
+.setrow.account{align-items:center;gap:var(--s4)}
+.setrow.account > div{flex:1;min-width:0}
+.setrow.account strong{font-size:var(--fs-16)}
+.setavatar{
+  width:56px;height:56px;flex:0 0 auto;display:grid;place-items:center;overflow:hidden;
+  border-radius:var(--r-full);color:#fff;font-size:var(--fs-20);font-weight:700;
+  background:linear-gradient(145deg,#2d5961,#d87c62);
+}
+.setavatar img{width:100%;height:100%;object-fit:cover}
+
+/* A value the account decides for us: stated, never offered as a control. */
+.setvalue{
+  flex:0 0 auto;padding:6px 12px;border-radius:var(--r-ctl);
+  background:var(--subtle);color:var(--muted);
+  font-size:var(--fs-13);font-weight:600;
+}
+.sethint{margin-top:var(--s2);color:var(--faint);font-size:var(--fs-12);line-height:1.55}
+
+/* Controls in a settings row keep their own width rather than stretching, but
+   never more than the row has to give: a fixed minimum pushed them off the
+   page as soon as the column was narrow. */
+.setrow{flex-wrap:wrap}
+.setrow > div{flex:1 1 180px;min-width:0}
+.setrow .fselect{flex:0 1 auto;min-width:min(190px,100%);max-width:100%}
+.setrow .fselect-label{display:none}
+.setrow .btn{flex:0 0 auto}
+.setrow .estinput{flex:0 0 auto}
+
+/* Seven days across, wrapping when the column is too narrow for them. The
+   grid definition had been lost when the display panel's styles were
+   rewritten, which left the inputs running off the page. */
+.capgrid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(84px,100%),1fr));
+  gap:var(--s2);margin-bottom:var(--s5);
+}
+.capday{display:grid;gap:4px;min-width:0}
+.capday > span{font-size:var(--fs-11);font-weight:600;color:var(--faint)}
+.capday input{
+  width:100%;min-width:0;height:34px;padding:0 10px;
+  border:1px solid var(--border-strong);border-radius:var(--r-ctl);
+  background:var(--surface);color:var(--text);
+  font:inherit;font-size:var(--fs-13);font-variant-numeric:tabular-nums;
+}
+.capday input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+
+@media (max-width:900px){
+  .setnav{
+    position:static;grid-auto-flow:column;grid-auto-columns:max-content;
+    overflow-x:auto;padding-bottom:var(--s2);
+  }
+}
+
+/* The estimate in the detail panel fills its property column, unit included. */
+.prop .estfield{display:flex;width:100%;margin-top:8px}
+.prop .estfield .estinput{flex:1 1 auto;width:auto;height:32px}
+
+/* A project list can be long, so it scrolls rather than running off the page. */
+.movemenu{max-height:280px;overflow-y:auto}
+.movemenu .opt > span{display:flex;align-items:center;gap:8px;min-width:0}
+.movemenu .opt .hash{width:18px;height:18px;font-size:var(--fs-12)}
+.movemenu .opt[aria-checked="true"]{color:var(--accent-dark);font-weight:600}
+
+/* ==========================================================================
+   Sheets — the tab strip sits on the same left edge as the heading above it
+   ========================================================================== */
+/* Without this the tabs run flush to the sheet's edge while the title is
+   inset by its padding, and the two rows visibly disagree. */
+.sheet .tabs,
+.side-sheet .tabs{
+  margin-top:0;
+  padding:0 var(--s4);
+  gap:var(--s4);
+}
+.sheet .tabs button,
+.side-sheet .tabs button{padding:12px 2px}
+.sheet .sheet-body,
+.side-sheet .sheet-body{padding-top:var(--s4)}
+
+/* ---------- The new-project sheet ---------- */
+/* The project icon picker (see domain/projectIcons.ts): a field like the
+   colour swatches beside it, not a popover — everything already on the page.
+   `appearance:none` and an explicit zero padding matter here specifically: a
+   plain `<button>` keeps the platform's own padding unless told otherwise,
+   which a 32px swatch never has room to reveal but a 16px glyph does — off
+   centre in its own cell is exactly the "broken" look this once had. */
+.projecticongrid-field .pickersearch{position:static;margin:0 0 6px}
+.iconpickergrid{
+  /* A fixed height, not a cap: three rows filtered down to two results
+     used to shrink the box around them, and the sheet jumped under the
+     hand on every keystroke. This holds its ground instead, the way the
+     colour row above it always has. */
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:4px;
+  height:124px;overflow-y:auto;align-content:start;
+}
+.iconpickeroption{
+  appearance:none;-webkit-appearance:none;padding:0;border:0;
+  display:grid;place-items:center;width:100%;aspect-ratio:1;max-height:36px;
+  border-radius:var(--r-sm);color:var(--muted);
+  box-shadow:inset 0 0 0 1px transparent;
+}
+.iconpickeroption:hover{background:var(--hover);color:var(--text)}
+.iconpickeroption:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+/* The arrow keys move this — the search field itself keeps the real focus
+   ring, so this is a second, lighter cue rather than two competing ones. */
+.iconpickeroption.active{background:var(--hover);color:var(--text)}
+.iconpickeroption.selected{color:var(--accent-dark);box-shadow:inset 0 0 0 1px var(--accent)}
+.iconpickeroption.clear{font-weight:700;font-size:var(--fs-13)}
+/* A direct grid child is one cell wide by default — without this the "no
+   results" line wraps after every word instead of reading as a sentence. */
+.iconpickergrid .menuhint{grid-column:1/-1}
+
+/* One field under the next, each labelled, none of them guessing at a width. */
+.projectform{display:grid;gap:var(--s4)}
+/* The project card is the form: the icon, the name and the description are
+   typed into where they will be read, and the star sits at the end of it. */
+.pcx{
+  display:flex;align-items:flex-start;gap:14px;padding:16px;
+  border:1px solid var(--border-strong);border-radius:var(--r-lg);background:var(--surface);
+}
+.pcx-icon{
+  position:relative;flex:none;width:52px;height:52px;display:grid;place-items:center;
+  border-radius:var(--r-lg);font-size:1.375rem;font-weight:700;
+  background:color-mix(in srgb,var(--c) 14%,var(--surface));color:var(--c);
+  transition:transform .15s;
+}
+.pcx-icon .hash{width:auto;height:auto;display:grid;place-items:center;transition:transform .3s cubic-bezier(.2,1.4,.4,1)}
+.pcx-icon .ic{width:24px;height:24px}
+.pcx-icon:hover{transform:scale(1.05)}
+.pcx-icon.open,.pcx-icon:focus-visible{box-shadow:0 0 0 2px var(--c)}
+.pcx-icon.open .hash{transform:scale(1.08)}
+/* A small pencil in the corner says the icon can be changed; it leans in when
+   the pointer is on it and while the icon grid below is open. */
+.pcx-icon::after{
+  content:"";position:absolute;right:-3px;bottom:-3px;width:16px;height:16px;border-radius:50%;
+  background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z'/%3E%3C/svg%3E") center/10px no-repeat;
+  box-shadow:0 0 0 1px var(--border-strong);
+  transition:transform .25s cubic-bezier(.2,1.4,.4,1);
+}
+.pcx-icon:hover::after,.pcx-icon.open::after{transform:scale(1.25) rotate(-8deg)}
+.pcx-main{flex:1;min-width:0;display:grid;gap:2px}
+.pcx-name,.pcx-desc{
+  width:calc(100% + 12px);margin:0 -6px;padding:3px 6px;border:0;border-radius:var(--r-sm);
+  background:transparent;color:var(--text);font:inherit;resize:none;overflow:hidden;
+}
+.pcx-name:hover,.pcx-desc:hover,.pcx-name:focus,.pcx-desc:focus{background:var(--hover);outline:0}
+.pcx-name{font-size:var(--fs-20);font-weight:700;letter-spacing:-.01em}
+.pcx-desc{font-size:var(--fs-14);color:var(--muted);line-height:1.45}
+.pcx-name::placeholder,.pcx-desc::placeholder{color:var(--faint)}
+.pcx .starbtn{margin-top:9px}
+.starbtn{
+  width:34px;height:34px;flex:none;display:grid;place-items:center;
+  border-radius:var(--r-md);color:var(--faint);
+}
+.starbtn:hover{background:var(--hover);color:var(--text)}
+.starbtn.on{color:var(--p2)}
+.starbtn.on .ic{fill:currentColor}
+
+/* The icon grid unfolds under the card: height and opacity, not a jump. */
+.iconfold{
+  display:grid;grid-template-rows:0fr;opacity:0;
+  transition:grid-template-rows .38s cubic-bezier(.2,.8,.2,1),opacity .28s ease;
+}
+.iconfold.open{grid-template-rows:1fr;opacity:1}
+.iconfold-in{
+  overflow:hidden;min-height:0;transform:translateY(-8px);
+  transition:transform .38s cubic-bezier(.2,.8,.2,1);
+}
+.iconfold.open .iconfold-in{transform:none}
+.iconfold:not(.open) .iconfold-in{visibility:hidden;transition:transform .38s cubic-bezier(.2,.8,.2,1),visibility 0s .38s}
+@media (prefers-reduced-motion:reduce){
+  .iconfold,.iconfold-in,.pcx-icon,.pcx-icon .hash,.pcx-icon::after{transition:none}
+}
+
+/* What the card does not say — where it is filed, and in which workspace — as
+   a short list of settings rather than more fields. */
+.pjrows{display:grid;gap:2px}
+.pjrow{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:8px 0;border-bottom:1px solid var(--border);
+}
+.pjrow > span:first-child{font-size:var(--fs-14);color:var(--muted)}
+.pjrow .fselect{min-width:190px}
+.pjvalue{font-size:var(--fs-14);color:var(--text)}
+.fieldlabel .cname{margin-left:6px;color:var(--faint);font-weight:500}
+/* Twenty colours do not fit a line of this sheet: two rows of ten, rather
+   than scrolling sideways, where the last two would be out of sight. */
+.projectform .swatches{
+  display:grid;grid-template-columns:repeat(10,26px);justify-content:space-between;
+  gap:10px 6px;overflow:visible;padding:4px 2px;margin:-4px -2px;
+}
+.formfield{display:grid;gap:8px}
+.fieldlabel{
+  display:block;color:var(--muted);font-size:var(--fs-12);font-weight:600;
+  letter-spacing:.01em;
+}
+
+/* The one text input in the product that is a box rather than a line. */
+.textfield{
+  width:100%;min-height:40px;padding:0 12px;
+  border:1px solid var(--border);border-radius:var(--r-sm);
+  background:var(--surface);color:var(--text);
+  font-size:var(--fs-14);font-family:inherit;
+}
+.textfield::placeholder{color:var(--faint)}
+.textfield:hover{border-color:var(--border-strong)}
+.textfield:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+
+/* The palette, on the one line the icon field below it needed the room from.
+   It scrolls instead of wrapping to a second row on anything narrower than
+   the full set — the same trade the icon grid makes, in the other axis. The
+   chosen one says so with a tick instead of a ring nobody can see on yellow. */
+.swatches{
+  /* `overflow-x` alone still clips the other axis — the selected ring's
+     `box-shadow` reaches 4px past the circle, so the padding has to clear
+     that or the ring's top and bottom edge are cut by the scroll box. */
+  display:flex;gap:6px;overflow-x:auto;padding:6px 2px;margin:-6px -2px;
+}
+.swatch{
+  aspect-ratio:1;width:26px;flex:0 0 auto;display:grid;place-items:center;
+  appearance:none;-webkit-appearance:none;padding:0;border:0;
+  border-radius:var(--r-full);background:var(--swatch);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
+  transition:transform .12s ease-out;cursor:pointer;
+}
+.swatch:hover{transform:scale(1.12)}
+.swatch:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.swatch.selected{box-shadow:inset 0 0 0 1px rgba(0,0,0,.12),0 0 0 2px var(--surface),0 0 0 4px var(--swatch)}
+.swatch .ic{width:13px;height:13px;color:#fff;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+
+/* A sheet's actions sit on their own bar, against the sheet's own edge — and
+   stay there. The sheet is the scroller, so a long list used to push Save off
+   the bottom and make you scroll to the end of forty tasks to reach it. Both
+   bars hold: the title so you know what you are in, the actions so you can
+   always leave. */
+.sheet-foot{
+  position:sticky;bottom:0;z-index:3;
+  display:flex;align-items:center;justify-content:flex-end;gap:var(--s2);
+  padding:var(--s3) var(--s4);border-top:1px solid var(--border);
+  background:var(--surface);
+}
+.sheet > .sheet-head{
+  position:sticky;top:0;z-index:3;background:var(--surface);
+}
+
+/* A row of choices inside a picker. The display panel stopped using these
+   when it moved to chips; the tag picker still does. */
+.checkrow{
+  display:flex;align-items:center;gap:8px;min-height:32px;padding:0 4px;
+  border-radius:var(--r-sm);font-size:var(--fs-13);cursor:pointer;
+}
+.checkrow:hover{background:var(--hover)}
+.checkrow input[type="checkbox"]{
+  width:15px;height:15px;flex:0 0 auto;margin:0;accent-color:var(--accent);
+}
+.checkrow .ic{flex:0 0 auto}
+.checkrow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* A chip that names a project carries its marker, at chip scale. */
+.chip .hash{width:18px;height:18px;font-size:var(--fs-12);margin-left:-3px}
+
+/* No control in a settings row is allowed to be wider than the row. */
+.setrow .btn,
+.setrow .estinput,
+.setrow .setvalue{max-width:100%}
+
+/* ==========================================================================
+   Settings — About
+   ========================================================================== */
+/* The unaffiliated notice, stated plainly rather than tucked into small print:
+   someone reading it should be able to read it. */
+.setlegal{
+  max-width:60ch;margin:0 0 var(--s4);
+  color:var(--muted);font-size:var(--fs-13);line-height:1.6;text-wrap:pretty;
+}
+.setlinks{display:flex;flex-wrap:wrap;gap:var(--s2) var(--s4)}
+.setlinks a{
+  display:inline-flex;align-items:center;gap:6px;
+  color:var(--accent);font-size:var(--fs-13);font-weight:600;
+}
+.setlinks a:hover{color:var(--accent-dark);text-decoration:underline}
+.setlinks .ic{color:currentColor}
+
+/* A button that cannot be pressed has to look like one. Two dialogs now hold
+   their primary action back until there is something to save, and without
+   this the held-back state looked exactly like the ready one. */
+.btn:disabled{opacity:.4;cursor:default}
+.btn:disabled:hover{filter:none;transform:none}
+
+/* ==========================================================================
+   1.1.1
+   ========================================================================== */
+
+/* A task ticked off leans out rather than vanishing under the pointer. The
+   tick lands first and is legible for a beat, which is the difference between
+   "done" and "which one did I just hit?". */
+.task.settling{
+  opacity:.6;
+  transition:opacity .38s ease;
+  pointer-events:none;
+}
+.task.settling .ttitle,
+.task.settling .tdesc{color:var(--faint)}
+@media (prefers-reduced-motion: reduce){
+  .task.settling{transition:none}
+}
+
+/* The same leaning-out, for a task ticked off inside the daily review. Two
+   places that finish a task should not look like two different acts. */
+.reviewrow.settling{
+  opacity:.6;
+  transition:opacity .38s ease;
+  pointer-events:none;
+}
+.reviewrow.settling .ttitle{color:var(--faint)}
+@media (prefers-reduced-motion: reduce){
+  .reviewrow.settling{transition:none}
+}
+
+/* A sidebar project being aimed at another one, to sit inside it. The two
+   readings of the same drop — reorder, and nest — need to look different or
+   nobody can tell which one they are about to get. */
+/* Reordering draws a full-width line under the row it will land above.
+   Nesting draws the same line, half the width and pushed right, which is
+   where the row itself is about to move to. */
+.navrow.nesting::after{
+  content:"";position:absolute;left:24px;right:4px;bottom:-1px;height:2px;
+  border-radius:1px;background:var(--accent);
+}
+
+/* How a picked row looks is settled with the cursor and the hover in one
+   place — see "Which row you mean" in theme.css. */
+
+.bulkbar{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;
+  display:flex;align-items:center;gap:6px;
+  padding:7px 8px;border-radius:var(--r-md);
+  background:var(--surface);border:1px solid var(--border);
+  box-shadow:var(--sh-lg);
+}
+.bulkbar strong{
+  padding:0 6px 0 4px;font-size:var(--fs-13);font-weight:600;white-space:nowrap;
+}
+.bulkbar .sep{width:1px;align-self:stretch;margin:2px;background:var(--border)}
+.bulkbar .btn{min-height:30px;padding:0 10px}
+.bulkbar .datefield .fselect-face{min-height:30px;padding:0 10px}
+/* Destructive, and readable: a light wash carrying the dark red, rather than
+   white text on a mid red where neither colour wins. */
+.bulkbar .btn.danger{
+  background:var(--accent-wash);border-color:var(--accent-badge);
+  color:var(--accent-dark);font-weight:600;
+}
+.bulkbar .btn.danger:hover{background:var(--accent-tint);border-color:var(--accent)}
+.bulkbar .btn.danger .ic{color:currentColor}
+/* One button per property, each opening its panel upwards: the bar is pinned
+   to the foot of the window, so a menu dropping out of it would open off the
+   bottom of the page. */
+.bulkmenu{position:relative}
+.bulkmenu > .btn{gap:6px}
+.bulkpop{bottom:calc(100% + 8px);left:0;top:auto;width:280px;max-width:calc(100vw - 16px)}
+/* Near the right-hand end of the bar, so it opens back into the bar rather
+   than off the edge of the window. */
+.bulkmenu:nth-last-of-type(1) .bulkpop{left:auto;right:0}
+.bulkpop-list{
+  /* Search plus six destinations. More remain reachable with a wheel or
+     trackpad, but the browser's bars do not become part of the picker. */
+  max-height:240px;overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:none;
+}
+.bulkpop-list::-webkit-scrollbar{width:0;height:0}
+.bulkpop .opt > span{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.bulkpop .opt .hash{flex:0 0 auto}
+.bulkpop-list .opt{width:100%;min-width:0;overflow:hidden}
+/* The choice the keyboard is on, drawn as a fill rather than the usual ring:
+   the list scrolls, and a ring around its first item was cut off by the top
+   of the list. The same wash the row's own Move menu uses. */
+.bulkpop .opt:focus-visible,
+.bulkpop .checkrow:has(input:focus-visible){
+  outline:none;background:var(--accent-soft);color:var(--accent-dark);
+}
+.bulkpop .checkrow input:focus-visible{outline:none}
+.bulkdest{width:100%;overflow:hidden}
+.bulkdest-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bulkpop .opt.sectionopt{padding-left:22px;color:var(--muted)}
+.bulkpop .opt.sectionopt .ic{color:var(--faint)}
+.bulkflag.p1{color:var(--p1)}
+.bulkflag.p2{color:var(--p2)}
+.bulkflag.p3{color:var(--p3)}
+.bulkflag.p4{color:var(--faint)}
+@media (max-width: 720px){
+  .bulkbar{left:10px;right:10px;transform:none;flex-wrap:wrap;justify-content:center;bottom:78px}
+  /* Wrapped onto two rows, a panel anchored to its button can hang off the
+     side; centre it on the bar instead. */
+  .bulkpop{left:50%;right:auto;transform:translateX(-50%)}
+  .bulkmenu:nth-last-of-type(1) .bulkpop{left:50%;right:auto}
+}
+
+
+
+/* The calendar inside the row's schedule menu, given the width of the menu
+   rather than the width of its own label. */
+/* The menu's own rules turn every button into a grid, which stacked the
+   calendar's icon, its date and its caret into three lines. */
+
+/* ==========================================================================
+   1.1.1 — the review
+   ========================================================================== */
+
+/* Which week is being closed, and the way back to the one before it. A weekly
+   review is almost never done inside the week it is about. */
+/* Beside the cadence control rather than under it. On its own row it pushed
+   the rail and everything below it down whenever the weekly pass was chosen,
+   so the one control that stayed put was surrounded by things that did not.
+   The columns are stated rather than left to source order: the cadence takes
+   the last one in both passes, so it does not slide left when the pager
+   appears beside it. */
+.reviewweek{grid-column:2;display:flex;align-items:center;gap:var(--s3)}
+.reviewcadence{grid-column:3}
+@media (max-width:720px){
+  /* Three things do not fit across a phone; the pager takes a row of its own. */
+  .reviewhead{grid-template-columns:minmax(0,1fr) auto}
+  .reviewcadence{grid-column:2}
+  .reviewweek{grid-column:1/-1;justify-self:end}
+}
+.reviewweek .rangelabel{
+  color:var(--text);font-size:var(--fs-13);font-weight:600;white-space:nowrap;
+}
+.reviewweek .rangelabel small{color:var(--faint);font-weight:500}
+
+/* A step that hands you something to read carries a mark, not a tally: a
+   count of finished tasks and a count of things still to settle were the same
+   circle carrying two different units. */
+.reviewpip.reports .reviewpip-dot{border-style:dashed}
+.reviewpip.reports.current .reviewpip-dot{border-style:solid}
+
+/* The sort beside a tally is a secondary choice and was reading as loudly as
+   the cadence control at the top of the page. */
+.reviewtoolbar .segmented.small button{min-height:24px;padding:0 9px}
+.reviewtoolbar .segmented.small button,
+.reviewtoolbar .segmented.small small{font-size:var(--fs-11)}
+
+/* Where the mail actually is. Quiet links, not a second row of decisions. */
+.reviewmail-links{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:2px 0 4px}
+/* They are links, but they are buttons here: the page's link colour and its
+   underline made four of them read as a paragraph of hyperlinks. */
+.reviewmail-links .btn{
+  min-height:28px;padding:0 10px;font-size:var(--fs-12);
+  color:var(--text);text-decoration:none;
+}
+.reviewmail-links .btn:hover{color:var(--text);text-decoration:none;border-color:var(--accent)}
+.reviewmail-links .btn .ic{color:var(--faint)}
+
+/* The estimates step keeps its answers until you save them, so it needs the
+   same running tally the Unestimated sheet has. */
+.reviewtally{
+  display:flex;align-items:center;justify-content:flex-end;gap:var(--s3);
+  margin-top:var(--s3);
+}
+.reviewtally > span{display:inline-flex;align-items:center;gap:8px}
+.reviewtally b{color:var(--text)}
+.reviewrow.filled{background:var(--subtle)}
+
+/* The week ahead, weighed. */
+.reviewload{
+  display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap;
+  margin-bottom:var(--s4);padding:var(--s4);
+  border:1px solid var(--border);border-radius:var(--r-lg);background:var(--subtle);
+}
+.reviewload .loadpill{font-size:var(--fs-16);padding:4px 12px}
+.reviewload-figures{display:grid;gap:2px}
+.reviewload-figures b{font-size:var(--fs-20);font-weight:700;letter-spacing:-.015em}
+.reviewload-figures small,
+.reviewload-note{color:var(--muted);font-size:var(--fs-12)}
+.reviewload-note{margin-left:auto}
+
+/* The mail step, which has nothing to list and says so. */
+.reviewmail{
+  display:grid;justify-items:center;gap:8px;
+  padding:var(--s6) var(--s4);text-align:center;
+  border:1px dashed var(--border);border-radius:var(--r-lg);background:var(--subtle);
+}
+.reviewmail strong{color:var(--text);font-size:var(--fs-16);font-weight:700}
+.reviewmail > span{max-width:52ch;color:var(--muted);font-size:var(--fs-13);line-height:1.5}
+.reviewmail .reviewclear-mark{background:var(--accent)}
+.reviewmail.cleared .reviewclear-mark{background:var(--ok)}
+
+/* ==========================================================================
+   1.1.1 — the second pass
+   ========================================================================== */
+
+/* ---------- Scheduling a task by typing the date ---------- */
+/* No heading: the field says what the menu is for, and a label above a thing
+   that is already obvious was most of the space this menu was wasting. */
+.schedulemenu{min-width:252px;padding:6px}
+.schedulemenu .opt{min-height:30px}
+.schedulemenu hr{margin:4px 0}
+
+/* A number that counts something needs the something beside it. */
+.setunit{display:inline-flex;align-items:center;gap:8px}
+.setunit .estinput{width:72px}
+.setunit > span{color:var(--muted);font-size:var(--fs-13)}
+
+/* What the field could still become: a short list, not a row of pills. Three
+   lines at most — a fourth is a menu, and this is a hint. */
+
+/* The mail step stopped asking to be ticked: Next already means "done". */
+.reviewmail{padding-bottom:var(--s5)}
+
+/* The coffee line.
+
+   Faint, small, and the same at every one of its two homes: a footnote at the
+   end of something that has finished, never a banner and never a thing to be
+   dismissed. The link is the only part that carries any colour, and only
+   under the pointer. */
+.coffeeline{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;
+  margin-top:var(--s6);padding-top:var(--s4);border-top:1px solid var(--border);
+  color:var(--faint);font-size:var(--fs-12);text-align:center;
+}
+.coffeeline a{
+  display:inline-flex;align-items:center;gap:5px;
+  color:var(--muted);text-decoration:none;border-bottom:1px solid var(--border);
+}
+.coffeeline a:hover{color:var(--accent-dark);border-bottom-color:var(--accent)}
+.coffeeline .ic{width:14px;height:14px}
+/* The finished panel centres everything and caps its paragraphs at 48ch; the
+   line is not one of those paragraphs. */
+.reviewdone .coffeeline{max-width:none;width:100%;font-size:var(--fs-12);color:var(--faint)}
+
+/* ---------- Moving a task by typing where it goes ---------- */
+/* The field and the list below it are the schedule menu's shape, because they
+   ask the same thing: type, narrow, Enter. */
+/* The field stays put and the list under it scrolls, so filtering never
+   pushes the field you are typing in off the top of the menu. */
+.movemenu{min-width:252px;padding:6px;max-height:none;overflow:visible}
+.movelist{display:grid;gap:2px;padding:6px 0 0;max-height:248px;overflow-y:auto}
+.movemenu .opt{min-height:30px;justify-content:space-between;gap:var(--s3)}
+.movemenu .opt small{color:var(--faint);font-size:var(--fs-12);white-space:nowrap}
+/* A section is shown under the project it belongs to, and reads as its child. */
+.movemenu .opt.sectionopt > span{padding-left:14px;color:var(--muted)}
+.movemenu .opt.sectionopt .icon{color:var(--faint)}
+.movemenu .opt.on{background:var(--accent-soft);color:var(--accent-dark)}
+/* A long project or section name takes one line and ends in an ellipsis: the
+   menu keeps a readable width instead of growing to the whole window. */
+.movemenu:not(.asSheet){width:max-content;max-width:min(360px, calc(100vw - 24px))}
+.movemenu .opt{min-width:0}
+.movemenu .opt > span{min-width:0;flex:1 1 auto}
+.movemenu .movelabel{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.movemenu .opt.on small{color:var(--accent-dark)}
+.movemenu .menuhint{padding:6px 8px}
+
+/* ---------- Subtasks that can be put in order ---------- */
+/* The handle sits in the gutter the panel already has, so the row itself does
+   not move to make room for it. */
+/* The row reaches out over its own handle: a drop is decided by where the
+   pointer is, and a handle drawn outside the row's box is a pointer that is
+   never over the row it is dragging onto. */
+.subtaskrow{position:relative;padding-left:22px;margin-left:-22px}
+.subtaskrow .subdrag{
+  position:absolute;left:0;top:50%;transform:translateY(-50%);
+  display:flex;align-items:center;color:var(--faint);
+  opacity:0;transition:opacity .12s ease;cursor:grab;
+}
+.subtaskrow:hover .subdrag,
+.subtaskrow:focus-within .subdrag{opacity:1}
+.subtaskrow.lifting{opacity:.45}
+/* Where it would land: the same line the sidebar draws for the same gesture. */
+.subtaskrow.landing{box-shadow:inset 0 2px 0 0 var(--accent)}
+.detail-section .subtaskrow{grid-template-columns:18px minmax(0,1fr) auto}
+.subtaskrow .subtaskedit{min-width:0;width:100%}
+.subtaskactions{display:flex;gap:4px;align-items:center;opacity:0;transition:opacity .12s ease}
+.subtaskrow:hover .subtaskactions,.subtaskrow:focus-within .subtaskactions{opacity:1}
+.subtaskaction{padding:5px;color:var(--muted);font-size:var(--fs-12);border-radius:var(--r-ctl)}
+.subtaskaction:hover,.subtaskaction:focus-visible{color:var(--text);background:var(--hover)}
+.subtaskaction.danger:hover{color:var(--p1)}
+@media (hover:none){.subtaskactions{opacity:1}}
+
+/* ---------- The task panel's breadcrumb ---------- */
+/* A trail that is walked, not read: every ancestor is a link, and only the
+   task you are on is plain. It wraps rather than pushing the tools off the
+   line, and each link is truncated before the row is. */
+.detail-top .crumb{flex-wrap:wrap;row-gap:2px;min-width:0}
+.crumblink{
+  display:inline-flex;align-items:center;gap:4px;max-width:28ch;
+  padding:2px 4px;margin:0 -4px;border-radius:var(--r-sm);
+  color:var(--muted);font:inherit;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.crumblink:hover{color:var(--accent-dark);background:var(--accent-tint)}
+/* One step of the trail: its separator and its link travel together, and the
+   row's own gap applies between steps rather than inside them. */
+.crumbstep{display:inline-flex;align-items:center;gap:6px}
+.crumbhere{
+  max-width:32ch;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* ---------- The same marked field, wrapping ---------- */
+/* The task panel's title is the composer's field in another shape: it wraps
+   instead of scrolling. Both layers are given the metrics in one rule, because
+   a single pixel of difference between them is a mark sliding off its word. */
+.namefield.multiline{margin-left:-6px}
+.namefield.multiline .titlefield,
+.namefield.multiline .namemirror{
+  width:100%;box-sizing:border-box;display:block;
+  padding:2px 6px;margin:0;border:1px solid transparent;border-radius:var(--r-sm);
+  font:inherit;font-size:var(--fs-20);font-weight:700;line-height:1.3;
+  letter-spacing:-.01em;
+  white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden;
+}
+.namefield.multiline .titlefield{
+  position:relative;z-index:1;resize:none;background:transparent;color:var(--text);
+}
+.namefield.multiline .namemirror{
+  position:absolute;inset:0;z-index:0;color:transparent;pointer-events:none;user-select:none;
+}
+/* Two weights of the same grey: the field says "you could type here" under
+   the pointer, and "you are typing here" while the caret is in it. */
+.namefield.multiline .titlefield:hover{border-color:var(--border)}
+.namefield.multiline .titlefield:focus{
+  outline:none;border-color:var(--border-strong);background:transparent;
+}
+.namefield.multiline .titlefield:focus:hover{border-color:var(--border-strong)}
+
+/* ---------- Finishing an edit to a title ---------- */
+/* Under the field, on the field's own left edge, and only while there is
+   something to save. */
+/* At the field's right edge, where the button that ends a form belongs, and
+   with the one that commits carrying the weight. */
+.titleactions{display:flex;justify-content:flex-end;gap:var(--s2);margin:var(--s2) 0 0}
+.titleactions .btn{min-height:28px;padding:0 12px;font-size:var(--fs-13)}
+
+/* The keyboard cursor's colour lives with the other row states, in the
+   "Which row you mean" block in theme.css. */
+
+/* ---------- The shortcuts sheet ---------- */
+.keyssheet{padding:var(--s5);position:relative}
+.keysclose{position:absolute;top:var(--s3);right:var(--s3)}
+.keyssheet h2{margin:0;font-size:var(--fs-18);font-weight:700}
+.keyshint{margin:6px 0 var(--s4);color:var(--muted);font-size:var(--fs-13);max-width:52ch}
+.keyscols{display:grid;gap:var(--s5)}
+.keyscols h5{
+  margin:0 0 6px;font-size:var(--fs-11);font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--faint);
+}
+.keysrow{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s4);
+  min-height:30px;font-size:var(--fs-13);border-bottom:1px solid var(--border);
+}
+.keysrow:last-child{border-bottom:0}
+.keys{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto}
+.keys .chord{display:inline-flex;align-items:center;gap:4px}
+.keys .chord small{color:var(--faint);font-size:var(--fs-11);margin-right:2px}
+.keys kbd{
+  min-width:22px;padding:2px 6px;border:1px solid var(--border-strong);
+  border-bottom-width:2px;border-radius:var(--r-xs);background:var(--surface);
+  font:inherit;font-size:var(--fs-12);font-weight:600;text-align:center;color:var(--text);
+}
+@media (min-width:720px){
+  .keyscols{grid-template-columns:1fr 1fr}
+  /* The task keys are the long column, and the one people come here for. */
+  .keyscols section:last-child{grid-row:span 2}
+}
+
+/* ---------- The key that gets here ---------- */
+/*
+ * Todoist shows a destination's shortcut when the pointer rests on it, and it
+ * is how anybody learns the shortcuts exist at all — a sheet behind `?` is
+ * only found by people who already suspected.
+ *
+ * Beside the row, not inside it. The only free space inside is the count's,
+ * and borrowing that hid the number the row is mostly there for, underneath
+ * the pointer that had just arrived. Drawn into the document, because the
+ * sidebar is a scrolling box and clips whatever hangs over its edge.
+ */
+.gohint{
+  position:fixed;z-index:80;
+  transform:translateY(-50%);
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 8px;border-radius:var(--r-sm);
+  border:1px solid var(--border);background:var(--surface);
+  box-shadow:var(--sh-md);
+  pointer-events:none;
+  animation:gohintin .12s ease both;
+}
+.gohint kbd{
+  min-width:16px;padding:0 4px;border-radius:var(--r-xs);
+  border:1px solid var(--border-strong);background:var(--subtle);
+  font:inherit;font-size:var(--fs-11);font-weight:700;color:var(--text);text-align:center;
+}
+.gohint small{font-size:var(--fs-11);color:var(--faint)}
+@keyframes gohintin{from{opacity:0;transform:translateY(-50%) translateX(-4px)}}
+@media (prefers-reduced-motion:reduce){.gohint{animation:none}}
+
+/* The line that stands in for the two choices a phone does not ask. */
+.wt-rest{color:var(--muted);font-size:var(--fs-13);line-height:1.55}
+
+/* Three swatches across, on the screen that has room for exactly three. Wrapped
+   two-and-one they left an orphan the width of the sheet, which reads as a card
+   that failed to line up rather than as the third of three. */
+@media (max-width:720px){
+  .wt-body .themechoice{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s2)}
+  .wt-body .themechoice > *{min-width:0}
+}
+
+/* The demo button says the longest sentence on the page, and on a phone its
+   words ran past both ends of the pill they sit in. It wraps instead. */
+.connect-demo{white-space:normal;text-align:center;line-height:1.35}
+@media (max-width:420px){
+  .connect-demo{padding-block:10px}
+}
+
+/* ---------- The first run, on a phone ---------- */
+/* The sheet fills the screen here, so the greeting is laid out like a screen:
+   the question at the top under the thumb's reach, and the one button at the
+   bottom where a thumb already is. Left as a short card floating in a tall
+   empty sheet, it read as a dialog that had failed to finish loading. */
+@media (max-width:720px){
+  .walkthrough{min-height:100%;display:flex;flex-direction:column}
+  .wt-body{flex:0 0 auto}
+  .wt-foot{margin-top:auto;padding-top:var(--s4)}
+  .wt-foot .btn{width:100%;justify-content:center;min-height:46px}
+}
+
+/* The trail keeps the places; the name of the task is the headline below it. */
+@media (max-width:720px){
+  .crumbself{display:none}
+}
+
+/* ==========================================================================
+   Phone gestures: swipe a row aside, hold it down
+   ========================================================================== */
+/*
+ * A row on a desktop shows its controls when the pointer is over it. A phone
+ * has no pointer to be over anything, and the answer the app shipped with was
+ * to take the controls away — which left a task row on a phone with the tick,
+ * the words, and no way to reschedule it without opening it.
+ *
+ * The tray is parked just past the row's right edge and comes in because the
+ * row itself moves, which is the iOS gesture: the finger pulls the row aside
+ * and what was behind it is revealed, rather than a panel flying in over the
+ * top of something.
+ */
+@media (max-width:720px){
+  .mode,.group,.reviewlist{overflow-x:clip}
+
+  .task{
+    transform:translateX(var(--swipe,0px));
+    /* Out of the way of the finger while it is on the row, and eased into
+       place the moment it leaves. */
+    transition:transform .22s cubic-bezier(.2,.8,.2,1);
+  }
+  .task.swiping{transition:none}
+
+  .trow-actions{
+    position:absolute;left:100%;top:0;bottom:0;
+    width:200px;
+    display:flex;align-items:center;justify-content:space-evenly;
+    visibility:visible;
+    gap:0;
+  }
+  /* Parked past the row's edge, the tray is still inside whatever the row
+     sits in: a group card's padding left a slice of every button showing down
+     the right of the list. It is hidden until the row moves — over the
+     desktop's hover and focus rules, which a tap on a phone also sets — and
+     hides only once the row has eased back over it. */
+  .task:not(.swiped):not(.swiping) .trow-actions{
+    visibility:hidden;
+    transition:visibility 0s linear .22s;
+  }
+  /* Tapping the row opens the task, so the button that opens the task is the
+     one the tray does without. */
+  .trow-actions .rowact-wide{display:none}
+  .trow-actions > button{
+    width:44px;height:44px;border-radius:var(--r-full);
+    background:var(--subtle);color:var(--muted);
+  }
+  .trow-actions > button:active{background:var(--hover);color:var(--text)}
+  .trow-actions .ic{width:18px;height:18px}
+
+  /* A row pulled aside is the one thing being acted on; the rest of the list
+     carries on as it was. */
+  .task.swiped{background:var(--subtle)}
+}
+
+/* ---------- The row's menus, as sheets ---------- */
+/* Drawn into the document rather than into the row: the row slides sideways to
+   show its buttons, and anything positioned inside a sliding row slides with
+   it. A sheet also has room for the actions' names, which a tray of glyphs
+   never did. */
+.rowsheet{position:fixed;inset:0;z-index:95}
+.rowsheet-scrim{position:absolute;inset:0;background:rgba(0,0,0,.18)}
+.rowsheet .rowmenu.asSheet{
+  position:absolute;top:auto;
+  left:var(--s3);right:var(--s3);
+  bottom:calc(var(--s3) + env(safe-area-inset-bottom));
+  min-width:0;max-width:none;max-height:72vh;overflow-y:auto;
+  padding:var(--s2) var(--s2) var(--s3);
+}
+.rowsheet .rowmenu.asSheet .opt{min-height:44px}
+.rowsheet .rowmenu.asSheet .pickersearch{min-height:var(--ctl-h-touch)}
+.rowsheet .rowmenu.asSheet .movelist{max-height:44vh}
+.rowsheet .estimatesheet h5,
+.estimatesheet.floating h5{
+  margin:0 0 var(--s2);font-size:var(--fs-11);font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--faint);
+}
+.rowsheet .estimatesheet .estfield,
+.estimatesheet.floating .estfield{width:100%}
+/* The durations an estimate usually is, as targets a thumb can hit without a
+   keyboard coming up over half the screen. */
+.estquick{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:var(--s3)}
+.estchip{
+  min-height:40px;padding:0 14px;border-radius:var(--r-full);
+  border:1px solid var(--border-strong);background:var(--surface);
+  font-size:var(--fs-13);font-weight:600;color:var(--text);
+  font-variant-numeric:tabular-nums;
+}
+.estchip.on{border-color:var(--accent);background:var(--accent-tint);color:var(--accent-dark)}
+.estchip.clear{
+  display:inline-flex;align-items:center;gap:6px;
+  border-style:dashed;color:var(--muted);font-weight:500;
+}
+
+/* ---------- The key that opens a property ---------- */
+/* Beside the name, not in place of anything, and quiet enough to be ignored by
+   anyone reaching for the mouse. It is how these get learnt: by being noticed
+   while the slow way is being used. */
+/* The name at the left, the key at the right, lined up with the end of the
+   field below it — a column of keys down the edge of the panel that the eye
+   can ignore in one pass and find in one look. */
+.proplabel{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.prophead .proplabel{flex:1;min-width:0}
+.propkey{
+  flex:0 0 auto;min-width:17px;padding:0 4px;
+  border:1px solid var(--border-strong);border-radius:var(--r-xs);
+  background:var(--surface);
+  font:inherit;font-size:var(--fs-11);font-weight:700;line-height:1.5;
+  color:var(--muted);text-align:center;
+  opacity:.6;
+}
+/* Worth reading properly once somebody is looking for it. */
+.detail-side:hover .propkey,.prop:focus-within .propkey{opacity:1}
+/* No keyboard to tell anyone about. */
+@media (hover:none),(max-width:720px){
+  .propkey{display:none}
+}
+
+/* ---------- A section that takes a drop ---------- */
+/* Favourites is the one section you can drop into, and the whole box says so:
+   "put this in there" is aimed at the box, and a one-line target at the top
+   of it is something you would have to be told about. */
+.side-group.dropping{
+  border-radius:var(--r-md);
+  background:var(--accent-tint);
+  box-shadow:0 0 0 1px var(--accent);
+}
+/* Empty, it is still somewhere to aim at. */
+.side-group.dropping .side-head{min-height:32px}
+
+/* ---------- The Display panel on a phone ---------- */
+/*
+ * 320px hung from the right edge of its button is 320px going left, so on a
+ * phone the panel ran off the left of the screen and half of it could not be
+ * read.
+ *
+ * It stays under its button — a menu belongs to the control that opened it,
+ * and this one is opened from the top of the page, so answering at the bottom
+ * of the screen puts it a long way from the thing it belongs to. It is the
+ * width of the page instead, hung from the button's left edge, which since
+ * the header controls sit at the page margin is the page margin.
+ */
+@media (max-width:720px){
+  .displaypanel{
+    left:0;right:auto;
+    width:calc(100vw - 2 * var(--s4));
+    max-width:none;max-height:min(64vh, calc(100dvh - 220px));
+  }
+}
+
+/* A project and a tag, carried under the pointer like a task. */
+.dragoverlay.project,.dragoverlay.tag{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:var(--fs-13);font-weight:600;
+}
+.dragoverlay.project .hash{width:18px;height:18px;font-size:var(--fs-12);flex:0 0 auto}
+.dragoverlay.tag .ic{color:var(--muted);flex:0 0 auto}
+
+/* What's new (#115). The title and the buttons hold still; the list scrolls
+   between them. The sheet itself stops scrolling so there is one scroller,
+   and it is no taller than the composer, with the composer's side room. */
+.sheet:has(> .whatsnew){overflow:hidden;display:flex}
+.whatsnew{display:flex;flex-direction:column;width:100%;max-height:min(620px, calc(100vh - 56px));min-height:0}
+.whatsnew-head{flex:0 0 auto;align-items:center;padding:var(--s4) var(--s5)}
+.whatsnew-pills{
+  flex:0 0 auto;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
+  padding:var(--s3) var(--s5);border-bottom:1px solid var(--border);
+}
+.whatsnew-pills::-webkit-scrollbar{display:none}
+.whatsnew-pill{
+  flex:0 0 auto;min-height:26px;padding:0 10px;border-radius:var(--r-full);
+  border:1px solid var(--border-strong);background:var(--surface);
+  color:var(--muted);font-size:var(--fs-12);font-weight:600;font-variant-numeric:tabular-nums;
+}
+.whatsnew-pill:hover{color:var(--text);background:var(--hover)}
+.whatsnew-pill[aria-current="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-dark)}
+.whatsnew-pill:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.whatsnew-body{flex:1 1 auto;min-height:0;overflow:auto;padding:var(--s4) var(--s5) var(--s5);display:grid;gap:var(--s5);align-content:start}
+.whatsnew-loading{color:var(--muted);font-size:var(--fs-13)}
+.whatsnew-release h3{display:flex;align-items:baseline;gap:8px;font-size:var(--fs-16);font-weight:700;margin-bottom:6px}
+.whatsnew-lang{font-size:var(--fs-12);font-weight:500;color:var(--faint)}
+.whatsnew-intro{color:var(--muted);font-size:var(--fs-13);line-height:1.5;margin-bottom:var(--s3)}
+.whatsnew-release ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.whatsnew-change{display:grid;grid-template-columns:24px 1fr;gap:6px;font-size:var(--fs-13);line-height:1.55}
+.whatsnew-mark{line-height:1.55}
+.whatsnew-change code{font-size:.92em;padding:0 4px;border-radius:4px;background:var(--hover)}
+.whatsnew-change a{color:inherit;text-decoration:underline}
+.whatsnew-more a{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-13);color:var(--muted)}
+.whatsnew-foot{flex:0 0 auto;position:static;padding:var(--s3) var(--s5)}
+/* The coffee is an offer, never the way out: a quiet yellow, next to the
+   button that closes the dialog. */
+.btn.coffee{border-color:transparent;background:#fff8d6;color:#342e10;text-decoration:none}
+.btn.coffee:hover{background:#fff1b3}
+.btn.coffee .ic{color:#342e10}
+:root[data-theme="dark"] .btn.coffee{background:rgba(254,215,0,.14);color:#f3e7a6}
+:root[data-theme="dark"] .btn.coffee:hover{background:rgba(254,215,0,.22)}
+:root[data-theme="dark"] .btn.coffee .ic{color:#f3e7a6}
+
+/* A board's "Add section" column (#108): a place, not a card — dashed and
+   quiet at rest, the same column shape as the others once it is a field. */
+.addsection-col{
+  width:100%;min-height:52px;padding:var(--s3) var(--s4);
+  display:flex;align-items:center;gap:6px;
+  border:1px dashed var(--border-strong);border-radius:var(--r-lg);
+  color:var(--muted);font-size:var(--fs-13);font-weight:600;text-align:left;
+  background:transparent;
+}
+.addsection-col:hover{color:var(--text);border-color:var(--muted);background:var(--hover)}
+.addsection-col:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.addsection-form{gap:var(--s3)}
+.addsection-field{
+  width:100%;padding:7px 10px;border:1px solid var(--border-strong);border-radius:var(--r-ctl);
+  background:var(--surface);color:var(--text);font:inherit;font-size:var(--fs-13);font-weight:700;
+}
+.addsection-field:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.addsection-actions{display:flex;justify-content:flex-end;gap:var(--s2)}
+
+/* ---------- The one date picker (#110) ----------
+   The same body in the row's schedule menu, the bulk bar's Date panel and
+   every date field's panel: a bordered field to type in, the quick choices
+   one per line with the day each lands on, the month, then the context's
+   own actions. Only the container differs. */
+.datepicker{display:grid;min-width:0;text-align:left}
+.datepicker .pickersuggestions,
+.datepicker .pickerreading{margin:0 0 6px}
+.datepicker .pickerreading{display:flex;align-items:center;gap:6px}
+.datepicker .pickersuggestions button.active{background:var(--accent-soft);color:var(--accent-dark)}
+.datepicker .pickersuggestions button.active small{color:var(--accent-dark)}
+.datepicker-options{display:grid;gap:1px;padding-bottom:2px}
+.datepicker button.opt{
+  width:100%;height:auto;display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+  min-height:30px;padding:0 8px;border-radius:var(--r-sm);
+  font-size:var(--fs-13);color:var(--text);text-align:left;background:transparent;
+}
+.datepicker button.opt > span{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.datepicker button.opt > span .ic{color:var(--muted)}
+.datepicker button.opt small{color:var(--faint);font-size:var(--fs-12);white-space:nowrap}
+.datepicker button.opt:hover{background:var(--hover)}
+.datepicker button.opt:focus-visible{outline:none;background:var(--accent-soft);color:var(--accent-dark)}
+.datepicker button.opt:focus-visible small,
+.datepicker button.opt:focus-visible .ic{color:var(--accent-dark)}
+.datepicker button.opt:disabled{opacity:.4;cursor:default}
+.datepicker-month{padding:0 2px}
+.datepicker button.datepicker-back{margin-bottom:4px}
+.rowmenu.schedulemenu{width:288px;max-width:calc(100vw - 16px)}
+.bulkpop:has(.datepicker){width:288px}
+.datepicker .dateday{aspect-ratio:auto;height:32px}
+
+/* Time, Duration and Repeat at the foot of the picker (#202): one
+   full-width line each under the choices or the month, the value on the
+   right once set, with a cross that keeps the value's colour. */
+.datepicker-foot{display:grid;gap:1px;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
+.pickerrow{display:flex;align-items:center;min-width:0;border-radius:var(--r-sm)}
+.pickerrow:hover{background:var(--hover)}
+.datepicker .pickerrow button.pickerrow-open{flex:1;min-width:0}
+.datepicker .pickerrow button.pickerrow-open:hover{background:transparent}
+.datepicker .pickerrow button.pickerrow-open > span{flex:0 0 auto}
+.datepicker .pickerrow.set button.pickerrow-open small{min-width:0;color:var(--accent-dark);font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.pickerrow-clear{
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:28px;height:28px;margin-right:2px;
+  padding:0;border:0;border-radius:var(--r-sm);background:transparent;color:var(--accent-dark);
+}
+.pickerrow-clear:hover,
+.pickerrow-clear:focus-visible{background:transparent;color:var(--accent)}
+.pickerrow-clear:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+.datepicker-sub{display:grid;gap:6px;min-width:0}
+
+/* "Back to the date" heads a sub-panel: a rule under it sets it apart from
+   the choices that follow. */
+.datepicker button.datepicker-back{position:relative;margin-bottom:9px}
+.datepicker button.datepicker-back::after{content:'';position:absolute;left:-4px;right:-4px;bottom:-5px;border-bottom:1px solid var(--border)}
+
+/* Time and Duration, Todoist's two fields: label on the left, the field on
+   the right, what fits listed under the field once something is typed. */
+.combo-row{display:grid;grid-template-columns:72px minmax(0, 1fr);align-items:center;gap:8px}
+.combo-row > label{color:var(--text);font-size:var(--fs-13);font-weight:600}
+.combo{position:relative;min-width:0}
+.combo input{
+  width:100%;height:32px;padding:0 10px;border:1px solid var(--border);border-radius:var(--r-sm);
+  background:var(--surface);color:var(--text);font:inherit;font-size:var(--fs-13);
+}
+.combo input:focus{outline:none;border-color:var(--accent)}
+.combo input[aria-invalid="true"]{border-color:var(--late)}
+.combo-list{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:5;display:grid;gap:1px;
+  max-height:220px;overflow:auto;padding:4px;border:1px solid var(--border);border-radius:var(--r-sm);
+  background:var(--surface);box-shadow:var(--sh-md);
+}
+.combo-list button{min-height:30px;padding:0 8px;border:0;border-radius:calc(var(--r-sm) - 2px);background:transparent;color:var(--text);font-size:var(--fs-13);text-align:left}
+.combo-list button.active{background:var(--accent-soft);color:var(--accent-dark)}
+.datepicker-time{gap:8px;padding-top:2px}
+.datepicker-time .pickerreading{margin:-2px 0 0 80px}
+/* The app's own list, opened from the Custom repeat dialog, sits above it. */
+.repeatdialog-scrim ~ .popover.listbox{z-index:310}
+.repeat-every .fselect{min-width:150px}
+.datepicker .datepicker-options button.opt.on{color:var(--accent-dark)}
+.datepicker .datepicker-options button.opt.on .ic{color:var(--accent-dark)}
+
+/* Custom repeat (#202): Todoist's centred dialog, over the picker it came
+   from, which stays open behind it. */
+.repeatdialog-scrim{
+  position:fixed;inset:0;z-index:300;display:grid;justify-items:center;align-items:start;padding:min(14vh, 120px) 16px 16px;
+  background:var(--scrim, rgb(0 0 0 / .4));
+}
+.repeatdialog{
+  width:min(440px, 100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+  border-radius:var(--r-lg);background:var(--surface);color:var(--text);box-shadow:var(--sh-lg);overflow:hidden;
+}
+.repeatdialog-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);padding:var(--s4) var(--s5);border-bottom:1px solid var(--border)}
+.repeatdialog-head h2{margin:0;font-size:var(--fs-16, 16px);font-weight:600}
+.repeatdialog-body{display:grid;gap:var(--s4);padding:var(--s4) var(--s5);overflow:auto}
+.repeatdialog-body fieldset{display:grid;gap:8px;margin:0;padding:0;border:0;min-width:0}
+.repeatdialog-body legend{margin-bottom:6px;padding:0;font-size:var(--fs-13);font-weight:600}
+.repeatdialog-foot{display:flex;justify-content:flex-end;gap:8px;padding:var(--s3) var(--s5) var(--s4);border-top:1px solid var(--border)}
+.repeat-radio{display:flex;align-items:center;gap:8px;font-size:var(--fs-13);cursor:pointer}
+.repeat-radio input{margin:0;accent-color:var(--accent)}
+.repeat-radio.off{opacity:.45;cursor:default}
+.repeat-every{display:flex;align-items:center;gap:8px}
+.repeat-every input{width:64px;height:32px;padding:0 8px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text);font:inherit;font-size:var(--fs-13)}
+.repeat-every input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.repeat-weekdays{display:grid;grid-template-columns:repeat(7, 1fr);gap:4px}
+.repeat-weekdays button{min-height:32px;padding:0;border:1px solid var(--border);border-radius:var(--r-full);background:transparent;color:var(--text);font-size:var(--fs-12)}
+.repeat-weekdays button.on{border-color:var(--accent);background:var(--accent);color:var(--on-accent, #fff)}
+.repeat-weekdays button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.repeat-choices{display:grid;gap:8px}
+.repeat-note{color:var(--faint);font-size:var(--fs-12);line-height:1.35}
+.repeatdialog .repeat-end{margin:0}
+.repeatdialog .pickerreading{display:flex;align-items:center;gap:6px;margin:0;font-size:var(--fs-12);color:var(--muted)}
+.repeatdialog .pickerreading.none{color:var(--late)}
+.repeatdialog .repeat-preview{padding:8px 10px;border-radius:var(--r-sm);background:var(--accent-tint);color:var(--accent-dark);font-size:var(--fs-13)}
+.repeatdialog .repeat-preview span{min-width:0;overflow-wrap:anywhere}
+.repeat-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:2px}
+
+/* A date chosen by typing in the picker hands the focus back without the
+   ring (#202): `.fselect-face:focus-visible` would otherwise outrank the
+   general `[data-pointer-focus]` rule. */
+.fselect-face[data-pointer-focus]:focus-visible{outline:none}
+
+/* The composer's repeat chip keeps its cross (#202). */
+.datefield.inchips:has(.chipclear){display:inline-flex;align-items:center}
+.datefield.inchips:has(.chipclear) .fselect-face{border-top-right-radius:0;border-bottom-right-radius:0;border-right:0}
+.chipclear{display:inline-flex;align-items:center;justify-content:center;align-self:stretch;padding:0 6px;border:1px solid var(--accent-line);border-left:0;border-radius:0 var(--r-full) var(--r-full) 0;background:var(--accent-tint);color:var(--accent-dark)}
+.chipclear:hover{background:var(--accent-tint);color:var(--accent)}
+
+/* Row menus are drawn into the document and placed against the row's
+   buttons with fixed coordinates (#111), so no box the row sits in — a
+   short board column, a short list — can clip one. */
+.rowmenu.floating,
+.rowmenu.floating.up{position:fixed;right:auto;bottom:auto;z-index:95}
+.datepicker .pickersuggestions button{font-size:var(--fs-13)}
+
+/* ---------- The composer, direction B (#113) ----------
+   Four levels read top to bottom: the task (title, then its description on
+   the same edge, quieter), planning as one line of chips, subtasks with a
+   heading and a count, and the way out on a bar of its own. Spacing and
+   type make the hierarchy; there is no card inside the card. */
+.sheet .composerbox{padding:0;gap:0}
+/* Margin, not padding: the mirror behind the name covers its box exactly,
+   and padding would put the marks above the words. */
+.composerbox > .namefield{margin:var(--s4) var(--s5) 0}
+.composerbox .composer-desc{
+  display:block;width:100%;min-height:0;margin:-4px 0 var(--s3);padding:0 var(--s5);
+  border:0;border-radius:0;background:transparent;resize:none;overflow:hidden;
+  color:var(--muted);font-size:var(--fs-13);line-height:1.5;
+}
+.composerbox .composer-desc:focus{outline:none;color:var(--text)}
+.composerbox .composer-desc::placeholder{color:var(--faint)}
+
+.composer-chips{
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+  padding:0 var(--s5) var(--s4);position:relative;
+}
+.fselect.inchips,.datefield.inchips{display:inline-flex;width:auto;min-width:0;max-width:100%}
+.fselect-face.chipface{
+  width:auto;max-width:100%;min-height:30px;padding:0 10px;gap:6px;
+  border:1px solid var(--border-strong);border-radius:var(--r-full);
+  background:var(--subtle);color:var(--text);font-size:var(--fs-13);font-weight:600;
+}
+.fselect-face.chipface .fselect-value{flex:0 1 auto}
+.fselect-face.chipface.unset{border-style:dashed;background:transparent;font-weight:400}
+.fselect-face.chipface.unset,
+.fselect-face.chipface.unset .ic,
+.fselect-face.chipface.unset .fselect-value{color:var(--faint)}
+.fselect-face.chipface.unset:hover,
+.fselect-face.chipface.unset:hover .ic,
+.fselect-face.chipface.unset:hover .fselect-value{color:var(--text)}
+/* The repeat, standing in the date's place, keeps its accent. */
+.fselect-face.chipface.crepeat{width:auto;background:var(--accent-tint);color:var(--accent-dark);border-color:var(--accent-line)}
+.fselect-face.chipface.crepeat .ic{color:var(--accent-dark)}
+.fselect-face.chipface.tagchip > .ic:last-child{color:var(--faint)}
+.fselect-face.chipface.tagchip:hover > .ic:last-child{color:var(--accent-dark)}
+/* The estimate chip while its number is being typed. */
+.fselect-face.chipface.chipedit{cursor:text;border-color:var(--accent);background:var(--surface)}
+.chipedit .estfield{gap:4px}
+.chipedit .estinput{width:64px;height:26px;padding:0;border:0;background:transparent;font-weight:600}
+.chipedit .estinput:focus{outline:none}
+.composer-chips .tagpicker{left:var(--s5)}
+
+.composerbox .composer-subs{
+  gap:0;margin:0 var(--s5);padding:var(--s3) 0 var(--s2);border-top:1px solid var(--border);
+}
+.composer-subhead{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.composer-subhead strong{font-size:var(--fs-13);font-weight:700}
+.composer-subhead small{color:var(--faint);font-size:var(--fs-12);font-variant-numeric:tabular-nums}
+.composer-sub + .composer-sub{border-top:1px solid var(--border)}
+.composer-sub.adding input::placeholder{color:var(--faint)}
+
+.composerbox .composer-actions{
+  display:flex;align-items:center;justify-content:flex-end;gap:var(--s2);
+  width:100%;margin:0;padding:var(--s3) var(--s4);border-top:0;
+}
+.composer-hint{
+  margin-right:auto;display:inline-flex;align-items:center;gap:4px;
+  color:var(--faint);font-size:var(--fs-12);
+}
+.composer-hint kbd{
+  min-width:18px;padding:1px 5px;border:1px solid var(--border-strong);border-radius:var(--r-xs);
+  font:inherit;font-size:var(--fs-11);text-align:center;color:var(--muted);
+}
+@media (max-width:720px){
+  .composer-hint{display:none}
+  .composerbox .composer-actions .btn{flex:1;justify-content:center;min-height:var(--ctl-h-touch)}
+}
+
+/* ---------- Gathering dust (#161) ----------
+   The age is the group's own warm colour, and the three actions sit at the end
+   of the meta line: they take the line's room and add none, so a row never
+   grows when the pointer arrives. Hidden until the row is hovered or has the
+   keyboard (a hidden control cannot be tabbed to, and a focused row shows
+   them, which is how Tab reaches them); on a phone there is no hover, so they
+   are always there, at a finger's size. */
+.meta .dustage{color:var(--dust-dark);font-weight:600}
+.dustacts{margin-left:auto;display:inline-flex;align-items:center;gap:2px;visibility:hidden;margin-block:-6px}
+.task:hover .dustacts,
+.task:focus-within .dustacts{visibility:visible}
+.dustacts .btn{color:var(--dust-dark);font-weight:600}
+.dustacts .btn:hover{background:var(--dust-badge)}
+.dustacts .btn.del{color:var(--late-dark)}
+@media (max-width:720px){
+  .dustacts{visibility:visible;flex:0 0 100%;margin:0 0 0 -8px;gap:var(--s2)}
+  .dustacts .btn{min-height:var(--ctl-h-touch);padding-inline:var(--s3)}
+}
+
+/* ---------- I have time (#159) ----------
+   The pill sits in the metrics line after the load pill. It is a button that
+   says what it does while no duration is chosen, and turns filled once one
+   is, with a cross that clears it apart from the panel being open or not. */
+.timepill{display:inline-flex;align-items:center;border-radius:var(--r-full);color:var(--muted);
+  background:var(--subtle);font-size:var(--fs-12);font-weight:600}
+.timepill-main,.timepill-x{display:inline-flex;align-items:center;gap:5px;height:24px;color:inherit;
+  border-radius:var(--r-full)}
+.timepill-main{padding:0 10px}
+.timepill-main .ic{color:var(--faint)}
+.timepill:hover{color:var(--text);background:var(--hover)}
+.timepill.on{color:var(--info);background:var(--accent-tint);background:color-mix(in srgb,var(--info) 14%,transparent)}
+.timepill.on .timepill-main{padding-right:4px}
+.timepill.on .timepill-main .ic{color:var(--info)}
+.timepill-x{width:22px;justify-content:center;margin-right:2px}
+.timepill-x:hover{background:color-mix(in srgb,var(--info) 18%,transparent)}
+.timepill-main:focus-visible,.timepill-x:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+/* The panel: on the right, over the page, and not modal. The page behind is
+   still there to be read and pointed at, and the pill that opened it can be
+   clicked again to put it away. Below the bulk bar and the dialogs. It is one
+   column of three things in the order you use them: how long, where and in
+   what order, and what fits. */
+.timepanel{position:fixed;top:0;right:0;bottom:0;z-index:55;width:min(420px,100vw);display:flex;
+  flex-direction:column;background:var(--surface);border-left:1px solid var(--border);
+  box-shadow:var(--sh-lg);animation:timein .22s cubic-bezier(.16,1,.3,1)}
+@keyframes timein{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.timepanel{animation:none}}
+.timehead{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+  padding:var(--s5) var(--s5) var(--s2)}
+.timehead h2{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-20);font-weight:700;
+  letter-spacing:-.015em}
+.timehead h2 .ic{color:var(--info)}
+.timebody{flex:1;overflow:auto;padding:0 var(--s5) var(--s6)}
+.timelabel{margin:var(--s2) 0 var(--s3);color:var(--muted);font-size:var(--fs-14)}
+/* The durations are one control, not five buttons: a track with the chosen one
+   lifted out of it, and the free field as its last cell. */
+.timechoices{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:3px;
+  border-radius:var(--r-lg);background:var(--subtle)}
+.timechoice,.timecustom{min-height:var(--ctl-h);padding:0 var(--s2);border:1px solid transparent;
+  border-radius:var(--r-md);background:transparent;color:var(--muted);font-size:var(--fs-13);
+  font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.timechoice:hover{color:var(--text);background:var(--hover)}
+.timechoice.on,.timecustom.on{background:var(--surface);color:var(--info);box-shadow:var(--sh-sm)}
+.timecustom{grid-column:1 / -1;min-width:0;width:100%;text-align:left;padding-inline:var(--s3)}
+.timecustom::placeholder{color:var(--placeholder);font-weight:400}
+.timecustom:focus{background:var(--surface);color:var(--text);border-color:var(--accent);outline:0}
+.timecustom.refused{border-color:var(--late);color:var(--late)}
+.timechoice:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.timeoptions{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s4)}
+.timescope{display:inline-flex;max-width:100%;min-width:0;padding:2px;border-radius:var(--r-md);
+  background:var(--subtle)}
+.timescope button{min-height:var(--ctl-h-sm);padding:0 var(--s3);border-radius:var(--r-sm);color:var(--muted);
+  font-size:var(--fs-12);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.timescope button.on{background:var(--surface);color:var(--text);box-shadow:var(--sh-sm)}
+.timescope button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.timehint,.timenothing{margin-top:var(--s6);color:var(--muted);font-size:var(--fs-13);line-height:1.5}
+.timesummary{margin:var(--s5) 0 var(--s1);padding:var(--s3) var(--s4);border-radius:var(--r-md);
+  background:color-mix(in srgb,var(--info) 9%,transparent);color:var(--text);font-size:var(--fs-13);
+  font-weight:600;font-variant-numeric:tabular-nums}
+.timegroup{margin-top:var(--s5)}
+.timegroup > header{display:flex;align-items:center;gap:var(--s2);padding-bottom:var(--s1)}
+.timegroup h3{color:var(--muted);font-size:var(--fs-12);font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase}
+.timegroup .gcount{margin-left:auto}
+.timegroup .gtime::before{content:none}
+.timerow{position:relative;display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:var(--s3);
+  align-items:start;padding:10px 8px;margin-inline:-8px;border-radius:var(--r-md);cursor:pointer;
+  text-align:left}
+.timerow:hover{background:var(--row-hover)}
+.timerow.picked{background:color-mix(in srgb, var(--accent) 13%, var(--surface))}
+.timerow.done .ttitle{color:var(--faint);text-decoration:line-through}
+.timerow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.timerow .check{margin-top:3px}
+.timemain{display:block;min-width:0}
+.timerow .ttitle{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  font-size:var(--fs-14);line-height:1.4}
+.timewhere{display:block;margin-top:2px;color:var(--muted);font-size:var(--fs-12);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.timeest{padding:2px 7px;border-radius:var(--r-full);background:var(--subtle);color:var(--muted);
+  font-size:var(--fs-12);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.timefoot{margin-top:var(--s5);padding-top:var(--s3);border-top:1px solid var(--border);color:var(--muted);
+  font-size:var(--fs-12)}
+.timefoot .btn.linklike{min-height:0;padding:0;font-size:inherit;font-weight:600}
+/* With room to spare the page makes way for it, so the pill that opened it and
+   the list it was opened from stay in view; without, it lies over the page. */
+@media (min-width:1180px){
+  :root[data-sidepanel="time"] .workspace{margin-right:420px}
+}
+/* A phone has no room beside a page: the panel is the page. */
+@media (max-width:720px){
+  .timepanel{width:100vw;z-index:85}
+  .timechoice,.timecustom,.timescope button{min-height:var(--ctl-h-touch)}
+  .timerow{padding-block:12px}
+}
+
+/* Storage consequences must stay readable on phone-sized screens too. */
+.psub.estimate-help{display:block}
+
+/* Estimate storage follows the app's icon, surface and selected-state controls. */
+.estimate-choice{width:100%;min-width:0}
+.estimate-toggle{display:flex;padding:4px;gap:4px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--subtle)}
+.estimate-toggle button{flex:1;display:flex;align-items:center;gap:10px;min-height:64px;padding:12px;text-align:left;border:1px solid transparent;border-radius:calc(var(--r-md) - 3px);color:var(--muted);background:transparent;cursor:pointer}
+.estimate-toggle button.selected{background:var(--surface);border-color:var(--accent-line);color:var(--text);box-shadow:0 1px 3px #0000000a}
+.estimate-toggle button:hover:not(:disabled){background:var(--hover);color:var(--text)}
+.estimate-toggle button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.estimate-toggle button:disabled{opacity:.45;cursor:not-allowed}
+.estimate-toggle button > span:nth-child(2){display:grid;gap:3px;flex:1}
+.estimate-toggle strong{font-size:var(--fs-13);font-weight:600;line-height:1.4}
+.estimate-toggle small{font-size:var(--fs-11);color:var(--muted)}
+.estimate-toggle-check{display:grid;place-items:center;opacity:0;color:var(--accent)}
+.estimate-toggle .selected .estimate-toggle-check{opacity:1}
+.estimate-choice-hint,.estimate-dialog-intro{margin:12px 0;color:var(--muted);font-size:var(--fs-13);line-height:1.55;max-width:none;text-wrap:initial}
+.estimate-choice-details,.conversion-notes{font-size:var(--fs-12);color:var(--muted);line-height:1.5}
+.estimate-choice-details summary,.conversion-notes summary{cursor:pointer;padding:6px 0;color:var(--text)}
+.estimate-choice-details p,.conversion-notes p{margin:8px 0}
+.estimate-conversion-offer{margin-top:20px;padding:16px;background:var(--subtle);border:1px solid var(--border);border-radius:var(--r-md)}
+.estimate-conversion-offer p{margin:0 0 12px;color:var(--muted);font-size:var(--fs-13);line-height:1.5}
+.conversion-head{display:block}
+.conversion-head h2{margin:0}.conversion-head > p{margin:8px 0 0;color:var(--muted);font-size:var(--fs-13)}
+.conversion-head progress{display:block;width:100%;height:5px;margin:14px 0 8px;accent-color:var(--accent)}
+.conversion-summary{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:var(--fs-12);font-weight:600}
+.conversion-summary > span{color:var(--muted);font-weight:400}
+.conversion-body{padding-top:12px}
+.conversion-list{list-style:none;margin:12px 0 0;padding:0}
+.conversion-list li{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);font-size:var(--fs-13)}
+.conversion-list li > .ic{flex-shrink:0;color:var(--muted)}
+.conversion-title{flex:1;min-width:0;overflow-wrap:anywhere}
+.conversion-list small{color:var(--muted);font-size:var(--fs-11)}
+.conversion-title small{display:block;margin-top:3px}
+.conversion-list li[data-state="done"] > .ic{color:var(--green,#22a06b)}
+.conversion-list li[data-state="done"] .conversion-title{color:var(--muted);text-decoration:line-through}
+.conversion-list li[data-state="failed"] > .ic{color:var(--accent)}
+.conversion-list li[data-state="skipped"]{opacity:.65}
+.conversion-foot{display:block}.conversion-foot > p{margin:0 0 12px;font-size:var(--fs-12);color:var(--muted);line-height:1.5}
+.conversion-foot > div{display:flex;justify-content:flex-end;gap:8px}
+.conversion-spin{animation:conversion-spin 1.2s linear infinite}
+.bulk-estimate{display:grid;gap:12px;padding:12px}
+@keyframes conversion-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.conversion-spin{animation:none}}
+@media(max-width:480px){.estimate-toggle{flex-direction:column}.estimate-toggle button{min-height:56px}.conversion-list li{flex-wrap:wrap}.conversion-list li > small{margin-left:26px}}
+.estimate-recommended{display:inline-block;margin-left:6px;padding:2px 5px;border-radius:var(--r-sm);background:var(--accent-soft);color:var(--accent);font-size:var(--fs-11);font-weight:600}
+.create-tag-input{margin-top:8px}.create-tag-input .pickersearch{margin:0}
+
+/* ---------- A note for Todoist's own people (HireNote) ---------- */
+/* Laid out exactly like a task row: the tint reaches past the row's ends with
+   offset shadows, as a picked row does, so the check and the text stay on the
+   same lines as the tasks around it. */
+.task.hirenote{
+  background:var(--accent-soft);
+  border-bottom-color:transparent;
+  border-radius:var(--r-md,8px);
+  box-shadow:-10px 0 0 0 var(--accent-soft), 10px 0 0 0 var(--accent-soft);
+  cursor:pointer;
+}
+.task.hirenote:hover{background:var(--accent-soft)}
+.task.hirenote .ttitle{font-weight:600}
+.hiretag{
+  display:inline-flex;align-items:center;
+  padding:1px 7px;border-radius:var(--r-sm);
+  background:var(--surface);color:var(--accent);
+  font-size:var(--fs-11);white-space:nowrap;
+}
+.task.hirenote .trow-end{display:flex;align-items:center;gap:var(--s2,8px);visibility:visible}
+.hirecard{position:relative;border-radius:inherit;overflow:hidden;text-align:center}
+.hirecard-cover{height:96px;background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#000));position:relative}
+.hirecard-close{position:absolute;top:var(--s2,8px);right:var(--s2,8px);color:#fff}
+.hirecard-photo{display:block;width:88px;height:88px;border-radius:50%;object-fit:cover;margin:-44px auto 0;position:relative;border:4px solid var(--surface)}
+.hirecard-body{padding:var(--s3) var(--s5) var(--s5);display:grid;gap:var(--s2);justify-items:center}
+.hirecard-body h2{font-size:var(--fs-18,18px);font-weight:700;line-height:1.3}
+.hirecard-body p{color:var(--text);font-size:var(--fs-14);line-height:1.55;margin:var(--s2) 0;max-width:42ch;text-wrap:balance}
+.hirecard-links{display:flex;flex-wrap:wrap;gap:var(--s2);justify-content:center}
+.hirepill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:var(--hover);color:var(--muted);font-size:var(--fs-13);text-decoration:none}
+.hirepill-mail{gap:0}
+.hirepill a{display:inline-flex;align-items:center;gap:6px;color:inherit;text-decoration:none}
+.hirepill:hover{color:var(--text)}
+/* The copy button takes no room until the pill is hovered or focused. */
+.hirepill-copy{display:inline-flex;align-items:center;gap:4px;color:inherit;font-size:var(--fs-12,12px);overflow:hidden;max-width:0;padding:0;opacity:0;margin-left:0;transition:max-width .16s ease,opacity .16s ease,margin .16s ease,padding .16s ease}
+.hirepill-mail:hover .hirepill-copy,.hirepill-mail:has(:focus-visible) .hirepill-copy,.hirepill-copy.copied{max-width:90px;padding:2px 4px;opacity:1;margin-left:6px}
+@media (hover:none){.hirepill-copy{max-width:90px;padding:2px 4px;opacity:1;margin-left:6px}}
+@media (prefers-reduced-motion:reduce){.hirepill-copy{transition:none}}
+/* In a matrix quadrant a task is a card: the card carries the tint, the row does not paint past its ends. */
+.taskwrap > .task.hirenote,.taskwrap > .task.hirenote:hover{background:transparent;box-shadow:none;border-radius:0}
+
+/* In a matrix quadrant the card is white like the others, picked out by an accent edge: a tint would vanish on the quadrant's own colour. */
+.taskwrap:has(> .task.hirenote){background:var(--surface);box-shadow:inset 0 0 0 2px var(--accent)}
+
+/* The Mac app: a card in Settings, About, and one quiet line on the sign-in screen. */
+.macapp{display:grid;gap:var(--s2);padding:var(--s4) 0;border-top:1px solid var(--border)}
+.macapp-text strong{display:block;font-size:var(--fs-13);font-weight:600}
+.macapp-text span{display:block;margin-top:2px;max-width:60ch;color:var(--muted);font-size:var(--fs-12);line-height:1.5}
+.macapp-actions{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.macapp-help{margin:0;max-width:60ch;color:var(--muted);font-size:var(--fs-12);line-height:1.5}
+.macapp-help a,.macapp-line a{color:var(--accent);font-weight:600}
+.macapp-help a:hover,.macapp-line a:hover{text-decoration:underline}
+.macapp-line{margin:2px 0 0;text-align:center;color:var(--muted);font-size:var(--fs-12);line-height:1.5}
+html.desktop-app .macapp,html.desktop-app .macapp-line{display:none}
+.whatsnew-end{margin-left:auto}
+.macapp-steps{margin:0;padding-left:1.3em;max-width:60ch;color:var(--muted);font-size:var(--fs-12);line-height:1.55}
+.macapp-steps li{padding-left:2px}
+.macapp-steps li + li{margin-top:2px}
+
+/* Who can access a project: tall tiles, each with its icon, title and sentence (#194). */
+.accesschoice{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:8px}
+.accesstile{
+  display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+  min-height:112px;padding:12px;border:1px solid var(--border-strong);border-radius:var(--r-lg);
+  background:var(--surface);color:var(--text);text-align:left;cursor:pointer;
+}
+.accesstile:hover{background:var(--hover)}
+.accesstile strong{font-size:var(--fs-13);font-weight:600}
+.accesstile > span:last-child{color:var(--muted);font-size:var(--fs-12);line-height:1.4;text-wrap:pretty}
+.accesstile[aria-checked="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);background:var(--accent-soft)}
+.accessmark{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin-bottom:2px;color:var(--muted)}
+.accesstile[aria-checked="true"] .accessmark{color:var(--accent)}
+.accessmark img{width:24px;height:24px;border-radius:7px;object-fit:cover}
+
+/* The call-out under the Mac app button: it grows open like the icon picker does. */
+.macfold{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .38s cubic-bezier(.2,.8,.2,1),opacity .28s ease}
+.macfold.open{grid-template-rows:1fr;opacity:1}
+.macfold-in{overflow:hidden;min-height:0}
+.macfold:not(.open) .macfold-in{visibility:hidden;transition:visibility 0s .38s}
+.maccallout{display:grid;gap:var(--s3);margin-top:var(--s2);padding:var(--s4);border:1px solid var(--border-strong);border-radius:var(--r-lg);background:var(--subtle)}
+.maccallout > strong{font-size:var(--fs-13);font-weight:600}
+@media (prefers-reduced-motion:reduce){.macfold,.macfold-in{transition:none}}
+
+/* ---------- Bedienungshilfen: Transparenz reduzieren, Kontrast erhöhen ----------
+   Die weichgezeichneten Flächen werden massiv, und Linien sowie Nebentext
+   kräftiger. Jede Regel steht zweimal: unter der Media-Query für Browser und
+   unter einer Klasse, die die Mac-App aus der Systemeinstellung setzt. */
+@media (prefers-reduced-transparency: reduce){
+.sidebar .side-foot::before{background:var(--frame-back);backdrop-filter:none;-webkit-backdrop-filter:none;-webkit-mask-image:none;mask-image:none}
+.setup-foot::before,
+.sheet-foot::before,
+.composerbox .composer-actions::before,
+.whatsnew-head::before{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none}
+}
+html.reduce-transparency .sidebar .side-foot::before{background:var(--frame-back);backdrop-filter:none;-webkit-backdrop-filter:none;-webkit-mask-image:none;mask-image:none}
+html.reduce-transparency .setup-foot::before,
+html.reduce-transparency .sheet-foot::before,
+html.reduce-transparency .composerbox .composer-actions::before,
+html.reduce-transparency .whatsnew-head::before{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none}
+
+@media (prefers-contrast: more){
+:root:not([data-theme="dark"]){--border:#c8c8c8;--border-strong:#8f8f8f;--muted:#474747;--faint:#575757}
+:root[data-theme="dark"]{--border:#6a6a6a;--border-strong:#8a8a8a;--muted:#d0d0d0;--faint:#bcbcbc}
+}
+html.more-contrast:not([data-theme="dark"]){--border:#c8c8c8;--border-strong:#8f8f8f;--muted:#474747;--faint:#575757}
+html.more-contrast[data-theme="dark"]{--border:#6a6a6a;--border-strong:#8a8a8a;--muted:#d0d0d0;--faint:#bcbcbc}
+
+/* ---------- Kalender (Mac-App) ----------
+   Eine Woche als Stundenraster mit den Terminen aus den Mac-Kalendern, links
+   die Aufgaben der Woche zum Hineinziehen. 48px pro Stunde (HOUR_PX). */
+.cal-full{display:flex;flex-direction:column;height:100%;min-height:0;padding:28px 24px 16px;box-sizing:border-box}
+.cal-head{display:flex;align-items:center;gap:var(--s4);margin-bottom:var(--s3);flex-wrap:wrap}
+.cal-head .ptitle{margin:0}
+.cal-nav{display:flex;align-items:center;gap:var(--s2);flex:1;min-width:0}
+.cal-range{font-weight:600;font-size:var(--fs-14);margin-left:var(--s2);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.cal-loading{font-size:var(--fs-12);color:var(--faint)}
+.btn.on{background:var(--hover)}
+.cal-gate{max-width:520px;display:grid;gap:var(--s3);color:var(--muted);line-height:1.5}
+.cal-gate .btn{justify-self:start}
+.cal-gate-actions{display:flex;gap:var(--s2)}
+
+.cal-panel{border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface);padding:var(--s4);margin-bottom:var(--s3);display:grid;gap:var(--s3);max-height:45vh;overflow:auto}
+.cal-panel-hint{margin:0;color:var(--muted);font-size:var(--fs-13)}
+.cal-source h3{margin:0 0 var(--s1);font-size:var(--fs-12);text-transform:uppercase;letter-spacing:.04em;color:var(--faint)}
+.cal-row{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);padding:3px 0}
+.cal-check{display:flex;align-items:center;gap:var(--s2);font-size:var(--fs-13);cursor:pointer}
+.cal-dot{width:10px;height:10px;border-radius:50%;flex:none;display:inline-block}
+
+.cal-body{flex:1;min-height:0;display:grid;grid-template-columns:300px minmax(0,1fr);gap:var(--s4)}
+.cal-body.folded{grid-template-columns:minmax(0,1fr)}
+/* Die Aufgabenliste: eine Karte wie das geöffnete Aufgabendetail. */
+.cal-tasks{min-height:0;display:flex;flex-direction:column;overflow:hidden;border-radius:20px;background:var(--surface);
+  box-shadow:0 0 0 1px rgba(0,0,0,.05),0 10px 30px rgba(0,0,0,.08);animation:calTasksIn .28s cubic-bezier(.2,.8,.2,1) both}
+:root[data-theme="dark"] .cal-tasks{box-shadow:0 0 0 1px rgba(255,255,255,.06),0 10px 30px rgba(0,0,0,.35)}
+@keyframes calTasksIn{from{transform:translateX(-16px);opacity:0}to{transform:none;opacity:1}}
+.cal-tasks-head{flex:none;border-radius:20px 20px 0 0}
+.cal-tasks-tools{flex:none;display:grid;gap:var(--s2);padding:12px 16px 4px}
+.cal-tasks-search{font:inherit;font-size:var(--fs-13);padding:7px 14px;border:1px solid var(--border-strong);border-radius:999px;background:var(--surface);color:var(--text)}
+.cal-tasks-search:focus{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+.cal-tasks-group{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:2px;border-radius:999px;background:var(--hover)}
+.cal-tasks-group button{all:unset;cursor:pointer;text-align:center;font-size:var(--fs-12);padding:4px 0;border-radius:999px;color:var(--muted);white-space:nowrap}
+.cal-tasks-group button[aria-pressed="true"]{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.cal-tasks-hint,.cal-empty{font-size:var(--fs-12);color:var(--faint);margin:0;line-height:1.4}
+.cal-tasks-list{flex:1;min-height:0;overflow:auto;padding:4px 12px 16px}
+.cal-tasks-section h3{position:sticky;top:0;z-index:1;margin:0;padding:10px 4px 6px;background:var(--surface);font-size:var(--fs-12);font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.cal-tasks-section h3 span{color:var(--faint);font-weight:500;margin-left:4px}
+.cal-tasks ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.cal-task{display:flex;align-items:center;gap:var(--s2);padding:8px 10px;border:1px solid var(--border);border-left:3px solid var(--border-strong);border-radius:var(--r-md);background:var(--surface);cursor:grab;font-size:var(--fs-13);transition:transform .1s ease-out,box-shadow .1s ease-out}
+.cal-task.p1{border-left-color:#d1453b}.cal-task.p2{border-left-color:#eb8909}.cal-task.p3{border-left-color:#246fe0}
+.cal-task.planned{opacity:.6}
+.cal-task.planned > svg{color:var(--faint);flex:none}
+.cal-task:hover{box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.cal-task:active{cursor:grabbing;transform:scale(.98)}
+.cal-task-main{flex:1;min-width:0;display:grid}
+.cal-task-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-task-due{font-size:var(--fs-11);color:var(--faint)}
+.cal-task-est{flex:none;color:var(--faint);font-variant-numeric:tabular-nums;font-size:var(--fs-12)}
+@media (prefers-reduced-motion:reduce){.cal-tasks{animation:none}}
+.cal-grid-wrap{min-height:0;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface);overflow:hidden}
+.cal-days,.cal-allday,.cal-grid{display:grid;grid-template-columns:52px repeat(var(--days,7),minmax(0,1fr))}
+.cal-days{border-bottom:1px solid var(--border)}
+.cal-dayhead{display:flex;align-items:baseline;justify-content:center;gap:6px;padding:8px 0;font-size:var(--fs-12);color:var(--muted)}
+.cal-dom{font-size:var(--fs-16);font-weight:600;color:var(--text)}
+.cal-dayhead.today .cal-dom{background:var(--accent);color:#fff;border-radius:999px;min-width:26px;text-align:center;padding:1px 6px}
+.cal-allday{border-bottom:1px solid var(--border);min-height:26px}
+.cal-allday .cal-gutter{font-size:var(--fs-11);color:var(--faint);display:flex;align-items:center;justify-content:center}
+.cal-allday-cell{padding:3px;display:grid;gap:2px;align-content:start;border-left:1px solid var(--border)}
+.cal-chip{all:unset;cursor:pointer;font-size:var(--fs-11);padding:1px 6px;border-radius:4px;background:color-mix(in srgb,var(--ev) 22%,var(--surface));color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-scroll{flex:1;min-height:0;overflow:auto}
+.cal-grid{position:relative}
+.cal-hours{position:relative}
+.cal-hours span{position:absolute;right:8px;transform:translateY(-50%);font-size:var(--fs-11);color:var(--faint);font-variant-numeric:tabular-nums}
+.cal-col{position:relative;border-left:1px solid var(--border);
+  background-image:repeating-linear-gradient(to bottom,var(--border) 0 1px,transparent 1px var(--hour,48px))}
+.cal-col.today{background-color:color-mix(in srgb,var(--accent) 4%,transparent)}
+.cal-event{position:absolute;box-sizing:border-box;border-radius:6px;padding:3px 6px;overflow:hidden;cursor:default;font-size:var(--fs-12);line-height:1.25;
+  background:color-mix(in srgb,var(--ev) 20%,var(--surface));border-left:3px solid var(--ev);color:var(--text)}
+.cal-event-title{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.cal-event-time{display:block;color:var(--muted);font-variant-numeric:tabular-nums}
+.cal-ghost{position:absolute;left:2px;right:2px;border-radius:6px;background:color-mix(in srgb,var(--accent) 18%,transparent);border:1.5px solid var(--accent);
+  font-size:var(--fs-11);font-weight:600;color:var(--accent);padding:2px 6px;box-sizing:border-box;pointer-events:none;z-index:3}
+.cal-now{position:absolute;left:0;right:0;height:2px;background:var(--accent);z-index:2;pointer-events:none}
+.cal-now::before{content:"";position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+
+.cal-card{position:fixed;z-index:90;width:280px;box-sizing:border-box;padding:var(--s3) var(--s4);border-radius:var(--r-lg);background:var(--surface);
+  box-shadow:0 0 0 1px rgba(0,0,0,.06),0 12px 36px rgba(0,0,0,.18);display:grid;gap:4px;font-size:var(--fs-13)}
+.cal-card p{margin:0;color:var(--muted)}
+.cal-card-head{display:flex;align-items:center;gap:var(--s2)}
+.cal-card-actions{display:flex;flex-wrap:wrap;gap:var(--s2);margin-top:var(--s2)}
+@media (prefers-reduced-motion:reduce){.cal-task{transition:none}}
+@media (max-width:900px){.cal-body{grid-template-columns:1fr}.cal-tasks{max-height:30vh}}
+
+/* ---------- Claude (Mac-App) ----------
+   Ein Chat am rechten Rand, über der Seite wie „Ich habe Zeit“. */
+.claudepanel{position:fixed;top:var(--frame-gap,12px);right:var(--frame-gap,12px);bottom:var(--frame-gap,12px);z-index:56;
+  width:min(420px,calc(100vw - 24px));box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;
+  background:var(--surface);border-radius:20px;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 18px 50px rgba(0,0,0,.18);
+  animation:claudeIn .32s cubic-bezier(.2,.8,.2,1) both}
+@keyframes claudeIn{from{transform:translateX(calc(100% + 28px))}to{transform:none}}
+:root[data-theme="dark"] .claudepanel{box-shadow:0 0 0 1px rgba(255,255,255,.06),0 18px 50px rgba(0,0,0,.45)}
+/* Beside the page, as an opened task's panel is: the page makes room. */
+:root:not([data-layout="sidebar-float"]).claude-open:not(.panel-open) .app{padding-right:444px;box-sizing:border-box;transition:padding-right .3s cubic-bezier(.2,.8,.2,1)}
+@media (max-width:1100px){:root.claude-open .app{padding-right:0 !important}}
+.claude-head{flex:none;border-radius:20px 20px 0 0}
+.claude-head .crumb svg{color:var(--accent)}
+.claude-head-actions{display:flex;align-items:center;gap:2px}
+.claude-list{flex:1;min-height:0;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:var(--s3)}
+.claude-empty{display:grid;gap:var(--s3);color:var(--muted);font-size:var(--fs-13);line-height:1.5}
+.claude-empty p{margin:0}
+.claude-quick{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.claude-note{font-size:var(--fs-12);color:var(--faint);margin:0}
+.claude-note.error{color:var(--late-dark,var(--accent));font-size:var(--fs-13)}
+.claude-msg{font-size:var(--fs-13);line-height:1.5;max-width:100%}
+.claude-msg p{margin:0}
+.claude-msg.user{align-self:flex-end;max-width:85%;background:var(--hover);padding:8px 12px;border-radius:14px 14px 4px 14px;white-space:pre-wrap}
+.claude-msg.assistant .md > :first-child{margin-top:0}
+.claude-msg.assistant .md > :last-child{margin-bottom:0}
+.claude-msg.error{color:var(--late-dark,var(--accent))}
+.claude-thinking{color:var(--faint);animation:pulse 1.6s ease-in-out infinite}
+.claude-actions{margin-top:var(--s3);border:1px solid var(--border);border-radius:var(--r-md);padding:var(--s3);display:grid;gap:var(--s2)}
+.claude-actions h3{margin:0;font-size:var(--fs-12);text-transform:uppercase;letter-spacing:.04em;color:var(--faint)}
+.claude-actions ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.claude-actions label{display:grid;grid-template-columns:auto auto 1fr;align-items:baseline;gap:var(--s2);cursor:pointer}
+.claude-when{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.claude-task{all:unset;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.claude-task:hover{text-decoration:underline}
+.claude-actions .btn{justify-self:start}
+.claude-applied{display:flex;align-items:center;gap:6px;color:var(--muted);margin:0}
+/* Gedächtnis-Vorschläge: Häkchen + Satz, der umbrechen darf. */
+.claude-memory label{grid-template-columns:auto 1fr}
+.claude-input{display:flex;gap:var(--s2);align-items:center;padding:12px 18px 16px;border-top:1px solid var(--border)}
+.claude-input textarea{flex:1;resize:none;font:inherit;font-size:var(--fs-13);padding:10px 16px;border:1px solid var(--border-strong);border-radius:22px;background:var(--surface);color:var(--text);max-height:160px}
+.claude-input textarea:focus{outline:2px solid color-mix(in srgb,var(--accent) 40%,transparent);outline-offset:0}
+@media (prefers-reduced-motion:reduce){.claudepanel{animation:none}.claude-thinking{animation:none}}
+html.reduce-transparency .claudepanel,html.more-contrast .claudepanel{box-shadow:0 0 0 1px var(--border-strong)}
+
+
+/* Ein Termin, geöffnet wie eine Aufgabe: dieselbe schwebende Karte rechts. */
+.cal-eventsheet{position:fixed;top:var(--frame-gap,12px);right:var(--frame-gap,12px);bottom:var(--frame-gap,12px);z-index:57;
+  width:min(420px,calc(100vw - 24px));box-sizing:border-box;display:flex;flex-direction:column;overflow:auto;
+  background:var(--surface);border-radius:20px;box-shadow:0 0 0 1px rgba(0,0,0,.05),0 18px 50px rgba(0,0,0,.18);
+  animation:claudeIn .32s cubic-bezier(.2,.8,.2,1) both}
+:root[data-theme="dark"] .cal-eventsheet{box-shadow:0 0 0 1px rgba(255,255,255,.06),0 18px 50px rgba(0,0,0,.45)}
+.cal-eventsheet .detail-top{flex:none;border-radius:20px 20px 0 0}
+.cal-eventsheet .crumb .cal-dot{width:9px;height:9px}
+.cal-eventsheet-main{padding:20px 22px 18px;border-bottom:1px solid var(--border)}
+.cal-eventsheet-title{margin:0;font-size:var(--fs-20);font-weight:700;letter-spacing:-.02em;line-height:1.2;text-wrap:balance}
+.cal-eventsheet-notes{margin:12px 0 0;color:var(--muted);font-size:var(--fs-13);line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.cal-eventsheet-side{flex:1;border:0}
+.cal-propvalue{display:flex;align-items:center;gap:8px;min-height:36px;box-sizing:border-box;padding:6px 14px;border:1px solid var(--border);border-radius:999px;
+  font-size:var(--fs-13);color:var(--text);background:var(--surface);overflow-wrap:anywhere}
+.cal-proplink{color:var(--accent);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;line-height:22px}
+.cal-eventsheet-actions{display:flex;flex-wrap:wrap;gap:var(--s2);padding-top:var(--s3)}
+:root:not([data-layout="sidebar-float"]).event-open:not(.panel-open) .app{padding-right:444px;box-sizing:border-box;transition:padding-right .3s cubic-bezier(.2,.8,.2,1)}
+@media (prefers-reduced-motion:reduce){.cal-eventsheet{animation:none}}
+@media (max-width:1100px){:root.event-open .app{padding-right:0 !important}}
+/* Ist rechts ein Panel offen (Termin, Aufgabe, Claude), hat das Wochenraster
+   Vorrang: Unter 1700px Fensterbreite tritt die Aufgabenliste so lange zurück. */
+@media (max-width:1700px){
+  :root:is(.event-open,.panel-open,.claude-open) .cal-body{grid-template-columns:minmax(0,1fr)}
+  :root:is(.event-open,.panel-open,.claude-open) .cal-tasks{display:none}
+}
+/* Schmales Raster: Wochentag über dem Datum, damit die Kopfzeile lesbar bleibt. */
+.cal-grid-wrap{container-type:inline-size}
+@container (max-width:640px){
+  .cal-dayhead{flex-direction:column;align-items:center;gap:0;padding:4px 0}
+  .cal-dow{font-size:var(--fs-11)}
+  .cal-dom{font-size:var(--fs-14)}
+  .cal-event{padding:2px 4px;font-size:var(--fs-11)}
+}
+
+
+/* Was beim Ziehen am Mauszeiger hängt: eine eigene kleine Karte statt eines
+   Bildschirmausschnitts. Kurz außerhalb des Fensters gezeichnet. */
+.cal-dragcard{position:fixed;top:-200px;left:-400px;z-index:-1;display:flex;align-items:baseline;gap:8px;max-width:240px;
+  padding:7px 12px;border-radius:10px;border-left:3px solid var(--ev,var(--accent));
+  background:var(--surface);color:var(--text);font:600 var(--fs-13)/1.3 -apple-system,BlinkMacSystemFont,sans-serif;
+  box-shadow:0 0 0 1px rgba(0,0,0,.06),0 6px 18px rgba(0,0,0,.16)}
+.cal-dragcard strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-dragcard span{flex:none;font-weight:500;color:var(--faint);font-variant-numeric:tabular-nums}
+/* Das gezogene Original bleibt ruhig stehen und wird nur blasser. */
+.cal-event.dragging,.cal-task.dragging{opacity:.35}
+
+/* Farbwahl je Kalender: der Punkt ist der Knopf, darunter eine kleine Palette. */
+.cal-row{position:relative}
+.cal-color{position:relative;display:flex;align-items:center;margin-left:auto;margin-right:var(--s3)}
+.cal-dot-btn{all:unset;cursor:pointer;width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 2px var(--surface),0 0 0 3px var(--border-strong)}
+.cal-dot-btn:hover{transform:scale(1.15)}
+.cal-palette{position:absolute;top:22px;right:-8px;z-index:20;display:grid;grid-template-columns:repeat(6,22px);gap:8px;padding:12px;border-radius:14px;
+  background:var(--surface);box-shadow:0 0 0 1px rgba(0,0,0,.06),0 10px 30px rgba(0,0,0,.18)}
+.cal-swatch{all:unset;cursor:pointer;width:22px;height:22px;border-radius:50%}
+.cal-swatch:hover{transform:scale(1.12)}
+.cal-swatch[aria-selected="true"]{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--text)}
+.cal-swatch-reset{grid-column:1 / -1;all:unset;grid-column:1 / -1;cursor:pointer;font-size:var(--fs-12);color:var(--muted);text-align:center;padding-top:4px}
+.cal-swatch-reset:hover{color:var(--text)}
+/* Die Palette klappt unter ihrem Kalender auf, statt über dem Rand der
+   (scrollenden) Auswahl zu schweben, wo sie abgeschnitten würde. */
+.cal-row{flex-wrap:wrap}
+.cal-color{display:contents}
+.cal-dot-btn{margin-left:auto;margin-right:var(--s3)}
+.cal-palette{position:static;order:10;flex-basis:100%;grid-template-columns:repeat(12,22px);justify-content:end;
+  margin:6px 0 4px;padding:10px 12px;box-shadow:none;background:var(--hover)}
+.cal-swatch-reset{grid-column:1 / -1;text-align:right}
+
+/* Zoom (⌘ + Mausrad) und Längenziehen von Aufgaben-Terminen. */
+.cal-zoom{display:inline-flex;gap:2px;margin-left:var(--s2);flex:none}
+.cal-zoom .iconbtn{font-size:var(--fs-16);font-weight:600;line-height:1;width:28px;height:28px}
+.cal-resize{position:absolute;left:0;right:0;height:8px;cursor:ns-resize;z-index:2;touch-action:none}
+.cal-resize.top{top:-3px}
+.cal-resize.bottom{bottom:-3px}
+.cal-resize::after{content:"";position:absolute;left:50%;width:18px;height:3px;margin-left:-9px;border-radius:2px;background:var(--ev);opacity:0;transition:opacity .12s}
+.cal-resize.top::after{top:3px}
+.cal-resize.bottom::after{bottom:3px}
+.cal-event.cal-taskblock:hover .cal-resize::after,.cal-event.resizing .cal-resize::after{opacity:.8}
+.cal-event.resizing{z-index:4;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+
+/* Ansicht: Woche · 2 Tage · Tag, im Stil des Ordnen-Schalters. */
+.cal-span{display:inline-flex;gap:2px;padding:2px;border-radius:999px;background:var(--hover);flex:none}
+.cal-span button{all:unset;cursor:pointer;font-size:var(--fs-13);padding:5px 12px;border-radius:999px;color:var(--muted);white-space:nowrap}
+.cal-span button[aria-pressed="true"]{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+/* Aufgabenliste: Gruppieren und Sortieren als zwei kleine Auswahlen. */
+.cal-tasks-order{display:grid;grid-template-columns:1fr 1fr auto;gap:var(--s2);align-items:end}
+.cal-tasks-order label{display:grid;gap:3px;min-width:0}
+.cal-tasks-order label > span{font-size:var(--fs-11);color:var(--faint)}
+.cal-tasks-order select{font:inherit;font-size:var(--fs-13);min-width:0;padding:5px 26px 5px 12px;border:1px solid var(--border-strong);border-radius:999px;
+  background:var(--surface);color:var(--text);appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 14px) 52%,calc(100% - 10px) 52%;background-size:4px 4px;background-repeat:no-repeat}
+.cal-sortdir{width:32px;height:32px;font-size:var(--fs-16);border:1px solid var(--border-strong);border-radius:999px}
+
+/* „Mit Claude planen“: ein Menüpunkt wie die anderen, mit Abstand darunter,
+   ausgewählt (weiß hinterlegt) nur solange das Claude-Fenster offen ist. */
+.sidebar .claudenav{width:100%;margin-bottom:14px}
+.sidebar .claudenav .navkbd{margin-left:auto;font:inherit;font-size:var(--fs-11);color:var(--faint);opacity:0;transition:opacity .12s}
+.sidebar .claudenav:hover .navkbd,.sidebar .claudenav:focus-visible .navkbd{opacity:1}
+:root.claude-open .sidebar .claudenav{background:var(--side-sel);box-shadow:var(--side-sel-shadow);color:var(--text);font-weight:600}
+:root.claude-open .sidebar .claudenav .ic,:root.claude-open .sidebar .claudenav svg{color:var(--side-icon-sel)}
+
+/* Kalender: Aufgaben stehen direkt aus Todoist im Raster. Termine sind farbig
+   gefüllt; Aufgaben bleiben farblos wie eine Karte der Aufgabenliste (weiß,
+   Rahmen, Schatten, Prioritätsstreifen links, Kreis zum Abhaken), damit man
+   beide auf einen Blick auseinanderhält. Erledigte bleiben blass, gestrichelt
+   und durchgestrichen stehen. */
+.cal-event.cal-taskblock{--ev:var(--border-strong);cursor:grab;background:var(--surface);color:var(--text);
+  border:1px solid var(--border-strong);border-left:3px solid var(--ev);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.cal-event.cal-taskblock.p1{--ev:#d1453b}.cal-event.cal-taskblock.p2{--ev:#eb8909}.cal-event.cal-taskblock.p3{--ev:#246fe0}
+.cal-event.cal-taskblock:active{cursor:grabbing}
+.cal-taskblock-head{display:flex;align-items:flex-start;gap:5px;min-width:0}
+.cal-taskblock-head .cal-event-title{flex:1;min-width:0}
+.cal-tick{flex:none;display:grid;place-items:center;width:13px;height:13px;margin-top:1px;padding:0;border:1.5px solid var(--muted);border-radius:50%;
+  background:var(--surface);color:var(--surface);cursor:pointer;transition:background .12s}
+.cal-tick:hover{background:var(--hover)}
+.cal-tick.on{background:var(--muted)}
+.cal-tick:disabled{cursor:default}
+.cal-tick svg{width:9px;height:9px}
+.cal-tick:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.cal-event.cal-taskblock.done{cursor:pointer;opacity:.6;background:transparent;box-shadow:none;
+  border:1.5px dashed var(--border-strong);border-left-width:3px}
+.cal-event.cal-taskblock.done .cal-event-title{font-weight:500;color:var(--muted);text-decoration:line-through}
+.cal-event.cal-taskblock.done:hover{opacity:.85}
+@media (prefers-reduced-motion:reduce){.cal-tick{transition:none}}
+
+/* Schalter „Weitere Aufgabe anlegen“ links in der Leiste des Eingabefensters. */
+.composer-more{
+  display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+  color:var(--muted);font-size:var(--fs-12);white-space:nowrap;
+}
+.composer-more .switch{width:32px;height:18px;padding:2px}
+.composer-more .switch::after{width:14px;height:14px}
+.composer-more .switch[aria-checked="true"]::after{margin-left:14px}
+.composer-more:has(.switch[aria-checked="true"]){color:var(--text)}
+.composer-hint{white-space:nowrap}
+/* Grid-Kind: ohne das wächst die Leiste mit einem langen Namen aus dem Fenster. */
+.composerbox .composer-actions{min-width:0}
+.composer-added{color:var(--muted);flex:1 1 0;min-width:0;overflow:hidden}
+.composer-added-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.composer-added .icon{flex:0 0 auto;color:var(--accent)}
+@media (max-width:720px){
+  .composerbox .composer-actions{flex-wrap:wrap}
+  .composer-more{flex-basis:100%}
+}
+
+/* ---------- Projekt-Schnellfilter im Seitenkopf ----------
+   Chips im Stil von „Ich habe Zeit“: „Alle“ und je Hauptprojekt eins mit
+   Farbpunkt und Anzahl. Gewählte Chips sind gefüllt. */
+.pquick{display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px}
+.pquick-chip{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;border:0;
+  border-radius:var(--r-full);background:var(--subtle);color:var(--muted);font:inherit;
+  font-size:var(--fs-12);font-weight:600;white-space:nowrap;cursor:pointer}
+.pquick-chip:hover{color:var(--text);background:var(--hover)}
+.pquick-chip.on{color:var(--info);background:var(--accent-tint);background:color-mix(in srgb,var(--info) 14%,transparent)}
+.pquick-chip:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.pquick-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.pquick-name{max-width:14em;overflow:hidden;text-overflow:ellipsis}
+.pquick-count{font-weight:500;color:var(--faint);font-variant-numeric:tabular-nums}
+.pquick-chip.on .pquick-count{color:inherit;opacity:.7}
+
+/* Rechtsklick-Menüs (lib/contextMenu.ts): am Mauszeiger, über allem, was
+   scrollt – die Position setzt das Menü selbst. */
+.popover.rowmenu.contextmenu,
+.popover.pagemenu-list.atpoint{position:fixed;right:auto;bottom:auto;z-index:110}
+.popover.rowmenu.contextmenu{min-width:210px}
+/* Schätzung per Rechtsklick: dieselbe Karte wie auf dem Handy, am Zeiger. */
+.rowmenu.estimatesheet.floating{width:300px;max-width:calc(100vw - 16px);padding:var(--s3)}
+.rowmenu.estimatesheet.floating .estchip{min-height:32px;padding:0 12px}
+
+/* Kanban-Status „In Arbeit“ an der Zeile (domain/kanban.ts): wie ein Tag, in
+   der Infofarbe, damit er sich von echten Tags abhebt. */
+.tag.status-doing{color:var(--info);background:color-mix(in srgb,var(--info) 12%,transparent)}
+
+/* E-Mails ins Fenster ziehen (components/MailDrop.tsx): ein Hinweis über
+   allem, der keine Klicks fängt. */
+.maildrop{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;background:color-mix(in srgb,var(--accent) 8%,transparent);
+  outline:3px dashed var(--accent);outline-offset:-12px}
+.maildrop-card{display:flex;align-items:center;gap:var(--s2);padding:12px 18px;border-radius:var(--r-full);
+  background:var(--surface,#fff);color:var(--text);font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+
+/* Kalender: Zeitraum für eine neue Aufgabe, während er aufgezogen wird. */
+.cal-event.cal-draft{position:absolute;z-index:4;pointer-events:none;display:flex;flex-direction:column;gap:2px;
+  padding:4px 6px;border-radius:6px;border:1.5px dashed var(--accent);
+  background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--text);font-size:var(--fs-12)}
+.cal-event.cal-draft span{color:var(--muted)}
+
 /* Fokus: eine ruhige Startseite mit wenigen Aufgaben auf einmal (ADHD-freundlich). */
 .focus-view {
   max-width: 44rem;
