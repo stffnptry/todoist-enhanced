@@ -9,7 +9,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon, type IconName } from './Icon';
 import { useT } from '@/hooks/useT';
-import { AreaAdd } from './AreaAdd';
+import { AreaListSheet } from './overlays/AreaListSheet';
 import { ListIcon } from './ListTitle';
 import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
@@ -36,7 +36,7 @@ import { byChildOrder, byLabelOrder } from '@/domain/orderKey';
 import { visibleSidebarNav, type SidebarItemId } from '@/domain/sidebar';
 import { pointAnchor } from '@/lib/contextMenu';
 import { isHiddenLabel } from '@/domain/kanban';
-import { LIST_ORDER, areaTitle, listDisplayName, splitListName, type ListLabel } from '@/domain/lists';
+import { areaTitle, compareLists, listDisplayName, parseListLabel, splitListName, type ListLabel, type ListMeta } from '@/domain/lists';
 
 interface SidebarProps {
   route: Route;
@@ -178,15 +178,18 @@ export function Sidebar({
    * or, on Todoist's free plan, a project (Claude_Eingang). Both show here by their
    * plain names and are hidden from the other sections.
    */
+  const listMeta = useStore((s) => s.prefs.listMeta);
   const areas = useMemo(() => {
-    type Row = { key: string; list: string; name: string; color: string; view: ViewId; id: string };
+    type Row = { key: string; list: string; name: string; color: string; view: ViewId; id: string; meta?: ListMeta };
     const byArea = new Map<string, Row[]>();
     const add = (parts: ListLabel, row: Row) => {
       byArea.set(parts.area, [...(byArea.get(parts.area) ?? []), row]);
     };
     for (const label of Object.values(snapshot.labels)) {
-      const parts = label.is_deleted ? null : splitListName(label.name);
-      if (parts) add(parts, { key: `label-${label.name}`, list: parts.list, name: listDisplayName(parts.list), color: label.color, view: 'label', id: label.name });
+      /* Die festen Listen (privat_geplant) und selbst angelegte (privat_einkauf). */
+      const parts = label.is_deleted ? null : splitListName(label.name) ?? parseListLabel(label.name);
+      const meta = listMeta[label.name];
+      if (parts) add(parts, { key: `label-${label.name}`, list: parts.list, name: meta?.name ?? listDisplayName(parts.list), color: label.color, view: 'label', id: label.name, meta });
     }
     for (const project of Object.values(snapshot.projects)) {
       const parts = project.is_archived || project.is_deleted ? null : splitListName(project.name);
@@ -197,9 +200,9 @@ export function Sidebar({
       .sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
       .map(([area, rows]) => ({
         area,
-        rows: [...rows].sort((a, b) => LIST_ORDER.indexOf(a.list) - LIST_ORDER.indexOf(b.list)),
+        rows: [...rows].sort(compareLists),
       }));
-  }, [snapshot.labels, snapshot.projects]);
+  }, [snapshot.labels, snapshot.projects, listMeta]);
 
   /* A menu that only closes by pressing its own button is a menu that follows
      you around the app. Anywhere else, and Escape, put it away. */
@@ -222,7 +225,7 @@ export function Sidebar({
   const toggleGroup = (key: string) =>
     setOpenGroups((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
 
-  /* The area whose "+" was pressed; its add form stays open until it is closed. */
+  /* The area whose "+" was pressed; the dialog for a new list in it is open while set. */
   const [addingArea, setAddingArea] = useState<string | null>(null);
 
   const workspaceOrder = useStore((s) => s.prefs.workspaceOrder);
@@ -479,6 +482,7 @@ export function Sidebar({
   return (
     <>
     <Feedback open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+    <AreaListSheet area={addingArea} onClose={() => setAddingArea(null)} />
     {/* Folded, the sidebar is still here and still drawn: it slides out
         (theme.css), and `inert` takes it out of the tab order and out of reach
         of a screen reader while it is away. */}
@@ -636,7 +640,7 @@ export function Sidebar({
               title={areaTitle(area)}
               open={openGroups[key] ?? true}
               onToggle={() => toggleGroup(key)}
-              onAdd={() => setAddingArea(addingArea === area ? null : area)}
+              onAdd={() => setAddingArea(area)}
               addLabel={t('area.add')}
             >
               {rows.map((row) => (
@@ -646,11 +650,10 @@ export function Sidebar({
                   aria-current={route.view === row.view && route.id === row.id ? 'page' : undefined}
                   onClick={() => navigate(row.view, row.id)}
                 >
-                  <ListIcon list={row.list} />
+                  <ListIcon list={row.list} meta={row.meta} />
                   <span className="label">{row.name}</span>
                 </button>
               ))}
-              {addingArea === area && <AreaAdd area={area} onClose={() => setAddingArea(null)} />}
             </SideGroup>
           );
         })}

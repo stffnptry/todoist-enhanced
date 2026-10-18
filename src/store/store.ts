@@ -12,7 +12,7 @@ import { createDustSlice } from './dust';
 import { createCollabSlice } from './collab';
 import * as idb from '@/db/idb';
 import { flushPersist, pendingDeletes } from './helpers';
-import { areaNames, setKnownAreas } from '@/domain/lists';
+import { areaNames, listAreas, setKnownAreas } from '@/domain/lists';
 
 /**
  * The app's one store, built from slices — one file per area:
@@ -37,7 +37,14 @@ export const useStore = create<AppState>()((...a) => ({
 // Covers hydration, remote settings, account switches and the quick-add entry.
 setEstimateStorage(useStore.getState().prefs.estimateStorage);
 useStore.subscribe((state, previous) => {
-  if (state.snapshot.projects !== previous.snapshot.projects) setKnownAreas(areaNames(state.snapshot.projects));
+  if (state.snapshot.projects !== previous.snapshot.projects || state.snapshot.labels !== previous.snapshot.labels) {
+    /* Bereiche sind Ordner oder ergeben sich aus den Listen-Namen (privat_geplant). */
+    const names = [
+      ...Object.values(state.snapshot.labels).filter((l) => !l.is_deleted).map((l) => l.name),
+      ...Object.values(state.snapshot.projects).filter((p) => !p.is_deleted && !p.is_archived).map((p) => p.name),
+    ];
+    setKnownAreas([...areaNames(state.snapshot.projects), ...listAreas(names)]);
+  }
   setEstimateStorage(state.prefs.estimateStorage);
   if (state.prefs.estimateStorage === 'duration' && !canStoreDurations(state.snapshot.user)) state.setPrefs({ estimateStorage: 'tag' });
 });

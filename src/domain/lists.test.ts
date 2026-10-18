@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { areaTitle, isListLabel, listDisplayName, listLabel, listOf, newListLabel, parseListLabel, setKnownAreas, splitListName } from './lists';
+import { areaTitle, compareLists, isListLabel, listAreas, listDisplayName, listLabel, listOf, newListLabel, parseListLabel, readListMeta, setKnownAreas, splitListName } from './lists';
 
 describe('Listen über Labels', () => {
   it('baut das Label aus Bereich und Liste, ohne Umlaute und Groß-/Kleinschreibung', () => {
@@ -55,5 +55,41 @@ describe('Bereiche und Listen in der Seitenleiste', () => {
     expect(splitListName('arbeit_geplant')).toEqual({ area: 'arbeit', list: 'geplant' });
     expect(splitListName('Einkaufsliste')).toBeNull();
     expect(areaTitle('privat')).toBe('Privat');
+  });
+});
+
+describe('selbst angelegte Listen', () => {
+  it('liest Listentyp, Symbol und Namen und verwirft Unbrauchbares', () => {
+    expect(readListMeta({
+      privat_einkauf: { kind: 'project', icon: 'cart', name: ' Einkauf ' },
+      privat_x: { kind: 'odd', icon: '<b>', name: 'X' },
+      privat_leer: { kind: 'list', name: '' },
+      privat_kaputt: 'nein',
+    })).toEqual({
+      privat_einkauf: { kind: 'project', icon: 'cart', name: 'Einkauf' },
+      privat_x: { kind: 'list', icon: null, name: 'X' },
+    });
+    expect(readListMeta(undefined)).toEqual({});
+  });
+
+  it('findet die Bereiche aus den Listen-Namen', () => {
+    expect(listAreas(['privat_geplant', 'Claude_Eingang', 'est-30', 'privat_wiederholend']).sort())
+      .toEqual(['claude', 'privat']);
+  });
+
+  it('erkennt eine eigene Liste, sobald ihr Bereich bekannt ist', () => {
+    setKnownAreas(listAreas(['privat_geplant']));
+    expect(parseListLabel('privat_urlaub_planen')).toEqual({ area: 'privat', list: 'urlaub_planen' });
+    setKnownAreas([]);
+  });
+
+  it('sortiert die festen Listen zuerst, dann nach Name', () => {
+    const rows = [
+      { list: 'zebra', name: 'Zebra' },
+      { list: 'geplant', name: 'Geplante Aufgaben' },
+      { list: 'einkauf', name: 'Einkauf' },
+      { list: 'wiederholend', name: 'Wiederholende Aufgaben' },
+    ];
+    expect([...rows].sort(compareLists).map((r) => r.list)).toEqual(['wiederholend', 'geplant', 'einkauf', 'zebra']);
   });
 });

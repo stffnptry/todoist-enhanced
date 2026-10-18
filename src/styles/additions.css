@@ -2112,27 +2112,42 @@ html.reduce-transparency .claudepanel,html.more-contrast .claudepanel{box-shadow
   margin-top: 0.75rem;
 }
 
-/* Unter einem Bereich: Liste oder Projekt anlegen (AreaAdd.tsx). */
-.area-add {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 2px 8px 6px 24px;
+/* Neue Liste in einem Bereich (AreaListSheet.tsx): links die Beschriftung,
+   rechts das Feld, wie im Entwurf. */
+.listform {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 14px 18px;
 }
-.area-addbtn {
-  font-size: 12px;
-  opacity: 0.7;
+.listform-label {
+  color: var(--muted);
+  font-size: var(--fs-14);
+  font-weight: 600;
 }
-.area-addfield {
-  flex: 1 1 100%;
-  font: inherit;
-  font-size: 13px;
-  padding: 3px 6px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--surface-1);
-  color: inherit;
+.listform-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
 }
-.area-addfield[aria-invalid='true'] {
-  border-color: var(--text-danger);
+.listform-field .textfield { width: 100%; border-color: var(--border-strong); }
+/* Das Feld bleibt auch mit dem Cursor darin als Feld sichtbar. */
+.listform-field .textfield:focus { border-color: var(--accent); outline: 1px solid var(--accent); outline-offset: -1px; }
+.listform-field .textfield[aria-invalid='true'] { border-color: var(--late); }
+.listform-field .filtererror { font-size: var(--fs-12); }
+.listform-wide { grid-column: 1 / -1; }
+.listform-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  transition: transform .15s;
 }
+.listform-icon .ic { width: 22px; height: 22px; }
+.listform-icon:hover { transform: scale(1.05); background: var(--hover); }
+.listform-icon.open,
+.listform-icon:focus-visible { box-shadow: 0 0 0 2px var(--accent); }

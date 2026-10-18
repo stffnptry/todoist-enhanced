@@ -9,7 +9,7 @@ import { ModeSurface } from '@/components/ModeSurface';
 import { TaskGroup } from '@/components/TaskGroup';
 import { Icon } from '@/components/Icon';
 import { ListTitle } from '@/components/ListTitle';
-import { splitListName } from '@/domain/lists';
+import { parseListLabel, splitListName } from '@/domain/lists';
 import { TimePanel } from '@/components/TimePanel';
 import { useT } from '@/hooks/useT';
 import { useFilterResult } from '@/hooks/useFilterResult';
@@ -173,7 +173,8 @@ function SimpleListBody({
   );
 
   /* A list label shows as its plain name, not as privat_wiederholend. */
-  const listParts = kind === 'label' && labelName ? splitListName(labelName) : null;
+  const listParts = kind === 'label' && labelName ? splitListName(labelName) ?? parseListLabel(labelName) : null;
+  const listMeta = labelName ? prefs.listMeta[labelName] : undefined;
   const title = kind === 'label'
     ? (labelName ?? '')
     : kind === 'filter' ? (filter?.name ?? '') : t(`nav.${kind}` as TranslationKey);
@@ -258,7 +259,7 @@ function SimpleListBody({
       <PageHeader
         hireNote={!hireInList}
         onContextMenu={inboxProject ? (event) => setMenuAnchor(pointAnchor(event)) : undefined}
-        title={filter ? <FilterTitle filter={filter} /> : listParts ? <ListTitle list={listParts.list} /> : title}
+        title={filter ? <FilterTitle filter={filter} /> : listParts ? <ListTitle list={listParts.list} meta={listMeta} /> : title}
         subtitle={filter ? <FilterDescription filter={filter} /> : undefined}
         actions={
           <>

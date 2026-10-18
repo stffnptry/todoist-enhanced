@@ -122,3 +122,58 @@ export function splitListName(name: string): ListLabel | null {
 export function areaTitle(area: string): string {
   return area.charAt(0).toUpperCase() + area.slice(1);
 }
+
+/**
+ * Was die App zu einer selbst angelegten Liste weiß und Todoist nicht: ob sie
+ * eine einfache Liste oder ein Projekt ist, ihr Symbol und ihr Name, wie er
+ * eingegeben wurde („Urlaub planen“ statt `urlaub_planen`). Ein Label hat in
+ * Todoist kein Feld dafür, also liegt das in den Einstellungen und reist mit
+ * ihnen zu den anderen Geräten.
+ */
+export type ListKind = 'list' | 'project';
+
+export interface ListMeta {
+  kind: ListKind;
+  icon: string | null;
+  name: string;
+}
+
+/** Die Listen-Angaben aus gespeicherten Einstellungen; Unbrauchbares fällt weg. */
+export function readListMeta(raw: unknown): Record<string, ListMeta> {
+  if (!raw || typeof raw !== 'object') return {};
+  const result: Record<string, ListMeta> = {};
+  for (const [label, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (!value || typeof value !== 'object') continue;
+    const v = value as Record<string, unknown>;
+    if (typeof v.name !== 'string' || !v.name.trim()) continue;
+    result[label] = {
+      kind: v.kind === 'project' ? 'project' : 'list',
+      icon: typeof v.icon === 'string' && /^[a-z0-9-]+$/.test(v.icon) ? v.icon : null,
+      name: v.name.trim(),
+    };
+  }
+  return result;
+}
+
+/**
+ * Die Bereiche, die sich aus den Namen der Listen ergeben (`privat_geplant`,
+ * `Claude_Eingang`). Damit erkennt die App auch selbst angelegte Listen wie
+ * `privat_einkauf` als Liste, wenn der Bereich kein Todoist-Ordner ist.
+ */
+export function listAreas(names: string[]): string[] {
+  const areas = new Set<string>();
+  for (const name of names) {
+    const parts = splitListName(name);
+    if (parts) areas.add(parts.area);
+  }
+  return [...areas];
+}
+
+/** Die Reihenfolge in einem Bereich: die bekannten Listen zuerst, dann die übrigen nach Name. */
+export function compareLists(a: { list: string; name: string }, b: { list: string; name: string }): number {
+  const rank = (list: string) => {
+    const at = LIST_ORDER.indexOf(list);
+    return at === -1 ? LIST_ORDER.length : at;
+  };
+  return rank(a.list) - rank(b.list) || a.name.localeCompare(b.name);
+}
