@@ -10,6 +10,8 @@ import { createPortal } from 'react-dom';
 import { Icon, type IconName } from './Icon';
 import { useT } from '@/hooks/useT';
 import { AreaListSheet } from './overlays/AreaListSheet';
+import { useConfirm } from './overlays/Confirm';
+import { PageMenu } from './PageMenu';
 import { ListIcon } from './ListTitle';
 import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
@@ -180,7 +182,7 @@ export function Sidebar({
    */
   const listMeta = useStore((s) => s.prefs.listMeta);
   const areas = useMemo(() => {
-    type Row = { key: string; list: string; name: string; color: string; view: ViewId; id: string; meta?: ListMeta };
+    type Row = { key: string; list: string; name: string; color: string; view: ViewId; id: string; meta?: ListMeta; labelId?: string };
     const byArea = new Map<string, Row[]>();
     const add = (parts: ListLabel, row: Row) => {
       byArea.set(parts.area, [...(byArea.get(parts.area) ?? []), row]);
@@ -189,7 +191,7 @@ export function Sidebar({
       /* Die festen Listen (privat_geplant) und selbst angelegte (privat_einkauf). */
       const parts = label.is_deleted ? null : splitListName(label.name) ?? parseListLabel(label.name);
       const meta = listMeta[label.name];
-      if (parts) add(parts, { key: `label-${label.name}`, list: parts.list, name: meta?.name ?? listDisplayName(parts.list), color: label.color, view: 'label', id: label.name, meta });
+      if (parts) add(parts, { key: `label-${label.name}`, list: parts.list, name: meta?.name ?? listDisplayName(parts.list), color: label.color, view: 'label', id: label.name, meta, labelId: label.id });
     }
     for (const project of Object.values(snapshot.projects)) {
       const parts = project.is_archived || project.is_deleted ? null : splitListName(project.name);
@@ -224,6 +226,27 @@ export function Sidebar({
 
   const toggleGroup = (key: string) =>
     setOpenGroups((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
+
+  /*
+   * Eine Liste löschen heißt: ihr Label löschen. Todoist nimmt es dabei von den
+   * Aufgaben, die Aufgaben selbst bleiben (ohne Liste) erhalten.
+   */
+  const confirm = useConfirm();
+  const deleteLabel = useStore((s) => s.deleteLabel);
+  async function deleteList(labelId: string, labelName: string, name: string) {
+    const count = roots.filter((i) => hasLabel(i, labelName)).length;
+    const yes = await confirm({
+      title: t('area.deleteTitle', { name }),
+      body: count === 0 ? t('area.deleteBodyEmpty') : t('area.deleteBody', { count }),
+      confirmLabel: t('area.deleteList'),
+      destructive: true,
+    });
+    if (!yes) return;
+    if (route.view === 'label' && route.id === labelName) navigate('week');
+    const { [labelName]: _gone, ...rest } = useStore.getState().prefs.listMeta;
+    setPrefs({ listMeta: rest });
+    await deleteLabel(labelId);
+  }
 
   /* The area whose "+" was pressed; the dialog for a new list in it is open while set. */
   const [addingArea, setAddingArea] = useState<string | null>(null);
@@ -643,17 +666,40 @@ export function Sidebar({
               onAdd={() => setAddingArea(area)}
               addLabel={t('area.add')}
             >
-              {rows.map((row) => (
-                <button
-                  key={row.key}
-                  className="navitem"
-                  aria-current={route.view === row.view && route.id === row.id ? 'page' : undefined}
-                  onClick={() => navigate(row.view, row.id)}
-                >
-                  <ListIcon list={row.list} meta={row.meta} />
-                  <span className="label">{row.name}</span>
-                </button>
-              ))}
+              {rows.map((row) => {
+                const button = (
+                  <button
+                    key={row.key}
+                    className="navitem"
+                    aria-current={route.view === row.view && route.id === row.id ? 'page' : undefined}
+                    onClick={() => navigate(row.view, row.id)}
+                  >
+                    <ListIcon list={row.list} meta={row.meta} />
+                    <span className="label">{row.name}</span>
+                  </button>
+                );
+                /* Nur Listen aus Labels lassen sich hier löschen: Eine Liste,
+                   die ein Todoist-Projekt ist (Claude_Eingang), nähme ihre
+                   Aufgaben mit. */
+                const labelId = row.labelId;
+                if (!labelId) return button;
+                return (
+                  <div key={row.key} className="navrow arearow">
+                    {button}
+                    <span className="navend">
+                      <PageMenu
+                        floating
+                        label={t('area.listActions')}
+                        contextOn=".arearow"
+                        items={[{
+                          key: 'delete', label: t('area.deleteList'), icon: 'trash', danger: true,
+                          onPick: () => void deleteList(labelId, row.id, row.name),
+                        }]}
+                      />
+                    </span>
+                  </div>
+                );
+              })}
             </SideGroup>
           );
         })}

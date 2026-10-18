@@ -19,9 +19,15 @@ export interface PageMenuItem {
  * The three dots on a page that is not a project: what can be done to the page
  * itself, in one small list. A project has its own, richer menu.
  */
-export function PageMenu({ items, label, contextOn }: {
+export function PageMenu({ items, label, contextOn, floating = false }: {
   items: PageMenuItem[];
   label?: string;
+  /**
+   * Auch der Klick auf die drei Punkte zeichnet das Menü ins Dokument, am
+   * Knopf: für Zeilen in einer scrollenden Liste wie der Seitenleiste, die es
+   * sonst abschneiden würde.
+   */
+  floating?: boolean;
   /**
    * Der Bereich, dessen Rechtsklick dieses Menü öffnet (ein Selektor für den
    * nächsten Vorfahren, etwa die Kopfzeile der Seite oder die Karte, auf der
@@ -115,7 +121,13 @@ export function PageMenu({ items, label, contextOn }: {
         title={name}
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={(event) => {
+          if (floating && !open) {
+            const at = event.currentTarget.getBoundingClientRect();
+            setPoint(pointAnchor({ clientX: at.left, clientY: at.bottom + 4 }));
+          }
+          setOpen((v) => !v);
+        }}
       >
         <Icon name="more" />
       </button>

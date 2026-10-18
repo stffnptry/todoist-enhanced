@@ -2151,3 +2151,18 @@ html.reduce-transparency .claudepanel,html.more-contrast .claudepanel{box-shadow
 .listform-icon:hover { transform: scale(1.05); background: var(--hover); }
 .listform-icon.open,
 .listform-icon:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+
+/* Die drei Punkte an einer Liste im Bereich (Liste löschen): erst beim Zeigen. */
+.arearow .navend { pointer-events: auto; }
+.arearow .pagemenu .iconbtn {
+  width: 22px;
+  height: 22px;
+  min-width: 0;
+  padding: 0;
+  opacity: 0;
+  color: var(--muted);
+}
+.arearow .pagemenu .iconbtn .ic { width: 16px; height: 16px; }
+.arearow:hover .pagemenu .iconbtn,
+.arearow:focus-within .pagemenu .iconbtn,
+.arearow .pagemenu .iconbtn[aria-expanded='true'] { opacity: 1; }
