@@ -182,6 +182,8 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
           (child) => dropMutation(child, where)?.update ?? null,
           t('replan.childrenMoved', { count: lateChildren.length }),
         );
+        /* Schon mitverschoben: in dieser Runde nicht noch einmal fragen. */
+        setHandled((prev) => new Set([...prev, ...lateChildren.map((child) => child.id)]));
       }
       done(current.id);
     } finally { setBusy(false); }
