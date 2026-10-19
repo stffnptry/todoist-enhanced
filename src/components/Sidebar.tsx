@@ -17,7 +17,7 @@ import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
 import { navigate, type Route } from '@/hooks/useRoute';
 import { projectCounts, projectTree, rootItems, type ProjectNode } from '@/store/selectors';
-import { bucketOf, restOfWeekItems, hasLabel, somedayItems, upcomingItems, weekItems } from '@/domain/views';
+import { bucketOf, missingEstimate, restOfWeekItems, hasLabel, somedayItems, upcomingItems, weekItems } from '@/domain/views';
 import { markerStyle, avatarUrl } from '@/domain/colors';
 import { firstName, karmaStanding } from '@/domain/karma';
 import { readProjectIcon } from '@/domain/projectIcons';
@@ -156,6 +156,15 @@ export function Sidebar({
         return date !== null && date <= endOfDay(addDays(now, prefs.upcomingHorizonDays));
       }).length,
       someday: somedayItems(scope('someday')).length,
+      unestimated: (() => {
+        /* Wie die Seite: alle offenen Aufgaben, Unteraufgaben mitgezählt. */
+        const filters = viewPrefs(prefs, 'unestimated').filters;
+        const scoped = { ...snapshot, items: assigneeItems(snapshot, filters.assignees) };
+        const childrenOf = makeChildrenOf(childIndex(scoped));
+        const open = openItems(scoped);
+        const { ids } = missingEstimate(open, childrenOf);
+        return applyFilters(open.filter((i) => ids.has(i.id)), filters, snapshot, childrenOf).length;
+      })(),
       byProject: projectCounts(roots),
     };
   }, [roots, inboxId, weekLayout, snapshot, prefs]);
@@ -333,6 +342,7 @@ export function Sidebar({
       case 'week': return navItem('week', 'week', 'nav.week', counts.week, { kind: 'anytime' });
       case 'upcoming': return navItem('upcoming', 'upcoming', 'nav.upcoming', counts.upcoming);
       case 'someday': return navItem('someday', 'someday', 'nav.someday', counts.someday, { kind: 'someday' });
+      case 'unestimated': return navItem('unestimated', 'clock', 'nav.unestimated', counts.unestimated);
       case 'review': return navItem('review', 'check', 'nav.review', 0);
       case 'calendar': return navItem('calendar', 'calendar', 'nav.calendar', 0);
       case 'dashboard':

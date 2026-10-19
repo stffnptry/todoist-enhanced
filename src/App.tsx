@@ -55,7 +55,7 @@ import { useDesktopReminders } from './hooks/useDesktopReminders';
 import { CalendarView } from './views/CalendarView';
 import { MailDrop } from './components/MailDrop';
 import { ClaudePanel } from './components/ClaudePanel';
-import { bucketOf, restOfWeekItems, hasLabel, somedayItems, upcomingItems, weekItems } from './domain/views';
+import { bucketOf, missingEstimate, restOfWeekItems, hasLabel, somedayItems, upcomingItems, weekItems } from './domain/views';
 import { effectiveEstimate } from './domain/estimates';
 import type { Item } from './domain/types';
 import type { TranslationKey } from './i18n';
@@ -690,6 +690,8 @@ function AppShell({
         return { contextItems: weekItems(roots), contextLabel: t('nav.review') };
       case 'someday':
         return { contextItems: somedayItems(roots), contextLabel: t('nav.someday') };
+      case 'unestimated':
+        return { contextItems: missingEstimate(items, childrenOf).tops, contextLabel: t('nav.unestimated') };
       case 'inbox': {
         const inboxId = snapshot.user?.inbox_project_id;
         return {
@@ -702,7 +704,7 @@ function AppShell({
       default:
         return { contextItems: roots, contextLabel: t(`nav.${route.view}` as TranslationKey) };
     }
-  }, [route, roots, snapshot.projects, snapshot.user?.inbox_project_id, t, weekLayout]);
+  }, [route, roots, items, childrenOf, snapshot.projects, snapshot.user?.inbox_project_id, t, weekLayout]);
 
   const unestimatedItems = useMemo(
     () => contextItems.filter((i) => effectiveEstimate(i, childrenOf).minutes === null),
@@ -872,6 +874,7 @@ function AppShell({
           {route.view === 'today' && <WeekView {...viewProps} scope="today" />}
           {route.view === 'upcoming' && <UpcomingView {...viewProps} />}
           {route.view === 'someday' && <SimpleListView kind="someday" {...viewProps} />}
+          {route.view === 'unestimated' && <SimpleListView kind="unestimated" {...viewProps} />}
           {/* The Inbox is a project like the others, with sections of its own
              : it is drawn by the project page, which is what shows them. */}
           {route.view === 'inbox' && (snapshot.user?.inbox_project_id

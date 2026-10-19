@@ -73,6 +73,7 @@ export const en = {
   'nav.week': 'My week',
   'nav.upcoming': 'Upcoming',
   'nav.someday': 'Someday',
+  'nav.unestimated': 'Missing estimate',
   'nav.dashboard': 'Dashboard',
   'nav.insights': 'Insights',
   'nav.settings': 'Settings',

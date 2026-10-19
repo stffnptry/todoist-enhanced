@@ -352,6 +352,8 @@ export type ViewId =
   | 'today'
   | 'upcoming'
   | 'someday'
+  /** Schätzung fehlt: jede offene Aufgabe ohne Dauer. */
+  | 'unestimated'
   | 'review'
   | 'dashboard'
   | 'settings'

@@ -182,7 +182,7 @@ describe('the sidebar settings', () => {
     const hydrated = hydratePreferences({ homepage: 'week' }, 'en');
     expect(hydrated.sidebarSearch).toBe(true);
     expect(hydrated.sidebarCounts).toBe(true);
-    expect(hydrated.sidebarNav.main.map((e) => e.id)).toEqual(['focus', 'inbox', 'today', 'week', 'upcoming', 'someday']);
+    expect(hydrated.sidebarNav.main.map((e) => e.id)).toEqual(['focus', 'inbox', 'today', 'week', 'upcoming', 'someday', 'unestimated']);
     expect(hydrated.sidebarNav.other.map((e) => e.id)).toContain('logbook');
   });
 

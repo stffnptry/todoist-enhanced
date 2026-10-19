@@ -20,7 +20,7 @@ import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
 import { viewPrefs } from '@/store/prefs';
 import { applyFilters, pullQuick, rootItems, sortItems } from '@/store/selectors';
-import { somedayItems, hasLabel, splitDust } from '@/domain/views';
+import { missingEstimate, somedayItems, hasLabel, splitDust } from '@/domain/views';
 import { summariseLoad } from '@/domain/load';
 import type { TranslationKey } from '@/i18n';
 import type { Item } from '@/domain/types';
@@ -28,7 +28,7 @@ import type { DropTarget, RowOrder, TaskPlacement } from '@/domain/dnd';
 import { pointAnchor } from '@/lib/contextMenu';
 
 interface SimpleListViewProps {
-  kind: 'someday' | 'inbox' | 'label' | 'filter';
+  kind: 'someday' | 'inbox' | 'label' | 'filter' | 'unestimated';
   labelName?: string;
   /** The saved filter a `filter` page shows. */
   filterId?: string;
@@ -88,11 +88,20 @@ function SimpleListBody({
     () => new Set(filterResult.parts?.flatMap((part) => part.ids) ?? []),
     [filterResult.parts],
   );
+  /* Schätzung fehlt: Unteraufgaben zählen mit. Eine fehlende steht unter
+     ihrer übergeordneten Aufgabe, wenn der auch die Dauer fehlt, sonst für
+     sich; aufgeklappt zeigt eine Aufgabe nur die Unteraufgaben ohne Dauer. */
+  const missing = useMemo(
+    () => (kind === 'unestimated' ? missingEstimate(items, allChildrenOf) : null),
+    [kind, items, allChildrenOf],
+  );
   const childrenOf = useMemo(
     () => (kind === 'filter'
       ? (id: string) => allChildrenOf(id).filter((child) => matched.has(child.id))
-      : allChildrenOf),
-    [kind, allChildrenOf, matched],
+      : missing
+        ? (id: string) => allChildrenOf(id).filter((child) => missing.ids.has(child.id))
+        : allChildrenOf),
+    [kind, allChildrenOf, matched, missing],
   );
   const filterPool = (ids: string[]): Item[] => ids
     .map((id) => snapshot.items[id])
@@ -108,6 +117,8 @@ function SimpleListBody({
     } else if (kind === 'inbox') {
       const inboxId = snapshot.user?.inbox_project_id;
       selection = inboxId ? roots.filter((i) => i.project_id === inboxId) : [];
+    } else if (missing) {
+      selection = missing.tops;
     } else if (kind === 'filter') {
       const seen = new Set<string>();
       selection = filterPool(filterResult.parts?.flatMap((part) => part.ids) ?? [])
@@ -118,7 +129,7 @@ function SimpleListBody({
 
     return selection;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, kind, labelName, snapshot, filterResult.parts, matched]);
+  }, [items, kind, labelName, snapshot, filterResult.parts, matched, missing]);
   const scoped = useMemo(
     () => applyFilters(pool0, current.filters, snapshot, childrenOf),
     [pool0, current.filters, snapshot, childrenOf],
@@ -138,7 +149,7 @@ function SimpleListBody({
   const split = useMemo(
     /* A filter shows what Todoist's query returns and nothing else, so its
        tasks stay in the lists the query draws rather than leaving for Quick. */
-    () => kind === 'filter' || (current.mode === 'board' && current.group !== 'none')
+    () => kind === 'filter' || kind === 'unestimated' || (current.mode === 'board' && current.group !== 'none')
       ? { quick: [], rest: scoped }
       : pullQuick(scoped, prefs.showQuickGroup, current.sort, childrenOf, order, snapshot),
     [kind, scoped, current.mode, current.group, current.sort, prefs.showQuickGroup, childrenOf, order, snapshot],
@@ -182,14 +193,14 @@ function SimpleListBody({
   /* What this page is, said twice: as the place a dropped task lands, and as
      the head start the composer opens with. */
   const inboxId = snapshot.user?.inbox_project_id;
-  const dropTarget: DropTarget | undefined = kind === 'filter'
+  const dropTarget: DropTarget | undefined = kind === 'filter' || kind === 'unestimated'
     ? undefined
     : kind === 'someday'
     ? { kind: 'someday' }
     : kind === 'inbox'
       ? (inboxId ? { kind: 'project', projectId: inboxId } : undefined)
       : (labelName ? { kind: 'label', label: labelName } : undefined);
-  const addition = kind === 'someday' || kind === 'filter'
+  const addition = kind === 'someday' || kind === 'filter' || kind === 'unestimated'
     ? {}
     : kind === 'inbox'
       ? { projectId: inboxId }

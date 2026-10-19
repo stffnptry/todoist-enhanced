@@ -1,6 +1,6 @@
 import { addMonths, differenceInMonths, endOfWeek, parseISO, startOfDay } from 'date-fns';
 import { SYSTEM_LABELS, weekLabel, type Bucket, type Item } from './types';
-import { estimateOf } from './estimates';
+import { effectiveEstimate, estimateOf } from './estimates';
 import { dueDate, hasTime, isFuture, isOverdue, isToday, toApiDate } from './dates';
 
 /** Case-insensitive label test, so `Week` and `week` behave the same. */
@@ -240,6 +240,25 @@ export function upcomingItems(items: Item[], now = new Date()): Item[] {
 /** Someday / backlog: no date and no `week` commitment. */
 export function somedayItems(items: Item[], now = new Date()): Item[] {
   return items.filter((i) => bucketOf(i, now) === 'someday');
+}
+
+/**
+ * „Schätzung fehlt“: jede offene Aufgabe ohne Eintrag im Feld Dauer, ob sie
+ * eine Unteraufgabe ist oder nicht. Eine übergeordnete Aufgabe, deren
+ * Unteraufgaben zusammen schon eine Dauer ergeben, gilt als geschätzt – so
+ * zeigt sie auch ihr Feld an.
+ *
+ * `ids` ist alles, was fehlt; `tops` die Zeilen der Liste. Eine Unteraufgabe,
+ * deren übergeordnete Aufgabe selbst fehlt, steht unter ihr und nicht noch
+ * einmal für sich.
+ */
+export function missingEstimate(
+  items: Item[],
+  childrenOf: (parentId: string) => Item[],
+): { ids: Set<string>; tops: Item[] } {
+  const missing = items.filter((i) => isOpen(i) && effectiveEstimate(i, childrenOf).minutes === null);
+  const ids = new Set(missing.map((i) => i.id));
+  return { ids, tops: missing.filter((i) => !(i.parent_id && ids.has(i.parent_id))) };
 }
 
 /** Anytime this week: no date, carrying `week`. */

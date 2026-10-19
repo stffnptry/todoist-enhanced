@@ -82,6 +82,8 @@ export function Search({ open, onClose, onOpen, seed = '' }: SearchProps) {
         run: go(() => navigate('upcoming')) },
       { key: 'go-someday', icon: 'someday', title: t('nav.someday'),
         run: go(() => navigate('someday')) },
+      { key: 'go-unestimated', icon: 'clock', title: t('nav.unestimated'),
+        run: go(() => navigate('unestimated')) },
       { key: 'go-review', icon: 'check', title: t('nav.review'),
         run: go(() => navigate('review')) },
       /* Always findable: opening it from here turns the page on, rather than

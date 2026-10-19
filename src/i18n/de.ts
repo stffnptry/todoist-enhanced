@@ -75,6 +75,7 @@ export const de: Record<TranslationKey, string> = {
   'nav.week': 'Meine Woche',
   'nav.upcoming': 'Demnächst',
   'nav.someday': 'Irgendwann',
+  'nav.unestimated': 'Schätzung fehlt',
   'nav.dashboard': 'Dashboard',
   'nav.insights': 'Statistiken',
   'nav.settings': 'Einstellungen',

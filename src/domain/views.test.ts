@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ageInMonths, byDay, groupWeek, restOfWeekItems, weekItems, keptDay, pruneKept, readKept, splitDust, splitQuick,
+  ageInMonths, byDay, missingEstimate, groupWeek, restOfWeekItems, weekItems, keptDay, pruneKept, readKept, splitDust, splitQuick,
 } from './views';
 import { due, item } from '@/test/items';
 
@@ -230,5 +230,37 @@ describe('ageInMonths', () => {
     expect(ageInMonths(item({ added_at: '2026-02-01T10:00:00' }), NOW)).toBe(8);
     expect(ageInMonths(item({ added_at: '2026-10-05T10:00:00' }), NOW)).toBe(1);
     expect(ageInMonths(item(), NOW)).toBe(0);
+  });
+});
+
+describe('missingEstimate', () => {
+  const tasks = [
+    item({ id: 'bare' }),
+    item({ id: 'tagged', labels: ['est-15'] }),
+    item({ id: 'timed', duration: { amount: 30, unit: 'minute' } }),
+    item({ id: 'days', duration: { amount: 2, unit: 'day' } }),
+    item({ id: 'done', checked: true }),
+    item({ id: 'parent' }),
+    item({ id: 'child-bare', parent_id: 'parent' }),
+    item({ id: 'child-est', parent_id: 'parent', labels: ['est-10'] }),
+    item({ id: 'sum' }),
+    item({ id: 'sum-a', parent_id: 'sum', labels: ['est-5'] }),
+    item({ id: 'orphan', parent_id: 'tagged' }),
+    item({ id: 'open' }),
+    item({ id: 'open-a', parent_id: 'open' }),
+  ];
+  const childrenOf = (id: string) => tasks.filter((t) => t.parent_id === id);
+
+  it('lists every open task with nothing in its duration field', () => {
+    const { ids: missing } = missingEstimate(tasks, childrenOf);
+    expect([...missing].sort()).toEqual(['bare', 'child-bare', 'days', 'open', 'open-a', 'orphan']);
+  });
+
+  it('draws a subtask on its own only when its parent is not listed', () => {
+    expect(ids(missingEstimate(tasks, childrenOf).tops).sort()).toEqual(['bare', 'child-bare', 'days', 'open', 'orphan']);
+  });
+
+  it('treats a parent whose subtasks add up as estimated', () => {
+    expect(missingEstimate(tasks, childrenOf).ids.has('sum')).toBe(false);
   });
 });
