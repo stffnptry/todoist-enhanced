@@ -15,6 +15,8 @@ import { Icon } from './Icon';
  *   direkt gelesen;
  * - Apple Mail gibt einen Link `message:<Message-ID>` mit; Betreff und Text
  *   holt die Mac-App per AppleScript aus Mail;
+ * - Outlook gibt nur ein Datei-Versprechen, das Chromium nicht kennt; die
+ *   Mac-App löst es beim Ablegen ein und reicht die .eml-Dateien herüber;
  * - gibt das Programm Chromium nichts davon (das neue Outlook), schaut die
  *   Mac-App auf die Drag-Ablage des Systems nach Dateien und Text;
  * - sonst bleibt Text oder HTML: erste Zeile Titel, der Rest Beschreibung.
@@ -152,7 +154,22 @@ async function readMails(
   }
   if (mails.length > 0) return { mails };
 
-  // 3. Nichts Lesbares für Chromium: die Drag-Ablage des Systems (neues Outlook u. a.)
+  // 3. Outlook: die Mac-App hat die versprochenen .eml-Dateien geschrieben
+  const promised = desktop?.promised && input.files.length === 0 ? await desktop.promised() : null;
+  const promisedFiles = promised?.ok ? promised.files ?? [] : [];
+  for (const path of promisedFiles) {
+    const file = await desktop!.readEml(path);
+    const mail = file.ok && file.text ? parseEml(file.text) : null;
+    if (mail) mails.push(mail);
+  }
+  if (mails.length > 0) return { mails };
+  /* Versprechen eingelöst, aber nichts Lesbares: die Dateinamen zur Fehlersuche zeigen. */
+  const promisedNames = [
+    ...promisedFiles.map((path) => path.split('/').pop() ?? path),
+    ...(promised?.errors ?? []),
+  ];
+
+  // 4. Nichts Lesbares für Chromium: die Drag-Ablage des Systems (neues Outlook u. a.)
   if (desktop && input.files.length === 0 && !input.plain && !input.html) {
     const board = await desktop.dragPasteboard();
     if (board.ok) {
@@ -166,12 +183,12 @@ async function readMails(
       const text = board.text || (board.html ? htmlToText(board.html) : '');
       const mail = text ? messageFromText(text) : null;
       if (mail) return { mails: [mail] };
-      return { mails: [], systemTypes: board.types ?? [] };
+      return { mails: [], systemTypes: [...promisedNames, ...(board.types ?? [])] };
     }
-    return { mails: [] };
+    return { mails: [], systemTypes: promisedNames };
   }
 
-  // 4. Text oder HTML
+  // 5. Text oder HTML
   const text = input.plain || (input.html ? htmlToText(input.html) : '');
   const mail = text ? messageFromText(text) : null;
   return { mails: mail ? [mail] : [] };
