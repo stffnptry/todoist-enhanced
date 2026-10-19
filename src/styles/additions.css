@@ -2197,11 +2197,34 @@ html.desktop-app:not(.quickadd) body::before {
 .replan-meta { margin: 6px 0 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.8125rem; color: var(--muted); }
 .replan-meta span { display: inline-flex; align-items: center; gap: 4px; }
 .replan-meta .late { color: var(--late-dark, #d1453b); }
-.replan-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.replan-choices .btn.replan-choice {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 6px; height: auto; min-height: 72px; padding: 10px 6px;
+/* Vier Kacheln in zwei Reihen: Symbol in einem farbigen Kreis, darunter
+   was passiert. Löschen bleibt zurückhaltend und färbt sich erst beim Zeigen. */
+.replan-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.replan-choice {
+  --tone: var(--muted); --tone-soft: var(--btn-soft, rgba(127,127,127,.1));
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  padding: 12px 14px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface, transparent); color: var(--text);
+  font: inherit; transition: border-color .12s, background-color .12s, transform .06s;
 }
+.replan-choice:hover:not(:disabled) { border-color: var(--tone); background: var(--tone-soft); }
+.replan-choice:active:not(:disabled) { transform: scale(.98); }
+.replan-choice:focus-visible { outline: 2px solid var(--tone); outline-offset: 2px; }
+.replan-choice:disabled { opacity: .55; cursor: default; }
+.replan-choice-icon {
+  flex: 0 0 auto; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+  color: var(--tone); background: var(--tone-soft);
+}
+.replan-choice-text { display: grid; gap: 1px; min-width: 0; }
+.replan-choice-text b { font-size: 0.875rem; font-weight: 600; }
+.replan-choice-text small { font-size: 0.75rem; color: var(--muted); }
+.replan-choice.complete { --tone: var(--ok, #2f7d32); --tone-soft: var(--ok-soft, #d7e7d7); }
+.replan-choice.move { --tone: var(--accent); --tone-soft: var(--accent-soft, transparent); }
+.replan-choice.skip { --tone: var(--muted); }
+.replan-choice.delete .replan-choice-icon { color: var(--muted); }
+.replan-choice.delete:hover:not(:disabled) { --tone: var(--late-dark, #d1453b); --tone-soft: var(--late-wash, #fdecea); }
+.replan-choice.delete:hover:not(:disabled) .replan-choice-icon { color: var(--tone); }
+@media (max-width: 420px) { .replan-choices { grid-template-columns: 1fr; } }
 .replan-move { display: grid; gap: 12px; }
 .replan-quick { display: flex; flex-wrap: wrap; gap: 6px; }
 .replan-when { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }

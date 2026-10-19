@@ -1801,6 +1801,14 @@ export const en = {
   "report.learn.onTimeHigh.text": "{share} % of your dated tasks were done on time.",
   "report.learn.focusHigh.title": "Focused on what matters",
   "report.learn.focusHigh.text": "Focus score {score}: your energy went mostly into high-priority tasks.",
+  'replan.skip': 'Skip',
+  'replan.skipHint': 'Leave it as it is',
+  'replan.completeHint': 'Tick it off',
+  'replan.moveHint': 'New date, with a reason',
+  'replan.deleteHint': 'Remove for good',
+  'replan.skippedCount_one': '1 task skipped.',
+  'replan.skippedCount_other': '{count} tasks skipped.',
+  'replan.skippedCount': '{count} skipped.',
 };
 
 export type TranslationKey = keyof typeof en;

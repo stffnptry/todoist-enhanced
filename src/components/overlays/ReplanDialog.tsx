@@ -52,6 +52,7 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
      stehen, auch wenn die Ansicht unter dem Dialog schrumpft. */
   const [handled, setHandled] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
+  const [skipped, setSkipped] = useState(0);
   const [moving, setMoving] = useState(false);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -95,6 +96,7 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
         <div className="sheet-body replan-done">
           <p className="replan-done-mark" aria-hidden="true">✓</p>
           <p>{total > 0 ? t('replan.allDone', { count: total }) : t('replan.nothing')}</p>
+          {skipped > 0 && <p className="replan-hint">{t('replan.skippedCount', { count: skipped })}</p>}
         </div>
         <div className="sheet-foot">
           <button className="btn primary" data-autofocus onClick={onClose}>{t('common.close')}</button>
@@ -116,6 +118,14 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
       await toggleTask(current.id);
       done(current.id);
     } finally { setBusy(false); }
+  }
+
+  /* Überspringen ändert nichts an der Aufgabe: sie bleibt, wo sie ist, und
+     kommt in dieser Runde nicht noch einmal. */
+  function skip() {
+    if (!current || busy) return;
+    setSkipped((n) => n + 1);
+    done(current.id);
   }
 
   async function remove() {
@@ -191,18 +201,27 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
 
         {!moving ? (
           <div className="replan-choices">
-            <button className="btn replan-choice" data-autofocus disabled={busy} onClick={() => void complete()}>
-              <Icon name="check" />
-              <span>{t('replan.complete')}</span>
-            </button>
-            <button className="btn replan-choice" disabled={busy} onClick={() => void remove()}>
-              <Icon name="trash" />
-              <span>{t('replan.delete')}</span>
-            </button>
-            <button className="btn replan-choice" disabled={busy} onClick={() => setMoving(true)}>
-              <Icon name="calendar" />
-              <span>{t('replan.move')}</span>
-            </button>
+            {([
+              { key: 'complete', icon: 'check', label: t('replan.complete'), hint: t('replan.completeHint'), run: () => void complete() },
+              { key: 'move', icon: 'calendar', label: t('replan.move'), hint: t('replan.moveHint'), run: () => setMoving(true) },
+              { key: 'skip', icon: 'arrow-right', label: t('replan.skip'), hint: t('replan.skipHint'), run: skip },
+              { key: 'delete', icon: 'trash', label: t('replan.delete'), hint: t('replan.deleteHint'), run: () => void remove() },
+            ] as const).map((choice, index) => (
+              <button
+                key={choice.key}
+                type="button"
+                className={`replan-choice ${choice.key}`}
+                data-autofocus={index === 0 ? true : undefined}
+                disabled={busy}
+                onClick={choice.run}
+              >
+                <span className="replan-choice-icon" aria-hidden="true"><Icon name={choice.icon} /></span>
+                <span className="replan-choice-text">
+                  <b>{choice.label}</b>
+                  <small>{choice.hint}</small>
+                </span>
+              </button>
+            ))}
           </div>
         ) : (
           <div className="replan-move">

@@ -1803,4 +1803,12 @@ export const de: Record<TranslationKey, string> = {
   "report.learn.onTimeHigh.text": "{share} % deiner Aufgaben mit Datum hast du pünktlich erledigt.",
   "report.learn.focusHigh.title": "Fokus auf Wichtigem",
   "report.learn.focusHigh.text": "Fokus-Wert {score}: Deine Energie ging vor allem in Aufgaben mit hoher Priorität.",
+  'replan.skip': 'Überspringen',
+  'replan.skipHint': 'Bleibt, wie sie ist',
+  'replan.completeHint': 'Abhaken',
+  'replan.moveHint': 'Neues Datum mit Grund',
+  'replan.deleteHint': 'Endgültig entfernen',
+  'replan.skippedCount_one': '1 Aufgabe übersprungen.',
+  'replan.skippedCount_other': '{count} Aufgaben übersprungen.',
+  'replan.skippedCount': '{count} übersprungen.',
 };

@@ -1801,4 +1801,12 @@ export const fr: Record<TranslationKey, string> = {
   "report.learn.onTimeHigh.text": "{share} % de tes tâches datées ont été faites à temps.",
   "report.learn.focusHigh.title": "Concentré sur l’essentiel",
   "report.learn.focusHigh.text": "Score de focus {score} : ton énergie est surtout allée aux tâches prioritaires.",
+  'replan.skip': 'Passer',
+  'replan.skipHint': 'La laisser telle quelle',
+  'replan.completeHint': 'La cocher',
+  'replan.moveHint': 'Nouvelle date, avec un motif',
+  'replan.deleteHint': 'Supprimer définitivement',
+  'replan.skippedCount_one': '1 tâche passée.',
+  'replan.skippedCount_other': '{count} tâches passées.',
+  'replan.skippedCount': '{count} passées.',
 };
