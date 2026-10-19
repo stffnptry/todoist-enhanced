@@ -20,6 +20,11 @@ interface ReplanDialogProps {
    * erledigte, gelöschte oder verschobene Aufgabe von selbst herausfällt.
    */
   items: readonly Item[];
+  /**
+   * Eine einzelne Aufgabe (Rechtsklick → „Neu planen“): öffnet gleich beim
+   * Umplanen, zeigt keinen Zähler und schließt sich, sobald sie behandelt ist.
+   */
+  single?: boolean;
 }
 
 /**
@@ -28,16 +33,16 @@ interface ReplanDialogProps {
  * Verschiebe-Kommentar an der Aufgabe. Danach kommt die nächste. Schließen
  * geht jederzeit (Escape, ✕, Klick daneben).
  */
-export function ReplanDialog({ open, onClose, items }: ReplanDialogProps) {
+export function ReplanDialog({ open, onClose, items, single = false }: ReplanDialogProps) {
   const { t } = useT();
   return (
     <Overlay open={open} onClose={onClose} label={t('replan.title')} size="sm">
-      {open && <ReplanBody items={items} onClose={onClose} />}
+      {open && <ReplanBody items={items} onClose={onClose} single={single} />}
     </Overlay>
   );
 }
 
-function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () => void }) {
+function ReplanBody({ items, onClose, single }: { items: readonly Item[]; onClose: () => void; single: boolean }) {
   const { t, locale } = useT();
   const confirm = useConfirm();
   const snapshot = useStore((s) => s.snapshot);
@@ -55,7 +60,7 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
   const [handled, setHandled] = useState<Set<string>>(() => new Set());
   const [busy, setBusy] = useState(false);
   const [skipped, setSkipped] = useState(0);
-  const [moving, setMoving] = useState(false);
+  const [moving, setMoving] = useState(single);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [reason, setReason] = useState('');
@@ -68,7 +73,7 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
 
   /* Jede neue Aufgabe beginnt wieder bei den drei Knöpfen. */
   useEffect(() => {
-    setMoving(false);
+    setMoving(single);
     setDate(current ? defaultReplanDate(current) : shortcuts.tomorrow);
     setTime(current ? dueTimeOf(current) : '');
     setReason('');
@@ -91,7 +96,13 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
     return `${name}, ${formatTime(clock, locale, hour12)}`;
   };
 
+  /* Einzeln geöffnet ist nach der einen Aufgabe Schluss. */
+  useEffect(() => {
+    if (single && !current) onClose();
+  }, [single, current, onClose]);
+
   if (!current) {
+    if (single) return null;
     return (
       <>
         <Head onClose={onClose} />
@@ -198,7 +209,7 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
 
   return (
     <>
-      <Head onClose={onClose} progress={t('replan.progress', { index: position, count: total })} />
+      <Head onClose={onClose} progress={single ? undefined : t('replan.progress', { index: position, count: total })} />
 
       <div className="sheet-body replan-body">
         <div className="replan-task">
@@ -307,7 +318,7 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
             </button>
           </>
         ) : (
-          <button className="btn quiet" onClick={onClose}>{t('replan.stop')}</button>
+          <button className="btn quiet" onClick={onClose}>{single ? t('common.cancel') : t('replan.stop')}</button>
         )}
       </div>
     </>

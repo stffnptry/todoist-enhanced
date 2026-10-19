@@ -16,6 +16,7 @@ import { ROW_PRESS_EVENT, type RowMenu } from '@/domain/gestures';
 import { leaveToText, pointAnchor } from '@/lib/contextMenu';
 import { useStore } from '@/store/store';
 import { useConfirm } from './overlays/Confirm';
+import { ReplanDialog } from './overlays/ReplanDialog';
 import { effectiveEstimate, formatDuration } from '@/domain/estimates';
 import { EstimateField } from './EstimateField';
 import { DatePicker, shortDay, taskShortcuts, type RecurrenceReading } from './DatePicker';
@@ -186,6 +187,9 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep }: TaskActionsPro
   const dateFormat = useStore((s) => s.prefs.dateFormat);
   const hour12 = useStore((s) => s.prefs.hour12);
   const [menu, setMenu] = useState<'none' | 'schedule' | 'more' | 'estimate' | 'move'>('none');
+  /* Rechtsklick → „Neu planen“: derselbe Dialog wie auf Heute, nur für diese
+     Aufgabe und gleich beim Umplanen – mit Pflicht-Grund. */
+  const [replanning, setReplanning] = useState(false);
   /** What has been typed to narrow the destinations, and where the keyboard is. */
   const [dest, setDest] = useState('');
   const [destPick, setDestPick] = useState(-1);
@@ -689,8 +693,8 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep }: TaskActionsPro
                 zu sehen, das Menü muss sie mitbringen. */}
             {(phone || point) && (
               <>
-                <button className="opt" onClick={() => setMenu('schedule')}>
-                  <span><Icon name="calendar" size="sm" /> {t('task.schedule')}</span>
+                <button className="opt" onClick={() => { setMenu('none'); setReplanning(true); }}>
+                  <span><Icon name="calendar" size="sm" /> {t('replan.title')}</span>
                 </button>
                 <button className="opt" onClick={() => setMenu('move')}>
                   <span><Icon name="project" size="sm" /> {t('task.moveToProject')}</span>
@@ -847,6 +851,10 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep }: TaskActionsPro
            menu short (#111). React still carries its events up through the
            row, as if it were drawn there. */
         : menu !== 'none' && createPortal(menus, document.body)}
+      {replanning && createPortal(
+        <ReplanDialog open single items={[item]} onClose={() => setReplanning(false)} />,
+        document.body,
+      )}
     </span>
   );
 }
