@@ -12,11 +12,13 @@
  * welcher Text mit welchen Werten gilt.
  */
 import { addDays, differenceInCalendarDays, endOfDay, startOfDay } from 'date-fns';
+import type { CompletionEntry } from '@/lib/completionLog';
 import type { RescheduleEntry } from '@/lib/rescheduleLog';
 import { estimateOf } from './estimates';
 import { focusScore } from './insights';
 import { areaTitle, parseListLabel, splitListName } from './lists';
 import { isRescheduleComment } from './replan';
+import { missingCompletions, timingOf, type Timing } from './planVsActual';
 import { daysOf, rangeFor, type Range } from './periods';
 import { toApiDate } from './dates';
 import type { CompletedItem, Item, Note, Project } from './types';
@@ -54,10 +56,12 @@ export interface Learning {
 export type LearningId =
   | 'noData' | 'trendUp' | 'trendDown' | 'bestDay' | 'bestTime' | 'lateWork' | 'weekend'
   | 'overplanning' | 'chronicMovers' | 'goodFlow' | 'onTimeHigh' | 'onTimeLow' | 'overdue'
-  | 'focusLow' | 'focusHigh' | 'estimates' | 'topReason' | 'gaps' | 'areaFocus';
+  | 'focusLow' | 'focusHigh' | 'estimates' | 'topReason' | 'gaps' | 'areaFocus'
+  | 'lateTimed' | 'weakPlanDay' | 'areaLate' | 'slipAfterMove' | 'spontaneous' | 'earlyBird' | 'clockGood';
 
 export type AnalysisId =
-  | 'volume' | 'volumeTrend' | 'rhythm' | 'planning' | 'planningNone' | 'reliability' | 'focus' | 'areas';
+  | 'volume' | 'volumeTrend' | 'rhythm' | 'planning' | 'planningNone' | 'reliability' | 'focus' | 'areas'
+  | 'timingLate' | 'timingClockLater' | 'timingClockEarlier' | 'timingClockExact' | 'timingMoved' | 'unplanned';
 
 export interface AnalysisLine {
   id: AnalysisId;
@@ -87,7 +91,7 @@ export interface Report {
     byPriority: { p1: number; p2: number; p3: number; p4: number };
     focusScore: number;
     activeDays: number;
-    /** Mit Datum erledigt: am Tag oder früher / später. */
+    /** Mit Plan erledigt: am Tag oder früher / später (Details in `timing`). */
     onTime: number;
     late: number;
     tasks: CompletedItem[];
@@ -105,6 +109,8 @@ export interface Report {
     reasons: Array<{ text: string; count: number }>;
     byWeekday: number[];
   };
+  /** Geplant gegen abgehakt. */
+  timing: Timing;
   open: {
     overdue: number;
     oldest: Array<{ id: string; title: string; days: number }>;
@@ -118,6 +124,8 @@ export interface ReportInput {
   completed: CompletedItem[];
   previous: CompletedItem[];
   log: RescheduleEntry[];
+  /** Abhak-Protokoll der App: der Plan im Moment des Abhakens. */
+  completions?: CompletionEntry[];
   items: Record<string, Item>;
   projects: Record<string, Project>;
   notes: Record<string, Note>;
@@ -201,7 +209,11 @@ export function buildReport(input: ReportInput): Report {
   const today = startOfDay(now);
 
   /* ------------------------------ erledigt ------------------------------ */
-  const done = input.completed.filter((c) => inRange(new Date(c.completed_at), range));
+  const completions = input.completions ?? [];
+  const fromTodoist = input.completed.filter((c) => inRange(new Date(c.completed_at), range));
+  /* Was die App beim Abhaken protokolliert hat, Todoist im Verlauf aber nicht
+     führt (manche Vorkommen wiederkehrender Aufgaben), zählt mit. */
+  const done = [...fromTodoist, ...missingCompletions(fromTodoist, completions, range)];
   const lastCounted = range.until < now ? range.until : now;
   const elapsedDays = Math.max(1, differenceInCalendarDays(lastCounted, range.since) + 1);
   const byWeekday = Array<number>(7).fill(0);
@@ -212,8 +224,6 @@ export function buildReport(input: ReportInput): Report {
   const byPriority = { p1: 0, p2: 0, p3: 0, p4: 0 };
   let minutes = 0;
   let withEstimate = 0;
-  let onTime = 0;
-  let late = 0;
   for (const c of done) {
     const at = new Date(c.completed_at);
     byWeekday[at.getDay()] += 1;
@@ -226,11 +236,11 @@ export function buildReport(input: ReportInput): Report {
     byPriority[`p${toDisplayPriority(c.priority ?? 1)}` as 'p1'] += 1;
     const est = estimateOf({ labels: c.labels ?? [], duration: c.duration });
     if (est) { minutes += est; withEstimate += 1; }
-    if (c.due?.date) {
-      if (key <= dayKey(c.due.date)) onTime += 1; else late += 1;
-    }
   }
   const byDay = daysOf(range).filter((d) => d <= now).map((d) => ({ date: toApiDate(d), count: perDayMap.get(toApiDate(d)) ?? 0 }));
+  const timing = timingOf(done, completions, input.log, (c) => areaOf(c.project_id, c.labels ?? [], projects));
+  const onTime = timing.early + timing.onDay;
+  const late = timing.late;
   const previousCount = input.previous.length;
   const change = previousCount > 0 ? Math.round(((done.length - previousCount) / previousCount) * 100) : null;
 
@@ -317,6 +327,7 @@ export function buildReport(input: ReportInput): Report {
       reasons,
       byWeekday: moveWeekday,
     },
+    timing,
     open: { overdue: overdueItems.length, oldest: overdueItems.slice(0, 5) },
     analysis: [],
     learnings: [],
@@ -344,6 +355,15 @@ export function analyse(r: Report): AnalysisLine[] {
     out.push({ id: 'planningNone', params: {} });
   }
   if (c.onTime + c.late > 0) out.push({ id: 'reliability', params: { share: pct(c.onTime, c.onTime + c.late), late: c.late } });
+  const tm = r.timing;
+  if (tm.late > 0) out.push({ id: 'timingLate', params: { avg: tm.avgLateDays, max: tm.maxLateDays } });
+  if (tm.timed.count > 0) {
+    const minutes = Math.abs(tm.timed.medianMinutes);
+    const id = minutes <= 15 ? 'timingClockExact' : tm.timed.medianMinutes > 0 ? 'timingClockLater' : 'timingClockEarlier';
+    out.push({ id, params: { count: tm.timed.count, minutes, close: tm.timed.close } });
+  }
+  if (tm.moved.count > 0) out.push({ id: 'timingMoved', params: { count: tm.moved.count, days: tm.moved.avgExtraDays } });
+  if (tm.unplanned > 0) out.push({ id: 'unplanned', params: { count: tm.unplanned, share: pct(tm.unplanned, c.count) } });
   if (c.count > 0) out.push({ id: 'focus', params: { score: c.focusScore, p1: c.byPriority.p1 } });
   if (c.byArea.length > 1) {
     out.push({ id: 'areas', params: { first: c.byArea[0].name, share: pct(c.byArea[0].count, c.count), second: c.byArea[1].name } });
@@ -372,6 +392,21 @@ export function learn(r: Report, now = new Date()): Learning[] {
   if (c.onTime + c.late >= 5 && pct(c.onTime, c.onTime + c.late) < 50) {
     out.push({ id: 'onTimeLow', tone: 'warn', params: { share: pct(c.onTime, c.onTime + c.late) } });
   }
+  const tm = r.timing;
+  if (tm.timed.count >= 4 && tm.timed.medianMinutes >= 60) {
+    out.push({ id: 'lateTimed', tone: 'warn', params: { minutes: tm.timed.medianMinutes, count: tm.timed.count } });
+  }
+  const weakDay = tm.byPlannedWeekday
+    .map((w, weekday) => ({ weekday, ...w, share: pct(w.kept, w.planned) }))
+    .filter((w) => w.planned >= 3 && w.share < 50)
+    .sort((a, b) => a.share - b.share)[0];
+  if (weakDay) out.push({ id: 'weakPlanDay', tone: 'warn', params: { weekday: weakDay.weekday, share: weakDay.share, planned: weakDay.planned } });
+  const lateArea = tm.byArea
+    .filter((a) => a.planned >= 4 && a.late / a.planned >= 0.5)
+    .sort((a, b) => b.late / b.planned - a.late / a.planned)[0];
+  if (lateArea && tm.byArea.length > 1) {
+    out.push({ id: 'areaLate', tone: 'warn', params: { area: lateArea.name, share: pct(lateArea.late, lateArea.planned) } });
+  }
   const evening = c.byHour.slice(21).reduce((a, b) => a + b, 0) + c.byHour.slice(0, 5).reduce((a, b) => a + b, 0);
   if (c.count >= 5 && evening / c.count > 0.25) out.push({ id: 'lateWork', tone: 'warn', params: { share: pct(evening, c.count) } });
   const weekend = c.byWeekday[0] + c.byWeekday[6];
@@ -381,6 +416,10 @@ export function learn(r: Report, now = new Date()): Learning[] {
   if (m.reasons.length > 0 && m.reasons[0].count >= 2) {
     out.push({ id: 'topReason', tone: 'tip', params: { reason: m.reasons[0].text, count: m.reasons[0].count } });
   }
+  if (tm.moved.count >= 3 && tm.moved.avgExtraDays >= 3) {
+    out.push({ id: 'slipAfterMove', tone: 'tip', params: { count: tm.moved.count, days: tm.moved.avgExtraDays } });
+  }
+  if (c.count >= 5 && tm.unplanned / c.count >= 0.5) out.push({ id: 'spontaneous', tone: 'tip', params: { share: pct(tm.unplanned, c.count) } });
   if (c.count >= 5 && c.focusScore < 40) out.push({ id: 'focusLow', tone: 'tip', params: { score: c.focusScore } });
   if (c.count >= 5 && pct(c.withEstimate, c.count) < 30) out.push({ id: 'estimates', tone: 'tip', params: { share: pct(c.withEstimate, c.count) } });
   const gaps = c.byDay.filter((d) => d.count === 0).length;
@@ -399,6 +438,12 @@ export function learn(r: Report, now = new Date()): Learning[] {
   if (c.count >= 5 && m.count <= c.count * 0.1) out.push({ id: 'goodFlow', tone: 'good', params: { moves: m.count, done: c.count } });
   if (c.onTime + c.late >= 5 && pct(c.onTime, c.onTime + c.late) >= 80) {
     out.push({ id: 'onTimeHigh', tone: 'good', params: { share: pct(c.onTime, c.onTime + c.late) } });
+  }
+  if (tm.rows.length >= 5 && tm.early / tm.rows.length >= 0.3) {
+    out.push({ id: 'earlyBird', tone: 'good', params: { share: pct(tm.early, tm.rows.length) } });
+  }
+  if (tm.timed.count >= 4 && tm.timed.close / tm.timed.count >= 0.7) {
+    out.push({ id: 'clockGood', tone: 'good', params: { share: pct(tm.timed.close, tm.timed.count) } });
   }
   if (c.count >= 5 && c.focusScore >= 70) out.push({ id: 'focusHigh', tone: 'good', params: { score: c.focusScore } });
   return out;
@@ -422,6 +467,30 @@ export function demoReschedules(items: Record<string, Item>, now = new Date()): 
     }
   });
   return out;
+}
+
+/**
+ * Beispiel-Abhak-Protokoll für den Demomodus: Zu den erledigten Demo-Aufgaben
+ * ein Plan, mal am Tag, mal früher oder später, manche mit Uhrzeit, manche ohne Datum.
+ */
+export function demoCompletions(completed: CompletedItem[]): CompletionEntry[] {
+  const offsets = [0, 0, 0, -1, 1, 0, 2, 0, 4, -2, 1, 0];
+  return completed.map((c, index) => {
+    const at = new Date(c.completed_at);
+    const k = index % offsets.length;
+    let planned: string | null = null;
+    if (index % 5 !== 4) {
+      const day = addDays(at, -offsets[k]);
+      if (index % 3 === 0) {
+        const slot = new Date(at.getTime() - (((index * 37) % 110) - 45) * 60_000);
+        planned = `${toApiDate(day)}T${String(slot.getHours()).padStart(2, '0')}:${String(slot.getMinutes()).padStart(2, '0')}:00`;
+      } else planned = toApiDate(day);
+    }
+    return {
+      taskId: c.task_id ?? c.id, at: c.completed_at, planned, title: c.content,
+      projectId: c.project_id, labels: c.labels ?? [], recurring: false,
+    };
+  });
 }
 
 /** Die Schnellwahl über dem Report. */

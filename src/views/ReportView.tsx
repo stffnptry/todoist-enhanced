@@ -6,7 +6,8 @@ import { useT } from '@/hooks/useT';
 import { useStore } from '@/store/store';
 import { useCompleted } from '@/hooks/useCompleted';
 import { loadReschedules, type RescheduleEntry } from '@/lib/rescheduleLog';
-import { buildReport, demoReschedules, QUICK_RANGES, quickRange, type QuickRange } from '@/domain/report';
+import { loadCompletions, type CompletionEntry } from '@/lib/completionLog';
+import { buildReport, demoCompletions, demoReschedules, QUICK_RANGES, quickRange, type QuickRange } from '@/domain/report';
 import { reportDoc, reportFileName, reportHtml, reportMarkdown } from '@/domain/reportExport';
 import type { Range } from '@/domain/periods';
 import { toApiDate } from '@/domain/dates';
@@ -34,18 +35,20 @@ export function ReportView({ onOpen }: { onOpen?: (id: string) => void }) {
   /* Das Protokoll liegt im localStorage; neu lesen, wenn die Seite wieder in
      den Vordergrund kommt (in der Zwischenzeit kann umgeplant worden sein). */
   const [log, setLog] = useState<RescheduleEntry[]>(() => loadReschedules());
+  const [doneLog, setDoneLog] = useState<CompletionEntry[]>(() => loadCompletions());
   useEffect(() => {
-    const reload = () => setLog(loadReschedules());
+    const reload = () => { setLog(loadReschedules()); setDoneLog(loadCompletions()); };
     window.addEventListener('focus', reload);
     return () => window.removeEventListener('focus', reload);
   }, []);
-  useEffect(() => { setLog(loadReschedules()); }, [snapshot.items]);
+  useEffect(() => { setLog(loadReschedules()); setDoneLog(loadCompletions()); }, [snapshot.items]);
   const entries = useMemo(() => (demo ? demoReschedules(snapshot.items) : log), [demo, log, snapshot.items]);
+  const completions = useMemo(() => (demo ? demoCompletions(completed) : doneLog), [demo, doneLog, completed]);
 
   const report = useMemo(() => buildReport({
-    range, completed, previous, log: entries,
+    range, completed, previous, log: entries, completions,
     items: snapshot.items, projects: snapshot.projects, notes: snapshot.notes,
-  }), [range, completed, previous, entries, snapshot.items, snapshot.projects, snapshot.notes]);
+  }), [range, completed, previous, entries, completions, snapshot.items, snapshot.projects, snapshot.notes]);
   const doc = useMemo(() => reportDoc(report, t, locale, intl), [report, t, locale, intl]);
 
   const pickQuick = (next: QuickRange) => {
@@ -115,6 +118,8 @@ export function ReportView({ onOpen }: { onOpen?: (id: string) => void }) {
     const best = Math.max(0, ...rows.map((r) => r.value));
     return rows.map((r) => ({ key: r.label, label: r.label, value: r.value, current: best > 0 && r.value === best }));
   };
+  const tm = doc.timing;
+  const percent = (value: number) => `${value} %`;
   const openIds = new Set(report.moves.top.filter((m) => m.state === 'open').map((m) => m.taskId));
 
   return (
@@ -204,6 +209,64 @@ export function ReportView({ onOpen }: { onOpen?: (id: string) => void }) {
             <ChartCard title={t('report.section.slot')} span={6}>
               <Bars data={asBars(doc.bySlot.map((s) => ({ ...s, label: s.label.split(' (')[0] })))} emptyLabel={t('report.empty.done')} />
             </ChartCard>
+
+            <section className="card w12 report-timing">
+              <h3>{t('report.section.timing')}</h3>
+              {tm.split.every((x) => x.value === 0)
+                ? <p className="chart-empty">{t('report.empty.timing')}</p>
+                : (
+                  <>
+                    <div className="report-timing-grid">
+                      <div><Bars data={asBars(tm.split)} emptyLabel="" /></div>
+                      {tm.clock.length > 0 && (
+                        <div>
+                          <h4>{t('report.section.timingClock')}</h4>
+                          <Bars data={asBars(tm.clock)} emptyLabel="" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="report-timing-grid">
+                      {tm.byWeekday.length > 0 && (
+                        <div>
+                          <h4>{t('report.section.timingWeekday')}</h4>
+                          <RankedBars data={tm.byWeekday.map((w) => ({ key: w.label, label: `${w.label} (${w.kept}/${w.planned})`, value: w.share }))}
+                            format={percent} max={100} emptyLabel="" />
+                        </div>
+                      )}
+                      {tm.byArea.length > 0 && (
+                        <div>
+                          <h4>{t('report.section.timingAreas')}</h4>
+                          <RankedBars data={tm.byArea.map((a) => ({ key: a.label, label: `${a.label} (${a.kept}/${a.planned})`, value: a.share }))}
+                            format={percent} max={100} emptyLabel="" />
+                        </div>
+                      )}
+                    </div>
+                    {tm.biggest.length > 0 && (
+                      <>
+                        <h4>{t('report.section.timingBiggest')}</h4>
+                        <table className="report-table">
+                          <thead>
+                            <tr>
+                              <th>{t('report.col.task')}</th><th>{t('report.col.planned')}</th>
+                              <th>{t('report.col.doneAt')}</th><th className="n">{t('report.col.diff')}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {tm.biggest.map((b, index) => (
+                              <tr key={index}>
+                                <td>{b.title}</td>
+                                <td>{b.planned}{b.original && <div className="muted">{b.original}</div>}</td>
+                                <td>{b.done}</td>
+                                <td className="n"><span className={`report-count${b.late ? ' hot' : ''}`}>{b.diff}</span></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </>
+                    )}
+                  </>
+                )}
+            </section>
 
             <section className="card w12">
               <h3>{t('report.section.moved')}</h3>

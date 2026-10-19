@@ -86,6 +86,22 @@ describe('buildReport', () => {
     expect(r.open.overdue).toBe(1);
   });
 
+  it('compares plan and completion and draws patterns from it', () => {
+    const tuesday = Array.from({ length: 4 }, (_, i) =>
+      done(`t${i}`, `2026-10-13T1${i}:30:00`, { due: due('2026-10-13T09:00:00') }));
+    const late = Array.from({ length: 3 }, (_, i) => done(`l${i}`, '2026-10-16T10:00:00', { due: due('2026-10-14') }));
+    const completions = [
+      { taskId: 'r', at: '2026-10-14T19:00:00', planned: '2026-10-14T18:00:00', title: 'Gießen', projectId: 'p', labels: [], recurring: true },
+    ];
+    const timed = buildReport({ range: week, completed: [...tuesday, ...late], previous: [], log: [], completions, items: {}, projects, notes: {}, now });
+    expect(timed.completed.count).toBe(8);
+    expect(timed.timing).toMatchObject({ late: 3, onDay: 5, timed: { count: 5, medianMinutes: 150 } });
+    const ids = timed.learnings.map((l) => l.id);
+    expect(ids).toContain('lateTimed');
+    expect(ids).toContain('weakPlanDay');
+    expect(timed.analysis.map((a) => a.id)).toContain('timingClockLater');
+  });
+
   it('says so when there is nothing', () => {
     const empty = buildReport({ range: week, completed: [], previous: [], log: [], items: {}, projects, notes: {}, now });
     expect(empty.learnings.map((l) => l.id)).toEqual(['noData']);

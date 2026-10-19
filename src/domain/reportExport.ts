@@ -7,6 +7,7 @@ import { formatDuration } from './estimates';
 import type { Locale } from '@/i18n';
 import { formatRange } from './periods';
 import type { AnalysisLine, DaySlot, Learning, Report } from './report';
+import type { PlanRow } from './planVsActual';
 import { plainTitle } from './markdown';
 
 type T = (key: TranslationKey, values?: TranslateValues) => string;
@@ -25,6 +26,15 @@ export interface ReportDoc {
   reasons: Array<{ text: string; count: number }>;
   overdue: Array<{ title: string; days: number }>;
   done: Array<{ day: string; title: string }>;
+  timing: {
+    /** Früher / am Tag / später / ohne Datum. */
+    split: Array<{ label: string; value: number }>;
+    /** Nur Aufgaben mit Uhrzeit: wie nah am Plan. */
+    clock: Array<{ label: string; value: number }>;
+    byWeekday: Array<{ label: string; planned: number; kept: number; share: number }>;
+    byArea: Array<{ label: string; planned: number; kept: number; share: number }>;
+    biggest: Array<{ title: string; planned: string; done: string; diff: string; original: string | null; late: boolean }>;
+  };
   note: string;
 }
 
@@ -115,7 +125,60 @@ export function reportDoc(r: Report, t: T, locale: Locale, intl: string, now = n
     reasons: r.moves.reasons.slice(0, 8),
     overdue: r.open.oldest.map((o) => ({ title: plainTitle(o.title), days: o.days })),
     done: c.tasks.map((task) => ({ day: day.format(new Date(task.completed_at)), title: plainTitle(task.content) })),
+    timing: timingDoc(r, t, intl),
     note: t('report.logNote'),
+  };
+}
+
+const share = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0);
+
+/** Abweichung als kurzer Text: Tage, oder am selben Tag die Minuten. */
+function diffText(row: PlanRow, t: T): string {
+  if (row.dayDiff !== 0) return t('report.timing.days', { n: signed(row.dayDiff) });
+  if (row.minuteDiff !== null) return t('report.timing.minutes', { n: signed(row.minuteDiff) });
+  return '0';
+}
+
+function timingDoc(r: Report, t: T, intl: string): ReportDoc['timing'] {
+  const tm = r.timing;
+  const day = new Intl.DateTimeFormat(intl, { weekday: 'short', day: 'numeric', month: 'short' });
+  const time = new Intl.DateTimeFormat(intl, { hour: '2-digit', minute: '2-digit' });
+  const plannedText = (row: PlanRow) => {
+    const at = row.hasTime ? new Date(row.planned) : new Date(`${row.planned.slice(0, 10)}T00:00:00`);
+    return row.hasTime ? `${day.format(at)}, ${time.format(at)}` : day.format(at);
+  };
+  const weight = (row: PlanRow) => (row.minuteDiff !== null ? Math.abs(row.minuteDiff) : Math.abs(row.dayDiff) * 1440);
+  return {
+    split: [
+      { label: t('report.timing.early'), value: tm.early },
+      { label: t('report.timing.onDay'), value: tm.onDay },
+      { label: t('report.timing.late'), value: tm.late },
+      { label: t('report.timing.unplanned'), value: tm.unplanned },
+    ],
+    clock: tm.timed.count === 0 ? [] : [
+      { label: t('report.timing.clockEarlier'), value: tm.timed.earlier },
+      { label: t('report.timing.close'), value: tm.timed.close },
+      { label: t('report.timing.clockLater'), value: tm.timed.later },
+    ],
+    byWeekday: WEEK_ORDER
+      .filter((d) => tm.byPlannedWeekday[d].planned > 0)
+      .map((d) => ({ label: weekdayName(d, intl, 'short'), ...tm.byPlannedWeekday[d], share: share(tm.byPlannedWeekday[d].kept, tm.byPlannedWeekday[d].planned) })),
+    // Ein einziger Bereich sagt nichts über Unterschiede.
+    byArea: tm.byArea.length < 2 ? [] : tm.byArea.map((a) => ({ label: a.name, planned: a.planned, kept: a.kept, share: share(a.kept, a.planned) })),
+    biggest: tm.rows
+      .filter((row) => row.dayDiff !== 0 || Math.abs(row.minuteDiff ?? 0) > 30)
+      .sort((a, b) => weight(b) - weight(a))
+      .slice(0, 10)
+      .map((row) => ({
+        title: plainTitle(row.title) || '–',
+        planned: plannedText(row),
+        done: `${day.format(row.doneAt)}, ${time.format(row.doneAt)}`,
+        diff: diffText(row, t),
+        original: row.original && row.original !== row.planned.slice(0, 10)
+          ? t('report.timing.original', { date: day.format(new Date(`${row.original}T00:00:00`)) })
+          : null,
+        late: row.dayDiff > 0 || (row.dayDiff === 0 && (row.minuteDiff ?? 0) > 30),
+      })),
   };
 }
 
@@ -146,6 +209,31 @@ export function reportMarkdown(doc: ReportDoc, t: T): string {
   table(t('report.section.weekday'), doc.byWeekday);
   table(t('report.section.slot'), doc.bySlot);
   table(t('report.section.areas'), doc.byArea);
+
+  const tm = doc.timing;
+  lines.push(`## ${t('report.section.timing')}`, '');
+  if (tm.split.every((s) => s.value === 0)) lines.push(t('report.empty.timing'), '');
+  else {
+    lines.push(`| ${t('report.col.what')} | ${t('report.col.count')} |`, '| --- | ---: |');
+    for (const row of [...tm.split, ...tm.clock]) lines.push(`| ${mdCell(row.label)} | ${row.value} |`);
+    lines.push('');
+    const kept = (head: string, rows: Array<{ label: string; planned: number; kept: number; share: number }>) => {
+      if (rows.length === 0) return;
+      lines.push(`### ${head}`, '', `| ${t('report.col.what')} | ${t('report.col.planned')} | ${t('report.col.kept')} | % |`, '| --- | ---: | ---: | ---: |');
+      for (const row of rows) lines.push(`| ${mdCell(row.label)} | ${row.planned} | ${row.kept} | ${row.share} % |`);
+      lines.push('');
+    };
+    kept(t('report.section.timingWeekday'), tm.byWeekday);
+    kept(t('report.section.timingAreas'), tm.byArea);
+    if (tm.biggest.length > 0) {
+      lines.push(`### ${t('report.section.timingBiggest')}`, '');
+      lines.push(`| ${t('report.col.task')} | ${t('report.col.planned')} | ${t('report.col.doneAt')} | ${t('report.col.diff')} |`, '| --- | --- | --- | ---: |');
+      for (const b of tm.biggest) {
+        lines.push(`| ${mdCell(b.title)} | ${mdCell(b.planned)}${b.original ? ` (${mdCell(b.original)})` : ''} | ${mdCell(b.done)} | ${b.diff} |`);
+      }
+      lines.push('');
+    }
+  }
 
   lines.push(`## ${t('report.section.moved')}`, '');
   if (doc.moved.length === 0) lines.push(t('report.empty.moved'), '');
@@ -188,6 +276,17 @@ export function reportHtml(doc: ReportDoc, t: T, lang: string): string {
     ? `<p class="muted">${esc(t('report.empty.moved'))}</p>`
     : `<table class="list"><thead><tr><th>${esc(t('report.col.task'))}</th><th class="n">${esc(t('report.col.moved'))}</th><th class="n">${esc(t('report.col.pushed'))}</th><th>${esc(t('report.col.state'))}</th><th>${esc(t('report.col.reasons'))}</th></tr></thead><tbody>${doc.moved.map((m) => `<tr><td>${esc(m.title)}</td><td class="n">${m.count}×</td><td class="n">${m.pushed > 0 ? `+${m.pushed}` : '–'}</td><td>${esc(m.state)}</td><td>${esc(m.reasons.join('; ')) || '–'}</td></tr>`).join('')}</tbody></table>`;
 
+  const tm = doc.timing;
+  const keptTable = (rows: Array<{ label: string; planned: number; kept: number; share: number }>) =>
+    `<table class="list"><thead><tr><th>${esc(t('report.col.what'))}</th><th class="n">${esc(t('report.col.planned'))}</th><th class="n">${esc(t('report.col.kept'))}</th><th class="n">%</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(r.label)}</td><td class="n">${r.planned}</td><td class="n">${r.kept}</td><td class="n">${r.share} %</td></tr>`).join('')}</tbody></table>`;
+  const timing = tm.split.every((s) => s.value === 0)
+    ? `<p class="muted">${esc(t('report.empty.timing'))}</p>`
+    : `<div class="cols"><div>${bars(tm.split)}</div><div>${tm.clock.length > 0 ? `<h3>${esc(t('report.section.timingClock'))}</h3>${bars(tm.clock)}` : ''}</div></div>`
+      + `<div class="cols">${tm.byWeekday.length > 0 ? `<div><h3>${esc(t('report.section.timingWeekday'))}</h3>${keptTable(tm.byWeekday)}</div>` : ''}${tm.byArea.length > 0 ? `<div><h3>${esc(t('report.section.timingAreas'))}</h3>${keptTable(tm.byArea)}</div>` : ''}</div>`
+      + (tm.biggest.length > 0
+        ? `<h3>${esc(t('report.section.timingBiggest'))}</h3><table class="list"><thead><tr><th>${esc(t('report.col.task'))}</th><th>${esc(t('report.col.planned'))}</th><th>${esc(t('report.col.doneAt'))}</th><th class="n">${esc(t('report.col.diff'))}</th></tr></thead><tbody>${tm.biggest.map((b) => `<tr><td>${esc(b.title)}</td><td>${esc(b.planned)}${b.original ? `<br><small class="muted">${esc(b.original)}</small>` : ''}</td><td>${esc(b.done)}</td><td class="n${b.late ? ' late' : ''}">${esc(b.diff)}</td></tr>`).join('')}</tbody></table>`
+        : '');
+
   return `<!doctype html>
 <html lang="${esc(lang)}"><head><meta charset="utf-8"><title>${esc(`${doc.title} ${doc.rangeLabel}`)}</title>
 <style>
@@ -218,6 +317,8 @@ export function reportHtml(doc: ReportDoc, t: T, lang: string): string {
   .list th{font-size:8.5pt;color:#6a737d;font-weight:600}
   .list .n{text-align:right}
   .bars td.n{padding-left:8pt}
+  h3{font-size:10pt;margin:10pt 0 4pt;color:#444}
+  td.late{color:#c0392b;font-weight:600}
   ul{margin:0;padding-left:14pt}
   li{margin:1pt 0}
   .muted{color:#6a737d}
@@ -237,6 +338,7 @@ ${section(t('report.section.weekday'), bars(doc.byWeekday))}
 ${section(t('report.section.slot'), bars(doc.bySlot))}
 </div>
 ${doc.byArea.length > 0 ? section(t('report.section.areas'), bars(doc.byArea)) : ''}
+${section(t('report.section.timing'), timing)}
 ${section(t('report.section.moved'), moved)}
 ${doc.reasons.length > 0 ? section(t('report.section.reasons'), `<ul>${doc.reasons.map((r) => `<li>${esc(r.text)} (${r.count}×)</li>`).join('')}</ul>`) : ''}
 ${doc.overdue.length > 0 ? section(t('report.section.overdue'), `<ul>${doc.overdue.map((o) => `<li>${esc(o.title)} – <span class="muted">${esc(t('report.overdueDays', { days: o.days, count: o.days }))}</span></li>`).join('')}</ul>`) : ''}

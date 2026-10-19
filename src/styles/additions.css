@@ -2296,3 +2296,16 @@ html.desktop-app:not(.quickadd) body::before {
 .report-done[open] summary::after{content:" ▾"}
 .report-note{margin-top:var(--s4)}
 [data-theme="dark"] .report-count.hot{background:#4a2e12;color:#f0b47a}
+
+/* Report: Geplant und abgehakt – zwei Spalten, auf schmalen Fenstern untereinander. */
+.report-timing h4 {
+  margin: 14px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.report-timing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}

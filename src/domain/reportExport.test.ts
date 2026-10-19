@@ -33,6 +33,20 @@ describe('report export', () => {
     expect(md).toContain('- [x] Rechnung <bezahlen>');
   });
 
+  it('adds plan against completion to Markdown and HTML', () => {
+    const planned = buildReport({
+      range,
+      completed: [{ id: '2', task_id: '2', user_id: 'me', project_id: 'p', section_id: null, content: 'Bericht', completed_at: '2026-10-16T11:00:00', due: due('2026-10-14') }],
+      previous: [], log: [], items: {}, projects: {}, notes: {}, now,
+    });
+    const d = reportDoc(planned, t, 'de', 'de-DE', now);
+    const md = reportMarkdown(d, t);
+    expect(md).toContain('## Geplant und abgehakt');
+    expect(md).toContain('| Später | 1 |');
+    expect(md).toMatch(/\| Bericht \| Mi\., 14\. Okt\. \| Fr\., 16\. Okt\., 11:00 \| \+2 Tg\. \|/);
+    expect(reportHtml(d, t, 'de')).toContain('Größte Abweichungen');
+  });
+
   it('escapes task titles in the HTML for the PDF', () => {
     const html = reportHtml(doc, t, 'de');
     expect(html).toContain('Rechnung &lt;bezahlen&gt;');

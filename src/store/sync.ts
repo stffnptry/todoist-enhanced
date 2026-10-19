@@ -24,6 +24,7 @@ import { DUST_KEY } from './dust';
 import type { AppState } from './types';
 import type { Slice, SyncSlice } from './types';
 import { recordReschedules } from '@/lib/rescheduleLog';
+import { recordCompletions } from '@/lib/completionLog';
 
 /** How often the app asks Todoist what changed while the tab is in the foreground. */
 export const POLL_INTERVAL_MS = 45_000;
@@ -378,8 +379,10 @@ export const createSyncSlice: Slice<SyncSlice> = (set, get) => ({
 
     set({ snapshot: after });
     schedulePersist(after);
-    // Für den Report: jede Verschiebung eines Fälligkeitstags (lib/rescheduleLog.ts).
+    // Für den Report: jede Verschiebung eines Fälligkeitstags (lib/rescheduleLog.ts)
+    // und jedes Abhaken mit dem Plan, den die Aufgabe da hatte (lib/completionLog.ts).
     recordReschedules(before, after, commands);
+    recordCompletions(before, commands);
 
     await idb.enqueue(commands, get().snapshot.user?.id);
     set({ pendingCount: get().pendingCount + commands.length });

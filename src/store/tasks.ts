@@ -16,6 +16,7 @@ import {
   restoreOrder, schedulePersist, settleFromServer,
 } from './helpers';
 import type { AppState, Slice, TasksSlice } from './types';
+import { skipNextCompletion } from '@/lib/completionLog';
 
 /** A subtask created with its parent: a title, and the labels it starts with. */
 interface NewSubtask { content: string; labels?: string[]; estimateMinutes?: number | null }
@@ -708,6 +709,7 @@ export const createTasksSlice: Slice<TasksSlice> = (set, get) => ({
     const item = get().snapshot.items[id];
     if (!item?.due?.is_recurring) return;
     const demo = get().demo;
+    skipNextCompletion([id]);
     await get().apply([command('item_close', { id })], (snapshot) =>
       demo ? advanceDemoRecurrence(snapshot, id) : patchItem(snapshot, id, { checked: true }));
     await settleFromServer(get, id, (current) => current.checked);
@@ -718,6 +720,7 @@ export const createTasksSlice: Slice<TasksSlice> = (set, get) => ({
     );
     if (recurring.length === 0) return 0;
     const demo = get().demo;
+    skipNextCompletion(recurring);
     await get().apply(
       recurring.map((id) => command('item_close', { id })),
       (snapshot) => recurring.reduce(
