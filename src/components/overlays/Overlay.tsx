@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { isTopOverlay, overlayCount, pushOverlay, removeOverlay } from './overlayStack';
+import { scrollThrough } from '../../lib/scrollThrough';
 
 interface OverlayProps {
   open: boolean;
@@ -136,7 +137,8 @@ export function Overlay({
        to remember the "hidden" the first had just set. */
     if (overlayCount() === 0) scrollWas = document.body.style.overflow;
     pushOverlay(id);
-    document.body.style.overflow = 'hidden';
+    /* Ein Seitenpanel lässt die Seite daneben scrollbar (siehe scrollThrough). */
+    if (variant !== 'side') document.body.style.overflow = 'hidden';
 
     const onKey = (e: KeyboardEvent) => {
       /* Every open dialog hears every key, and the oldest hears it first. Only
@@ -211,6 +213,7 @@ export function Overlay({
       returnFocus(returnRef.current?.() ?? restoreTo.current, openedByPointer.current);
     };
     /* `open` and nothing else. See closeRef above. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- variant never changes while open
   }, [open, id]);
 
   /* A side panel takes a moment to leave: it is not unmounted until its exit
@@ -250,7 +253,11 @@ export function Overlay({
 
   return (
     <div className={`overlay${open ? ' open' : ' leaving'}${hung ? ' hung' : ''}`} role="dialog" aria-modal="true" aria-label={label}>
-      <div className="scrim" onClick={open ? onClose : undefined} />
+      <div
+        className="scrim"
+        onClick={open ? onClose : undefined}
+        onWheel={variant === 'side' && open ? (e) => scrollThrough(e.nativeEvent, e.currentTarget) : undefined}
+      />
       <div className={sheetClass} ref={sheetRef} style={hung ?? undefined}>
         {children}
       </div>
