@@ -1809,4 +1809,11 @@ export const fr: Record<TranslationKey, string> = {
   'replan.skippedCount_one': '1 tâche passée.',
   'replan.skippedCount_other': '{count} tâches passées.',
   'replan.skippedCount': '{count} passées.',
+  'replan.subtaskOf': 'Sous-tâche de « {name} »',
+  'replan.childrenFollow': '{count} sous-tâches en retard suivent.',
+  'replan.childrenFollow_one': '1 sous-tâche en retard suit.',
+  'replan.childrenFollow_other': '{count} sous-tâches en retard suivent.',
+  'replan.childrenMoved': '{count} sous-tâches déplacées',
+  'replan.childrenMoved_one': '1 sous-tâche déplacée',
+  'replan.childrenMoved_other': '{count} sous-tâches déplacées',
 };

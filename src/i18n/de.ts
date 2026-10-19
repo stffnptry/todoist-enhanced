@@ -1811,4 +1811,11 @@ export const de: Record<TranslationKey, string> = {
   'replan.skippedCount_one': '1 Aufgabe übersprungen.',
   'replan.skippedCount_other': '{count} Aufgaben übersprungen.',
   'replan.skippedCount': '{count} übersprungen.',
+  'replan.subtaskOf': 'Unteraufgabe von „{name}“',
+  'replan.childrenFollow': '{count} überfällige Unteraufgaben ziehen mit.',
+  'replan.childrenFollow_one': '1 überfällige Unteraufgabe zieht mit.',
+  'replan.childrenFollow_other': '{count} überfällige Unteraufgaben ziehen mit.',
+  'replan.childrenMoved': '{count} Unteraufgaben mitverschoben',
+  'replan.childrenMoved_one': '1 Unteraufgabe mitverschoben',
+  'replan.childrenMoved_other': '{count} Unteraufgaben mitverschoben',
 };

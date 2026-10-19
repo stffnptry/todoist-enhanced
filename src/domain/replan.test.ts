@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  dueTimeOf, isRescheduleComment, nextToReplan, replanShortcuts, rescheduleCommentText, RESCHEDULE_MARK,
+  defaultReplanDate, dueTimeOf, isOverdue, overdueDescendants, isRescheduleComment, nextToReplan, replanShortcuts, rescheduleCommentText, RESCHEDULE_MARK,
 } from './replan';
 import { due, item } from '@/test/items';
 
@@ -48,6 +48,7 @@ describe('replanShortcuts', () => {
   it('counts from the given day', () => {
     // Saturday, 18 October 2026.
     expect(replanShortcuts(new Date(2026, 9, 18, 15, 0))).toEqual({
+      today: '2026-10-18',
       tomorrow: '2026-10-19',
       dayAfter: '2026-10-20',
       nextWeek: '2026-10-19',
@@ -60,5 +61,42 @@ describe('dueTimeOf', () => {
     expect(dueTimeOf(item({ due: due('2026-10-18T09:30:00') }))).toBe('09:30');
     expect(dueTimeOf(item({ due: due('2026-10-18') }))).toBe('');
     expect(dueTimeOf(item())).toBe('');
+  });
+});
+
+describe('defaultReplanDate', () => {
+  const now = new Date(2026, 9, 19, 10, 0);
+
+  it('suggests today for overdue tasks', () => {
+    expect(defaultReplanDate(item({ due: due('2026-10-16') }), now)).toBe('2026-10-19');
+    expect(defaultReplanDate(item({ due: due('2026-10-19T08:00:00') }), now)).toBe('2026-10-19');
+    expect(isOverdue(item({ due: due('2026-10-19T08:00:00') }), now)).toBe(true);
+  });
+
+  it('suggests tomorrow for tasks that are not overdue', () => {
+    expect(defaultReplanDate(item({ due: due('2026-10-19') }), now)).toBe('2026-10-20');
+    expect(defaultReplanDate(item({ due: due('2026-10-19T14:00:00') }), now)).toBe('2026-10-20');
+    expect(defaultReplanDate(item(), now)).toBe('2026-10-20');
+  });
+});
+
+describe('overdueDescendants', () => {
+  const now = new Date(2026, 9, 19, 10, 0);
+  const items = Object.fromEntries([
+    item({ id: 'p', due: due('2026-10-16') }),
+    item({ id: 'late', parent_id: 'p', due: due('2026-10-15') }),
+    item({ id: 'deep', parent_id: 'late', due: due('2026-10-17T09:00:00') }),
+    item({ id: 'later', parent_id: 'p', due: due('2026-10-25') }),
+    item({ id: 'undated', parent_id: 'p' }),
+    item({ id: 'done', parent_id: 'p', due: due('2026-10-15'), checked: true }),
+    item({ id: 'other', due: due('2026-10-15') }),
+  ].map((i) => [i.id, i]));
+
+  it('finds open overdue subtasks at any depth and nothing else', () => {
+    expect(overdueDescendants('p', items, now).map((i) => i.id).sort()).toEqual(['deep', 'late']);
+  });
+
+  it('gives nothing for a task without subtasks', () => {
+    expect(overdueDescendants('other', items, now)).toEqual([]);
   });
 });

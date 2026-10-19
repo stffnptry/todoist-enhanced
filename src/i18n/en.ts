@@ -1809,6 +1809,13 @@ export const en = {
   'replan.skippedCount_one': '1 task skipped.',
   'replan.skippedCount_other': '{count} tasks skipped.',
   'replan.skippedCount': '{count} skipped.',
+  'replan.subtaskOf': 'Subtask of “{name}”',
+  'replan.childrenFollow': '{count} overdue subtasks move along.',
+  'replan.childrenFollow_one': '1 overdue subtask moves along.',
+  'replan.childrenFollow_other': '{count} overdue subtasks move along.',
+  'replan.childrenMoved': '{count} subtasks moved along',
+  'replan.childrenMoved_one': '1 subtask moved along',
+  'replan.childrenMoved_other': '{count} subtasks moved along',
 };
 
 export type TranslationKey = keyof typeof en;

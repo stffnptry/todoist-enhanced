@@ -7,8 +7,9 @@ import { useStore } from '@/store/store';
 import { dueDate, formatDay, formatDayOrName, formatTime } from '@/domain/dates';
 import { renderTitle } from '@/domain/markdown';
 import { displayTaskContent, type Item } from '@/domain/types';
+import { dropMutation, type DropTarget } from '@/domain/dnd';
 import {
-  dueTimeOf, nextToReplan, replanShortcuts, rescheduleCommentText,
+  defaultReplanDate, dueTimeOf, isOverdue, nextToReplan, overdueDescendants, replanShortcuts, rescheduleCommentText,
 } from '@/domain/replan';
 
 interface ReplanDialogProps {
@@ -45,6 +46,7 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
   const toggleTask = useStore((s) => s.toggleTask);
   const removeTask = useStore((s) => s.removeTask);
   const sendTo = useStore((s) => s.sendTo);
+  const updateMany = useStore((s) => s.updateMany);
   const addComment = useStore((s) => s.addComment);
   const toast = useStore((s) => s.toast);
 
@@ -67,7 +69,7 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
   /* Jede neue Aufgabe beginnt wieder bei den drei Knöpfen. */
   useEffect(() => {
     setMoving(false);
-    setDate(shortcuts.tomorrow);
+    setDate(current ? defaultReplanDate(current) : shortcuts.tomorrow);
     setTime(current ? dueTimeOf(current) : '');
     setReason('');
   }, [current?.id, shortcuts.tomorrow]); // eslint-disable-line react-hooks/exhaustive-deps -- nur beim Wechsel der Aufgabe
@@ -108,8 +110,10 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
   const was = dueDate(current);
   const project = snapshot.projects[current.project_id]?.name;
   const position = handled.size + 1;
-  /* Mit Uhrzeit ist eine Aufgabe ab dieser Uhrzeit spät, sonst ab morgen. */
-  const isLate = !!was && (dueTimeOf(current) ? was < new Date() : was < new Date(new Date().setHours(0, 0, 0, 0)));
+  const isLate = isOverdue(current);
+  const parent = current.parent_id ? snapshot.items[current.parent_id] : undefined;
+  /* Überfällige Unteraufgaben erben den neuen Termin. */
+  const lateChildren = overdueDescendants(current.id, snapshot.items);
 
   async function complete() {
     if (!current || busy) return;
@@ -169,12 +173,22 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
         toast(t('replan.commentFailed'), undefined, { tone: 'error' });
         return;
       }
-      await sendTo(current.id, { kind: 'day', date: target, time: time ? `${time}:00` : undefined }, describe(target, time, true));
+      const where: DropTarget = { kind: 'day', date: target, time: time ? `${time}:00` : undefined };
+      await sendTo(current.id, where, describe(target, time, true));
+      if (lateChildren.length > 0) {
+        /* Wie die Aufgabe selbst: Regel und Uhrzeit bleiben, das Wochen-Label geht. */
+        await updateMany(
+          lateChildren.map((child) => child.id),
+          (child) => dropMutation(child, where)?.update ?? null,
+          t('replan.childrenMoved', { count: lateChildren.length }),
+        );
+      }
       done(current.id);
     } finally { setBusy(false); }
   }
 
   const quick = [
+    { key: 'today', value: shortcuts.today, label: t('date.today') },
     { key: 'tomorrow', value: shortcuts.tomorrow, label: t('date.tomorrow') },
     { key: 'dayAfter', value: shortcuts.dayAfter, label: t('replan.dayAfter') },
     { key: 'nextWeek', value: shortcuts.nextWeek, label: t('date.nextWeek') },
@@ -196,6 +210,12 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
             )}
             {current.due?.is_recurring && <span><Icon name="repeat" size="sm" />{t('replan.recurring')}</span>}
             {project && <span><Icon name="project" size="sm" />{project}</span>}
+            {parent && (
+              <span className="replan-parent" title={displayTaskContent(parent)}>
+                <Icon name="subtask" size="sm" />
+                {t('replan.subtaskOf', { name: displayTaskContent(parent) })}
+              </span>
+            )}
           </p>
         </div>
 
@@ -266,6 +286,12 @@ function ReplanBody({ items, onClose }: { items: readonly Item[]; onClose: () =>
               />
               <span className="replan-hint">{t('replan.reasonHint')}</span>
             </label>
+            {lateChildren.length > 0 && (
+              <p className="replan-hint replan-children">
+                <Icon name="subtask" size="sm" />
+                {t('replan.childrenFollow', { count: lateChildren.length })}
+              </p>
+            )}
           </div>
         )}
       </div>

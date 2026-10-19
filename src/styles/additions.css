@@ -2197,6 +2197,8 @@ html.desktop-app:not(.quickadd) body::before {
 .replan-meta { margin: 6px 0 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.8125rem; color: var(--muted); }
 .replan-meta span { display: inline-flex; align-items: center; gap: 4px; }
 .replan-meta .late { color: var(--late-dark, #d1453b); }
+.replan-parent { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.replan-children { display: flex; align-items: center; gap: 6px; margin: 0; }
 /* Vier Kacheln in zwei Reihen: Symbol in einem farbigen Kreis, darunter
    was passiert. Löschen bleibt zurückhaltend und färbt sich erst beim Zeigen. */
 .replan-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
