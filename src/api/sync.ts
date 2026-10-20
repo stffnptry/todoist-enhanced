@@ -1,4 +1,5 @@
 import { request } from './client';
+import { readDeadlineNote } from '@/domain/deadlineNote';
 import type {
   Collaborator, CollaboratorState, Filter, Item, Label, LiveNotification, Note, Project, Reminder,
   Section, Snapshot, TodoistUser, Workspace,
@@ -94,7 +95,8 @@ function mergeStates(
 export function applySync(snapshot: Snapshot, response: SyncResponse): Snapshot {
   const full = response.full_sync;
   return {
-    items: mergeCollection(snapshot.items, response.items, full),
+    // Deadline-Zeilen aus der Beschreibung (Free-Tarif) werden hier zu `deadline`.
+    items: mergeCollection(snapshot.items, response.items?.map(readDeadlineNote), full),
     projects: mergeCollection(snapshot.projects, response.projects, full),
     sections: mergeCollection(snapshot.sections, response.sections, full),
     labels: mergeCollection(snapshot.labels, response.labels, full),

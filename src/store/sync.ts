@@ -6,6 +6,7 @@ import { completeSignIn } from '@/api/oauth';
 import { ApiError, NotConnectedError } from '@/api/client';
 import { applySync, applyWrite, sync } from '@/api/sync';
 import { sendCommands, type Command } from '@/api/commands';
+import { canStoreDeadlines, deadlinesToNotes } from '@/domain/deadlineNote';
 import * as idb from '@/db/idb';
 import { emptySnapshot, setWeekLabel } from '@/domain/types';
 import { readKept } from '@/domain/views';
@@ -365,9 +366,11 @@ export const createSyncSlice: Slice<SyncSlice> = (set, get) => ({
    * so it survives a reload, and at Todoist. A failure rolls the screen back
    * rather than leaving it showing something Todoist never accepted.
    */
-  async apply(commands, optimistic) {
+  async apply(original, optimistic) {
     const before = get().snapshot;
     const after = optimistic(before);
+    // Free-Tarif: Deadlines gehen als Zeile in die Beschreibung (domain/deadlineNote.ts).
+    const commands = deadlinesToNotes(original, after, canStoreDeadlines(after.user));
 
     /* A demo account is a sandbox, and so is the tour, which plays on the
        demo's tasks even for a real account (#4): changes show, and stop

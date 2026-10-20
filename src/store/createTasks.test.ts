@@ -93,6 +93,21 @@ describe('estimate writes use the selected storage', () => {
   });
 });
 
+describe('Deadline im Free-Tarif', () => {
+  it('geht als Zeile in die Beschreibung, die App zeigt sie weiter als Deadline', async () => {
+    const snapshot = emptySnapshot();
+    snapshot.user = { id: 'free', is_premium: false } as NonNullable<typeof snapshot.user>;
+    useStore.setState({ snapshot });
+    await useStore.getState().createTask({ content: 'Rechnung', description: 'IBAN', deadline: { date: '2026-10-26', lang: 'en' } });
+    const args = sent.mock.calls[0][1][0].args;
+    expect(args).not.toHaveProperty('deadline');
+    expect(args.description).toBe('IBAN\n\nDeadline: 26.10.2026');
+    const [task] = Object.values(useStore.getState().snapshot.items);
+    expect(task.deadline?.date).toBe('2026-10-26');
+    expect(task.description).toBe('IBAN');
+  });
+});
+
 describe('assignment creation and refusal (#203)', () => {
   function shared() {
     const snapshot = emptySnapshot();

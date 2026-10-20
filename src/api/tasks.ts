@@ -1,5 +1,6 @@
 import { ApiError, request } from './client';
 import type { CompletedItem, Item, Note } from '@/domain/types';
+import { readDeadlineNote } from '@/domain/deadlineNote';
 
 /**
  * One task read straight from Todoist, completed ones included.
@@ -11,7 +12,7 @@ import type { CompletedItem, Item, Note } from '@/domain/types';
 export async function fetchTask(id: string): Promise<Item | null> {
   try {
     const task = await request<Partial<Item> & { is_collapsed?: boolean }>(`/tasks/${id}`);
-    return toItem(task);
+    return readDeadlineNote(toItem(task));
   } catch (error) {
     if (error instanceof ApiError && (error.status === 404 || error.status === 400)) return null;
     throw error;
