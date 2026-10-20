@@ -171,3 +171,35 @@ describe('Kurzbefehle wie in Todoists Schnelleingabe', () => {
     expect(de('Achtung !30').reminders).toEqual([]);
   });
 });
+
+describe('/Abschnitt', () => {
+  it('liest einen Abschnitt ohne Projekt und nimmt dessen Projekt mit', () => {
+    const parsed = read('Rechnung ablegen /Admin');
+    expect(parsed.sectionId).toBe('admin');
+    expect(parsed.projectId).toBe('perso');
+    expect(parsed.content).toBe('Rechnung ablegen');
+    expect(marked('Rechnung ablegen /Admin')).toBe('/Admin');
+  });
+
+  it('liest Namen mit Leerzeichen ohne sie und lässt Satzzeichen stehen', () => {
+    expect(read('Texte /SiteInternet.').sectionId).toBe('site');
+    expect(read('Texte /siteinternet').projectId).toBe('alias');
+  });
+
+  it('sucht nach #Projekt nur in dessen Abschnitten', () => {
+    const own = read('Ordnen #Perso /Admin');
+    expect(own.projectId).toBe('perso');
+    expect(own.sectionId).toBe('admin');
+    const other = read('Ordnen #Perso /SiteInternet');
+    expect(other.projectId).toBe('perso');
+    expect(other.sectionId).toBeNull();
+    expect(other.content).toBe('Ordnen /SiteInternet');
+  });
+
+  it('lässt Schrägstriche stehen, die keinen Abschnitt nennen', () => {
+    const parsed = read('Ordner /Users/steffen und/oder 3/4');
+    expect(parsed.sectionId).toBeNull();
+    expect(parsed.projectId).toBeNull();
+    expect(parsed.content).toBe('Ordner /Users/steffen und/oder 3/4');
+  });
+});

@@ -23,6 +23,11 @@ export interface ProjectMenuProps {
    */
   onAddAbove?: () => void;
   onAddBelow?: () => void;
+  /**
+   * Legt am Ende des Projekts einen Abschnitt an. Nur die Projektseite bietet
+   * das an: Dort erscheint der neue Abschnitt, und sein Name wird getippt.
+   */
+  onAddSection?: () => void;
   /** Where the popover hangs from, so a sidebar row and a header can differ. */
   align?: 'left' | 'right';
   /** The control it belongs to. The menu is placed against this. */
@@ -37,7 +42,7 @@ export interface ProjectMenuProps {
  * places, and a second copy would be a second thing to keep in step.
  */
 export function ProjectMenu({
-  project, onClose, onEdit, onAddAbove, onAddBelow, align = 'left', anchor,
+  project, onClose, onEdit, onAddAbove, onAddBelow, onAddSection, align = 'left', anchor,
 }: ProjectMenuProps) {
   const { t } = useT();
   const confirm = useConfirm();
@@ -192,6 +197,11 @@ export function ProjectMenu({
       <button className="opt" role="menuitem" onClick={() => { onClose(); onEdit(); }}>
         <Icon name="edit" size="sm" /><span>{t('project.edit')}</span>
       </button>
+      {onAddSection && (
+        <button className="opt" role="menuitem" onClick={() => { onClose(); onAddSection(); }}>
+          <Icon name="section" size="sm" /><span>{t('section.add')}</span>
+        </button>
+      )}
       {!isTemporaryId(project.id) && !project.inbox_project && (
         <button
           className="opt"

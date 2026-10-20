@@ -430,6 +430,7 @@ export const de: Record<TranslationKey, string> = {
   'comment.reactionFailed': 'Todoist hat diese Reaktion nicht gespeichert. Versuche es gleich noch einmal.',
   'composer.searchProjects': 'Tippen, um Projekte und Abschnitte zu suchen',
   'composer.searchTags': 'Tippen, um Labels zu suchen',
+  'composer.searchSections': 'Tippen, um Abschnitte zu suchen',
   'reaction.search': 'Emoji suchen',
   'reaction.recent': 'Zuletzt verwendet',
   'reaction.results': 'Ergebnisse',

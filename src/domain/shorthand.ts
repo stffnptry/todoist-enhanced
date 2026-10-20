@@ -18,7 +18,7 @@ import { clockTime, offsetMinutes, type ReminderNote } from './reminderNote';
  * answer read once — a range is what was matched, and the value is what that
  * range meant.
  *
- * `#project`, `p1`..`p4`, `@tag` (or `%tag`), `(25)`, `{deadline}` and
+ * `#project`, `/section`, `p1`..`p4`, `@tag` (or `%tag`), `(25)`, `{deadline}` and
  * `!reminder` are syntax: they were typed on
  * purpose and are always honoured. The date is a guess made from prose, so it
  * is the only part the caller can switch off.
@@ -64,7 +64,7 @@ export interface Shorthand {
   /** The name with every recognised phrase taken out of it. */
   content: string;
   projectId: string | null;
-  /** A section of that project, when the name said `#Project/Section`. */
+  /** A section of that project, when the name said `#Project/Section` or `/Section`. */
   sectionId: string | null;
   priority: DisplayPriority | null;
   labels: string[];
@@ -187,9 +187,30 @@ export function parseShorthand(
       tone: colorValue(project.found.color),
     };
   }
+  /* `/Abschnitt`, wie in Todoist: ein Abschnitt für sich, ohne das Projekt
+     davor. Nach `#Projekt` wird nur in dessen Abschnitten gesucht; sonst in
+     allen, und das Projekt folgt dem Abschnitt. Ein Name mit Leerzeichen wird
+     ohne sie getippt („/ZuKaufen“), so wie beim Projekt. Ein Schrägstrich, der
+     keinen Abschnitt nennt („/Users“), bleibt Text. */
+  const liveSections = Object.values(snapshot.sections).filter((s) => !s.is_deleted && !s.is_archived);
+  let sectionClaim: { start: number; length: number; tone?: string } | null = null;
+  for (const token of raw.matchAll(/(?<=^|\s)\/([^\s/]+)/gu)) {
+    const slash = token.index!;
+    const owner = projectId;
+    const found = readName(token[1], (text) => liveSections.find(
+      (s) => (!owner || s.project_id === owner) && fold(s.name) === fold(text),
+    ));
+    if (!found || isOff(slash, 1 + found.length)) continue;
+    sectionId = found.found.id;
+    if (!projectId) projectId = found.found.project_id;
+    const project = snapshot.projects[found.found.project_id];
+    sectionClaim = { start: slash, length: 1 + found.length, tone: project ? colorValue(project.color) : undefined };
+  }
+
   if (projectClaim) {
     claim(projectClaim.start, projectClaim.length, 'project', projectClaim.tone);
   }
+  if (sectionClaim) claim(sectionClaim.start, sectionClaim.length, 'project', sectionClaim.tone);
 
   let flagClaim: { start: number; length: number } | null = null;
   for (const flag of raw.matchAll(/\bp([1-4])\b/gi)) {

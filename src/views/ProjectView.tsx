@@ -207,6 +207,13 @@ function ProjectBody({
         .sort(bySectionOrder),
     [snapshot.sections, projectId],
   );
+  const setViewPrefs = useStore((s) => s.setViewPrefs);
+  /* Aus dem Projektmenü: Abschnitte sieht man nur in der Standard-Gruppierung,
+     also schaltet es dorthin, bevor der neue Abschnitt unten erscheint. */
+  const addSectionAtEnd = () => {
+    if (current.group !== 'none') setViewPrefs(viewKey, { group: 'none' });
+    void addSection(sections.length);
+  };
 
   const sorted = useCallback(
     (list: typeof scoped) => sortItems(list, current.sort, childrenOf, 'project', snapshot),
@@ -439,6 +446,7 @@ function ProjectBody({
                   anchor={menuAnchor}
                   onClose={() => setMenuAnchor(null)}
                   onEdit={() => onProjectSheet({ mode: 'edit', projectId })}
+                  onAddSection={addSectionAtEnd}
                 />
               )}
             </span>
@@ -540,10 +548,13 @@ function ProjectBody({
             />
             </Fragment>
           ))}
+          {/* Der letzte Platz bleibt sichtbar: Wer noch keinen Abschnitt hat,
+              fände die unsichtbaren Nähte zwischen den Gruppen nie. */}
           <AddSectionLine
             label={t('section.add')}
             slotId={String(sections.length)}
             onAdd={() => void addSection(sections.length)}
+            atRest
           />
         </div>
       ) : current.mode === 'list' && current.group === 'scheduled' ? (

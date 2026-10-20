@@ -23,15 +23,18 @@ const squash = (text: string): string =>
 /** The `@tag` or `#project` the caret is currently inside, if any. */
 function tokenAtCaret(
   value: string, caret: number,
-): { sigil: '@' | '#' | '%'; query: string; start: number } | null {
+): { sigil: '@' | '#' | '%' | '/'; query: string; start: number } | null {
   const before = value.slice(0, caret);
   /* A project's name can hold any character but a space (#102); a tag's
      keeps to letters, digits, `_` and `-`, as the parser reads it. `%` is
      Todoist's newer sign for a tag and offers the same list. */
-  const match = before.match(/(^|\s)(#)(\S*)$/u) ?? before.match(/(^|\s)([@%])([\p{L}\p{N}_/-]*)$/u);
+  const match = before.match(/(^|\s)(#)(\S*)$/u)
+    ?? before.match(/(^|\s)([@%])([\p{L}\p{N}_/-]*)$/u)
+    /* `/Abschnitt`: ein Abschnitt für sich, wie in Todoist. */
+    ?? before.match(/(^|\s)(\/)([^\s/]*)$/u);
   if (!match) return null;
   return {
-    sigil: match[2] as '@' | '#' | '%',
+    sigil: match[2] as '@' | '#' | '%' | '/',
     query: match[3].toLowerCase(),
     start: caret - match[3].length - 1,
   };
@@ -260,6 +263,28 @@ export function TaskNameField({
           .map(sectionOption(p)));
 
       return [...withSections, ...elsewhere].slice(0, 60);
+    }
+    if (token.sigil === '/') {
+      /* Die Abschnitte des Projekts, das der Name schon nennt, zuerst; die
+         übrigen danach, mit ihrem Projekt daneben. */
+      const owner = read.projectId;
+      return Object.values(snapshot.sections)
+        .filter((s) => !s.is_archived && !s.is_deleted && squash(s.name).includes(squash(token.query)))
+        .filter((s) => {
+          const p = snapshot.projects[s.project_id];
+          return p && !p.is_archived && !p.is_deleted;
+        })
+        .sort((a, b) => Number(b.project_id === owner) - Number(a.project_id === owner) || bySectionOrder(a, b))
+        .slice(0, 20)
+        .map((s) => ({
+          id: s.id,
+          name: s.name,
+          label: s.name,
+          hint: snapshot.projects[s.project_id].name as string | undefined,
+          color: snapshot.projects[s.project_id].color,
+          sigil: '/' as const,
+          isNew: false,
+        }));
     }
     const known = Object.values(snapshot.labels)
       .filter((l) => !l.is_deleted && !isHiddenLabel(l.name))
@@ -576,7 +601,7 @@ export function TaskNameField({
             <Icon name="search" size="sm" />
             {token.query
               ? <span className="namepicker-query">{token.sigil}{token.query}</span>
-              : <span className="namepicker-placeholder">{t(token.sigil === '#' ? 'composer.searchProjects' : 'composer.searchTags')}</span>}
+              : <span className="namepicker-placeholder">{t(token.sigil === '#' ? 'composer.searchProjects' : token.sigil === '/' ? 'composer.searchSections' : 'composer.searchTags')}</span>}
           </div>
           {options.map((option, index) => (
             <button

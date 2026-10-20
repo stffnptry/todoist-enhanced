@@ -2314,3 +2314,15 @@ html.desktop-app:not(.quickadd) body::before {
    wie eine Mitteilung. */
 .nmark.deadline{--mark:var(--deadline)}
 .nmark.reminder{--mark:var(--p2)}
+
+/* Abschnitt hinzufügen am Ende eines Projekts: immer zu sehen, aber leise –
+   grau statt Akzentfarbe, bis der Zeiger darauf ist. */
+.addsection-slot.atrest{margin-top:var(--s3)}
+.addsection-slot.atrest .addsection{opacity:1}
+.addsection-slot.atrest .addsection-label{color:var(--muted)}
+.addsection-slot.atrest .addsection-rule{background:var(--border);height:1px}
+.addsection-slot.atrest .addsection:hover .addsection-label,
+.addsection-slot.atrest .addsection:focus-visible .addsection-label{color:var(--accent)}
+.addsection-slot.atrest .addsection:hover .addsection-rule,
+.addsection-slot.atrest .addsection:focus-visible .addsection-rule{background:var(--accent);height:2px}
+.addsection-slot.atrest.armed .addsection-label{visibility:hidden}

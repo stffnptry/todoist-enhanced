@@ -428,6 +428,7 @@ export const en = {
   'comment.reactionFailed': 'Todoist did not save this reaction. Try again in a moment.',
   'composer.searchProjects': 'Type to search projects and sections',
   'composer.searchTags': 'Type to search tags',
+  'composer.searchSections': 'Type to search sections',
   'reaction.search': 'Search emoji',
   'reaction.recent': 'Recently used',
   'reaction.results': 'Results',
