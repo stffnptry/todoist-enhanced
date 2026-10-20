@@ -5,6 +5,7 @@ import { readRecurrence, type RecurrenceLang } from './recurrence';
 import { parseDurationInput } from './estimates';
 import { colorValue } from './colors';
 import type { DisplayPriority, Snapshot } from './types';
+import { clockTime, offsetMinutes, type ReminderNote } from './reminderNote';
 
 /**
  * Everything a task's name is carrying, and exactly where it carries it.
@@ -17,7 +18,8 @@ import type { DisplayPriority, Snapshot } from './types';
  * answer read once — a range is what was matched, and the value is what that
  * range meant.
  *
- * `#project`, `p1`..`p4`, `@tag` and `(25)` are syntax: they were typed on
+ * `#project`, `p1`..`p4`, `@tag` (or `%tag`), `(25)`, `{deadline}` and
+ * `!reminder` are syntax: they were typed on
  * purpose and are always honoured. The date is a guess made from prose, so it
  * is the only part the caller can switch off.
  *
@@ -31,7 +33,8 @@ import type { DisplayPriority, Snapshot } from './types';
  */
 
 export type HighlightKind =
-  'date' | 'recurrence' | 'project' | 'priority' | 'label' | 'duration' | 'link';
+  'date' | 'recurrence' | 'project' | 'priority' | 'label' | 'duration' | 'link'
+  | 'deadline' | 'reminder';
 
 export interface Highlight {
   start: number;
@@ -76,6 +79,10 @@ export interface Shorthand {
   recurrence: { string: string; lang: RecurrenceLang; fromCompletion: boolean } | null;
   /** An estimate in minutes, written in brackets: "Call Anne (25)". */
   minutes: number | null;
+  /** `yyyy-MM-dd`, written in braces: "Bericht {31. Oktober}". */
+  deadline: string | null;
+  /** `!14:00` or `!30m`, stored by the app itself (see reminderNote.ts). */
+  reminders: ReminderNote[];
   /** Where each of the above sits in the original string. */
   ranges: Highlight[];
 }
@@ -197,7 +204,8 @@ export function parseShorthand(
   /* A tag starts a word: `@work` after a space or at the start. Glued to
      something, it is not one: `@@link0@@` is text, and so is the `@example` of
      an address like `me@example.com`, which used to make a tag out of it. */
-  for (const label of raw.matchAll(/(?<=^|\s)@([\p{L}\p{N}_-]+)/gu)) {
+  /* `%` is Todoist's newer sign for a tag and reads the same as `@`. */
+  for (const label of raw.matchAll(/(?<=^|\s)[@%]([\p{L}\p{N}_-]+)/gu)) {
     if (isOff(label.index!, label[0].length)) continue;
     labels.push(label[1]);
     const tag = Object.values(snapshot.labels).find(
@@ -218,6 +226,44 @@ export function parseShorthand(
     durationClaim = { start: bracket.index!, length: bracket[0].length };
   }
   if (durationClaim) claim(durationClaim.start, durationClaim.length, 'duration');
+
+  /* A deadline in braces, as in Todoist: `{31. Oktober}`, `{Freitag}`,
+     `{31.10.}`. What is inside is read by the same date reader as the name,
+     but only the day is kept: a deadline has no time. Braces that hold no
+     date are left as text. Read before the due date so "Freitag" inside the
+     braces is not taken for the due date as well. */
+  let deadline: string | null = null;
+  let deadlineClaim: { start: number; length: number } | null = null;
+  for (const brace of raw.matchAll(/\{([^{}]{1,40})\}/g)) {
+    if (isOff(brace.index!, brace[0].length)) continue;
+    const reading = readNaturalDate(brace[1], new Date(), { dateFormat });
+    if (!reading || brace[1].replace(reading.matched, '').trim()) continue;
+    deadline = reading.date.slice(0, 10);
+    deadlineClaim = { start: brace.index!, length: brace[0].length };
+  }
+  if (deadlineClaim) claim(deadlineClaim.start, deadlineClaim.length, 'deadline');
+
+  /* A reminder: `!14:00`, `!9`, `!14 Uhr` for a time on the due day, `!30m`,
+     `!2h` for that long before the due time. Each one typed is kept, as in
+     Todoist, where a task can have several. `!` glued to a word ("Hallo!")
+     is punctuation and stays. */
+  const reminders: ReminderNote[] = [];
+  for (const bang of raw.matchAll(
+    /(?<=^|\s)!(?:(\d{1,4})\s?(m|min|h|std)|(\d{1,2})(?::(\d{2}))?(\s?uhr)?)(?=\s|$|[.,;])/giu,
+  )) {
+    if (isOff(bang.index!, bang[0].length)) continue;
+    let note: ReminderNote | null = null;
+    if (bang[1]) {
+      const minutes = offsetMinutes(bang[1], bang[2]);
+      if (minutes) note = { kind: 'before', minutes };
+    } else {
+      const time = clockTime(bang[3], bang[4]);
+      if (time) note = { kind: 'time', time };
+    }
+    if (!note) continue;
+    reminders.push(note);
+    claim(bang.index!, bang[0].length, 'reminder');
+  }
 
   /* The recurrence is read before the date and out of the same text, because
      the two compete for the same words: "every monday" contains a weekday the
@@ -281,7 +327,7 @@ export function parseShorthand(
   const clean = dedupe(ranges);
   return {
     content: strip(raw, clean),
-    projectId, sectionId, priority, labels, date, recurrence, minutes,
+    projectId, sectionId, priority, labels, date, recurrence, minutes, deadline, reminders,
     ranges: clean,
   };
 }

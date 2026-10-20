@@ -2309,3 +2309,8 @@ html.desktop-app:not(.quickadd) body::before {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 18px;
 }
+
+/* Schnelleingabe: {Deadline} in der Deadline-Farbe, !Erinnerung in Orange
+   wie eine Mitteilung. */
+.nmark.deadline{--mark:var(--deadline)}
+.nmark.reminder{--mark:var(--p2)}

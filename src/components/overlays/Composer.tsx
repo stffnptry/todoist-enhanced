@@ -23,6 +23,7 @@ import {
 import { matchesSearch } from '@/domain/search';
 import { byLabelOrder } from '@/domain/orderKey';
 import { isHiddenLabel } from '@/domain/kanban';
+import { anchorReminder, withReminderNotes } from '@/domain/reminderNote';
 
 interface ComposerProps {
   open: boolean;
@@ -228,6 +229,7 @@ export function Composer({
     if (reading === 'priority') setPriority(4);
     if (reading === 'duration') setMinutes(defaultMinutes ?? null);
     if (reading === 'project') { setProjectId(fallbackProject); setSectionId(''); }
+    if (reading === 'deadline') setDeadline('');
     /* A tag read from the name needs nothing here: it is read again from the
        name every time, so refusing it is enough to take it off. */
   };
@@ -245,7 +247,7 @@ export function Composer({
    * afterwards stays changed until the name says something new.
    */
   const { date: readDate, projectId: readProject, sectionId: readSection,
-    priority: readPriority, minutes: readMinutes, recurrence: readRepeat } = parsed;
+    priority: readPriority, minutes: readMinutes, recurrence: readRepeat, deadline: readDeadline } = parsed;
 
   /*
    * Each of these also watches `refusals`, whose identity changes only when a
@@ -262,8 +264,8 @@ export function Composer({
      field was changed by hand since, which is then left alone. */
   const wasRead = useRef<{
     date: string | null; repeat: string | null; project: string | null; section: string | null;
-    priority: DisplayPriority | null; minutes: number | null;
-  }>({ date: null, repeat: null, project: null, section: null, priority: null, minutes: null });
+    priority: DisplayPriority | null; minutes: number | null; deadline: string | null;
+  }>({ date: null, repeat: null, project: null, section: null, priority: null, minutes: null, deadline: null });
   useEffect(() => {
     const was = wasRead.current;
     if (was.date && !readDate) setDate((now) => (now === was.date ? (defaultDate ?? '') : now));
@@ -274,12 +276,14 @@ export function Composer({
     }
     if (was.priority && !readPriority) setPriority((now) => (now === was.priority ? (defaultPriority ?? 4) : now));
     if (was.minutes !== null && readMinutes === null) setMinutes((now) => (now === was.minutes ? null : now));
+    if (was.deadline && !readDeadline) setDeadline((now) => (now === was.deadline ? '' : now));
     wasRead.current = {
       date: readDate ?? null, repeat: readRepeat?.string ?? null, project: readProject ?? null,
       section: readSection ?? null, priority: readPriority ?? null, minutes: readMinutes ?? null,
+      deadline: readDeadline ?? null,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the readings themselves, not on the fallbacks.
-  }, [readDate, readRepeat?.string, readProject, readSection, readPriority, readMinutes]);
+  }, [readDate, readRepeat?.string, readProject, readSection, readPriority, readMinutes, readDeadline]);
   useEffect(() => { if (readDate) setDate(readDate); }, [readDate, refusals]);
   /* Depends on the rule's text, not on the object: the parser builds a new one
      on every keystroke and the effect would never stop firing. */
@@ -299,6 +303,7 @@ export function Composer({
   useEffect(() => {
     if (readMinutes !== null) setMinutes(readMinutes);
   }, [readMinutes, refusals]);
+  useEffect(() => { if (readDeadline) setDeadline(readDeadline); }, [readDeadline, refusals]);
 
   /**
    * One creation at a time (#142).
@@ -356,8 +361,11 @@ export function Composer({
       const inbox = snapshot.user?.inbox_project_id;
       await createTasks(lines.map((line) => {
         const read = parseShorthand(line, snapshot, naturalDates, [], dateFormat);
+        const notes = read.reminders.map((note) => anchorReminder(note, !!(read.date || read.recurrence), new Date()));
         return {
           content: read.content || line,
+          ...(notes.length > 0 ? { description: withReminderNotes('', notes) } : {}),
+          ...(read.deadline ? { deadline: { date: read.deadline, lang: 'en' } } : {}),
           project_id: read.projectId || inbox,
           section_id: read.sectionId || undefined,
           priority: toTodoistPriority(read.priority ?? 4),
@@ -397,7 +405,12 @@ export function Composer({
 
     const saved = await createTask({
       content,
-      description: description.trim() || undefined,
+      /* `!14:00` and `!30m` go into the description as lines the Mac app
+         reminds from: Todoist's own reminders need Pro (reminderNote.ts). */
+      description: withReminderNotes(
+        description.trim(),
+        parsed.reminders.map((note) => anchorReminder(note, !!(dueDate || repeat), new Date())),
+      ) || undefined,
       project_id: targetProject,
       responsible_uid: responsibleUid,
       section_id: sectionId || undefined,

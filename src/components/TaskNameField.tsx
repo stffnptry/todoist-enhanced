@@ -23,14 +23,15 @@ const squash = (text: string): string =>
 /** The `@tag` or `#project` the caret is currently inside, if any. */
 function tokenAtCaret(
   value: string, caret: number,
-): { sigil: '@' | '#'; query: string; start: number } | null {
+): { sigil: '@' | '#' | '%'; query: string; start: number } | null {
   const before = value.slice(0, caret);
   /* A project's name can hold any character but a space (#102); a tag's
-     keeps to letters, digits, `_` and `-`, as the parser reads it. */
-  const match = before.match(/(^|\s)(#)(\S*)$/u) ?? before.match(/(^|\s)(@)([\p{L}\p{N}_/-]*)$/u);
+     keeps to letters, digits, `_` and `-`, as the parser reads it. `%` is
+     Todoist's newer sign for a tag and offers the same list. */
+  const match = before.match(/(^|\s)(#)(\S*)$/u) ?? before.match(/(^|\s)([@%])([\p{L}\p{N}_/-]*)$/u);
   if (!match) return null;
   return {
-    sigil: match[2] as '@' | '#',
+    sigil: match[2] as '@' | '#' | '%',
     query: match[3].toLowerCase(),
     start: caret - match[3].length - 1,
   };

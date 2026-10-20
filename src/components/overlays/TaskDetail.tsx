@@ -25,6 +25,7 @@ import {
 } from '@/domain/dates';
 import { plainTitle, renderTitle, titleLinks } from '@/domain/markdown';
 import { parseShorthand, savedRefusals, splitTrailingEstimate, type TextRange } from '@/domain/shorthand';
+import { anchorReminder, reminderLine, withReminderNotes } from '@/domain/reminderNote';
 import { dueForDate } from '@/domain/recurrence';
 import { EstimateField } from '../EstimateField';
 import { TaskNameField } from '../TaskNameField';
@@ -520,6 +521,10 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
     if (read.labels.length > 0) labels = [...new Set([...labels, ...read.labels])];
     if (read.minutes !== null) fields.estimateMinutes = read.minutes;
     if (labels !== item.labels) fields.labels = labels;
+    if (read.deadline) fields.deadline = { date: read.deadline, lang: 'en' };
+    /* `!14:00` / `!30m` werden Erinnerungszeilen in der Beschreibung (reminderNote.ts). */
+    const notes = read.reminders.map((note) => anchorReminder(note, !!(read.date || read.recurrence || item.due), new Date()));
+    if (notes.length > 0) fields.description = withReminderNotes(item.description ?? '', notes);
 
     if (Object.keys(fields).length > 0) void updateTask(item.id, fields);
 
@@ -554,6 +559,8 @@ export function TaskDetail({ taskId, onClose, onOpen }: TaskDetailProps) {
       read.priority ? `P${read.priority}` : null,
       ...read.labels.map((label) => `@${label}`),
       read.minutes !== null ? formatDuration(read.minutes, locale) : null,
+      read.deadline ? `${t('detail.deadline')} ${formatRelativeDay(new Date(`${read.deadline}T00:00:00`), locale)}` : null,
+      ...notes.map(reminderLine),
     ].filter(Boolean);
     if (applied.length > 0) toast(applied.join(' · '));
 

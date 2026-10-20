@@ -2,6 +2,7 @@ import { parseISO } from 'date-fns';
 import type { Item, Snapshot, TodoistDue } from './types';
 import { hasTime, toApiDateTime } from './dates';
 import { dueForDate } from './recurrence';
+import { readReminderNotes, reminderMoment } from './reminderNote';
 
 /**
  * When the desktop app should put up a notification, worked out from the
@@ -12,6 +13,11 @@ import { dueForDate } from './recurrence';
  * timed task with no reminder of its own, the moment it is due. A task with
  * only a day and no time never notifies: at midnight that would be every task
  * of the day at once. Location reminders need a phone and are left out.
+ *
+ * A third source is the app's own: an "Erinnerung: …" line in the
+ * description, which is how the quick add stores `!14:00` on a Free plan
+ * (see reminderNote.ts). It counts as the task's reminder like one set in
+ * Todoist.
  */
 export interface ScheduledReminder {
   /** Unique per task and moment, so the same reminder is never shown twice. */
@@ -69,6 +75,16 @@ export function upcomingReminders(
       withReminder.add(item.id);
       const due = dueMoment(item);
       if (due !== null) add(item, due - (reminder.minute_offset ?? 0) * 60_000);
+    }
+  }
+
+  for (const item of Object.values(snapshot.items)) {
+    if (!isOpen(item) || !isMine(item, userId)) continue;
+    for (const note of readReminderNotes(item.description)) {
+      const at = reminderMoment(note, item);
+      if (at === null) continue;
+      withReminder.add(item.id);
+      add(item, at);
     }
   }
 

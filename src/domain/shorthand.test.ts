@@ -131,3 +131,43 @@ describe('the estimate marked at the end of a subtask (#163)', () => {
     expect(trailingEstimate('(5)')).toBeNull();
   });
 });
+
+describe('Kurzbefehle wie in Todoists Schnelleingabe', () => {
+  const de = (raw: string) => parseShorthand(raw, snapshot, true);
+
+  it('liest %Label wie @Label', () => {
+    const parsed = de('Milch kaufen %einkauf @dringend');
+    expect(parsed.labels).toEqual(['einkauf', 'dringend']);
+    expect(parsed.content).toBe('Milch kaufen');
+    expect(de('50% Rabatt').labels).toEqual([]);
+  });
+
+  it('liest {Deadline} als Tag, ohne das Fälligkeitsdatum zu setzen', () => {
+    const parsed = de('Bericht {31. Oktober} morgen');
+    expect(parsed.deadline).toMatch(/^\d{4}-10-31$/);
+    expect(parsed.date).not.toBeNull();
+    expect(parsed.date!.slice(5, 10)).not.toBe('10-31');
+    expect(parsed.content).toBe('Bericht');
+    expect(parsed.ranges.some((r) => r.kind === 'deadline')).toBe(true);
+  });
+
+  it('lässt Klammern ohne Datum stehen', () => {
+    const parsed = de('Vorlage {Entwurf}');
+    expect(parsed.deadline).toBeNull();
+    expect(parsed.content).toBe('Vorlage {Entwurf}');
+  });
+
+  it('liest !Uhrzeit und !Minuten als Erinnerung', () => {
+    const parsed = de('Arzt anrufen morgen 10 Uhr !9:30 !30m');
+    expect(parsed.reminders).toEqual([{ kind: 'time', time: '09:30' }, { kind: 'before', minutes: 30 }]);
+    expect(parsed.date?.slice(11, 16)).toBe('10:00');
+    expect(parsed.content).toBe('Arzt anrufen');
+    expect(de('Termin !14 Uhr').reminders).toEqual([{ kind: 'time', time: '14:00' }]);
+    expect(de('Termin !2h').reminders).toEqual([{ kind: 'before', minutes: 120 }]);
+  });
+
+  it('lässt ein Ausrufezeichen im Satz stehen', () => {
+    expect(de('Hallo! Toll').reminders).toEqual([]);
+    expect(de('Achtung !30').reminders).toEqual([]);
+  });
+});

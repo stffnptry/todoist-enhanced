@@ -511,7 +511,7 @@ export const de: Record<TranslationKey, string> = {
   'editor.link': 'Link',
   'editor.url': 'Link-URL',
   'composer.descriptionPlaceholder': 'Beschreibung',
-  'composer.placeholder': 'Aufgabenname – probiere „Briefing prüfen tomorrow 2pm p1 #Arbeit“',
+  'composer.placeholder': 'Aufgabenname – probiere „Briefing prüfen morgen 14 Uhr p1 #Arbeit“',
   'composer.needsTitle': 'Füge einen Titel hinzu: Alles Eingegebene wurde als Datum, Projekt oder Label gelesen.',
   'composer.add': 'Aufgabe hinzufügen',
   'composer.adding': 'Wird hinzugefügt …',
