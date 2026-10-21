@@ -7,6 +7,7 @@
  * bzw. HTML, wenn das Programm nichts anderes mitgibt. Alles endet hier in
  * derselben Form und wird zu Titel und Beschreibung einer Aufgabe.
  */
+import { areaTitle, listDisplayName, parseListLabel, splitListName } from './lists';
 import type { Snapshot } from './types';
 
 export interface MailMessage {
@@ -203,17 +204,33 @@ export function mailTask(
 }
 
 /**
- * Wohin gezogene Mails kommen: in die gerade offene Liste (ein Projekt, mit
- * dem Abschnitt, wenn einer angesprungen ist), sonst – Woche, Report, Eingang
- * – in den Eingang. `name` ist null für den Eingang (die Seite übersetzt ihn).
+ * Wohin gezogene Mails kommen: in die gerade offene Liste, sonst – Woche,
+ * Report, Eingang – in den Eingang. Eine Liste ist ein Todoist-Projekt (mit
+ * dem Abschnitt, wenn einer angesprungen ist) oder eine in der App angelegte
+ * Liste, also ein Label (die Aufgabe kommt dann mit dem Label in den Eingang,
+ * wie beim „Aufgabe hinzufügen“ der Seite). `name` ist null für den Eingang
+ * (die Seite übersetzt ihn).
  */
 export function mailTarget(
   route: { view: string; id?: string; sectionId?: string },
-  snapshot: Pick<Snapshot, 'projects' | 'sections' | 'user'>,
-): { projectId: string; sectionId?: string; name: string | null } {
+  snapshot: Pick<Snapshot, 'projects' | 'sections' | 'user' | 'labels'>,
+  listMeta: Record<string, { name: string }> = {},
+): { projectId: string; sectionId?: string; labels?: string[]; name: string | null } {
   const inbox = snapshot.user?.inbox_project_id
     || Object.values(snapshot.projects).find((p) => p.inbox_project && !p.is_deleted)?.id
     || '';
+  /* „Privat · Geplant“ statt „Privat_Geplant“, wie in der Seitenleiste. */
+  const title = (name: string, own?: string) => {
+    const ownArea = own !== undefined ? /^([a-z0-9]+)_/i.exec(name) : null;
+    const parts = splitListName(name) ?? parseListLabel(name) ?? (ownArea ? { area: ownArea[1].toLowerCase(), list: '' } : null);
+    return parts ? `${areaTitle(parts.area)} · ${own ?? listDisplayName(parts.list)}` : own ?? name;
+  };
+  if (route.view === 'label' && route.id) {
+    const wanted = route.id.toLowerCase();
+    const label = Object.values(snapshot.labels).find((l) => !l.is_deleted && l.name.toLowerCase() === wanted);
+    if (label) return { projectId: inbox, labels: [label.name], name: title(label.name, listMeta[label.name]?.name) };
+    return { projectId: inbox, name: null };
+  }
   const project = route.view === 'project' && route.id ? snapshot.projects[route.id] : undefined;
   if (!project || project.is_deleted || project.is_archived || project.inbox_project || project.id === inbox) {
     return { projectId: inbox, name: null };
@@ -222,5 +239,5 @@ export function mailTarget(
   const sectionId = section && section.project_id === project.id && !section.is_deleted && !section.is_archived
     ? section.id
     : undefined;
-  return { projectId: project.id, sectionId, name: project.name };
+  return { projectId: project.id, sectionId, name: title(project.name) };
 }

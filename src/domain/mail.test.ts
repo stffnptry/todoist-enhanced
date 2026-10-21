@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { appleMailMessageId, decodeHeader, mailTarget, mailTask, messageFromText, parseEml } from './mail';
-import type { Project, Section, Snapshot } from './types';
+import type { Label, Project, Section, Snapshot } from './types';
 
 const words = { from: 'Von', date: 'Datum', open: 'In Mail öffnen', noSubject: 'Mail ohne Betreff' };
 
@@ -102,12 +102,22 @@ describe('Ziel gezogener Mails', () => {
       s1: { id: 's1', project_id: 'p1', name: 'A', is_deleted: false, is_archived: false } as Section,
       s2: { id: 's2', project_id: 'other', name: 'B', is_deleted: false, is_archived: false } as Section,
     },
-  } as unknown as Pick<Snapshot, 'projects' | 'sections' | 'user'>;
+    labels: {
+      l1: { id: 'l1', name: 'privat_einkauf', is_deleted: false } as Label,
+      l2: { id: 'l2', name: 'alt', is_deleted: true } as Label,
+    },
+  } as unknown as Pick<Snapshot, 'projects' | 'sections' | 'user' | 'labels'>;
 
   it('nimmt die offene Liste, samt angesprungenem Abschnitt', () => {
-    expect(mailTarget({ view: 'project', id: 'p1' }, snapshot)).toEqual({ projectId: 'p1', sectionId: undefined, name: 'Privat_Geplant' });
+    expect(mailTarget({ view: 'project', id: 'p1' }, snapshot)).toEqual({ projectId: 'p1', sectionId: undefined, name: 'Privat · Geplante Aufgaben' });
     expect(mailTarget({ view: 'project', id: 'p1', sectionId: 's1' }, snapshot).sectionId).toBe('s1');
     expect(mailTarget({ view: 'project', id: 'p1', sectionId: 's2' }, snapshot).sectionId).toBeUndefined();
+  });
+
+  it('nimmt eine in der App angelegte Liste (Label) mit in den Eingang', () => {
+    expect(mailTarget({ view: 'label', id: 'privat_einkauf' }, snapshot, { privat_einkauf: { name: 'Einkaufen' } }))
+      .toEqual({ projectId: 'in', labels: ['privat_einkauf'], name: 'Privat · Einkaufen' });
+    expect(mailTarget({ view: 'label', id: 'alt' }, snapshot)).toEqual({ projectId: 'in', name: null });
   });
 
   it('nimmt sonst den Eingang', () => {

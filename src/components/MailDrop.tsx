@@ -37,7 +37,8 @@ export function MailDrop() {
   const inside = useRef(false);
   const depth = useRef(0);
 
-  const target = mailTarget(route, snapshot);
+  const listMeta = useStore((s) => s.prefs.listMeta);
+  const target = mailTarget(route, snapshot, listMeta);
   const list = target.name ?? t('nav.inbox');
   /* Die Handler hängen einmal am Fenster; was sie brauchen, lesen sie hier. */
   const latest = useRef({ target, list, createTask, toast, t });
@@ -110,7 +111,7 @@ export function MailDrop() {
     let created = 0;
     for (const mail of mails) {
       const { content, description } = mailTask(mail, words);
-      if (await create({ content, description, project_id: into.projectId || undefined, section_id: into.sectionId })) created += 1;
+      if (await create({ content, description, project_id: into.projectId || undefined, section_id: into.sectionId, labels: into.labels })) created += 1;
     }
     if (created === 1) say(tr('mail.created', { name: mailTask(mails[0], words).content, list: where }));
     else if (created > 1) say(tr('mail.createdMany', { count: created, list: where }));
