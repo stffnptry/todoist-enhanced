@@ -8,6 +8,7 @@ import { useStore } from '@/store/store';
 import { copyText, isTemporaryId, todoistTaskUrl } from '@/api/links';
 import { uploadAttachment } from '@/api/uploads';
 import { isRescheduleComment } from '@/domain/replan';
+import { isNotDoneComment, NOT_DONE_MARK } from '@/domain/notDone';
 import { avatarUrl } from '@/domain/colors';
 import { formatRelativeDay } from '@/domain/dates';
 import { renderMarkdown } from '@/domain/markdown';
@@ -156,7 +157,7 @@ function CommentRow({ note, itemId }: { note: Note; itemId: string }) {
 
   return (
     <article
-      className={`comment${isRescheduleComment(note.content) ? ' comment-reschedule' : ''}`}
+      className={`comment${isRescheduleComment(note.content) ? ' comment-reschedule' : ''}${isNotDoneComment(note.content) ? ' comment-notdone' : ''}`}
       data-note-id={note.id}
       onContextMenu={editing ? undefined : (event) => {
         if (event.defaultPrevented || leaveToText(event.nativeEvent)) return;
@@ -174,6 +175,9 @@ function CommentRow({ note, itemId }: { note: Note; itemId: string }) {
               Durchsehen sieht, wie oft und warum etwas geschoben wurde. */}
           {isRescheduleComment(note.content) && (
             <span className="comment-badge reschedule">↻ {t('replan.commentBadge')}</span>
+          )}
+          {isNotDoneComment(note.content) && (
+            <span className="comment-badge notdone">{NOT_DONE_MARK} {t('notDone.commentBadge')}</span>
           )}
         </header>
 

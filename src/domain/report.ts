@@ -18,6 +18,7 @@ import { estimateOf } from './estimates';
 import { focusScore } from './insights';
 import { areaTitle, parseListLabel, splitListName } from './lists';
 import { isRescheduleComment } from './replan';
+import { isNotDoneCompletion, notDoneTasks, type NotDoneTask } from './notDone';
 import { missingCompletions, timingOf, type Timing } from './planVsActual';
 import { daysOf, rangeFor, type Range } from './periods';
 import { toApiDate } from './dates';
@@ -43,8 +44,8 @@ export interface MovedTask {
   /** Wie viele Tage es insgesamt nach hinten ging. */
   daysPushed: number;
   reasons: string[];
-  /** Schon erledigt (im Zeitraum oder davor), noch offen, oder nicht mehr da. */
-  state: 'done' | 'open' | 'gone';
+  /** Schon erledigt (im Zeitraum oder davor), als nicht erledigt abgeschlossen, noch offen, oder nicht mehr da. */
+  state: 'done' | 'notDone' | 'open' | 'gone';
 }
 
 export interface Learning {
@@ -61,7 +62,7 @@ export type LearningId =
 
 export type AnalysisId =
   | 'volume' | 'volumeTrend' | 'rhythm' | 'planning' | 'planningNone' | 'reliability' | 'focus' | 'areas'
-  | 'timingLate' | 'timingClockLater' | 'timingClockEarlier' | 'timingClockExact' | 'timingMoved' | 'unplanned';
+  | 'timingLate' | 'timingClockLater' | 'timingClockEarlier' | 'timingClockExact' | 'timingMoved' | 'unplanned' | 'notDone';
 
 export interface AnalysisLine {
   id: AnalysisId;
@@ -108,6 +109,15 @@ export interface Report {
     top: MovedTask[];
     reasons: Array<{ text: string; count: number }>;
     byWeekday: number[];
+  };
+  /**
+   * Als „nicht erledigt“ abgeschlossen: in Todoist abgehakt, zählt hier aber
+   * nicht als erledigt, sondern steht für sich, mit Grund.
+   */
+  notDone: {
+    count: number;
+    tasks: NotDoneTask[];
+    reasons: Array<{ text: string; count: number }>;
   };
   /** Geplant gegen abgehakt. */
   timing: Timing;
@@ -208,9 +218,15 @@ export function buildReport(input: ReportInput): Report {
   const { range, items, projects } = input;
   const today = startOfDay(now);
 
+  /* --------------------------- nicht erledigt --------------------------- */
+  /* Todoist führt sie als erledigt; hier zählen sie nicht mit. */
+  const allNotDone = notDoneTasks(input.completions ?? [], input.notes, items);
+  const reallyDone = (c: CompletedItem) => !isNotDoneCompletion(c.task_id ?? c.id, new Date(c.completed_at), allNotDone);
+  const notDone = allNotDone.filter((e) => inRange(e.at, range));
+
   /* ------------------------------ erledigt ------------------------------ */
-  const completions = input.completions ?? [];
-  const fromTodoist = input.completed.filter((c) => inRange(new Date(c.completed_at), range));
+  const completions = (input.completions ?? []).filter((e) => e.notDone === undefined);
+  const fromTodoist = input.completed.filter((c) => inRange(new Date(c.completed_at), range) && reallyDone(c));
   /* Was die App beim Abhaken protokolliert hat, Todoist im Verlauf aber nicht
      führt (manche Vorkommen wiederkehrender Aufgaben), zählt mit. */
   const done = [...fromTodoist, ...missingCompletions(fromTodoist, completions, range)];
@@ -241,12 +257,13 @@ export function buildReport(input: ReportInput): Report {
   const timing = timingOf(done, completions, input.log, (c) => areaOf(c.project_id, c.labels ?? [], projects));
   const onTime = timing.early + timing.onDay;
   const late = timing.late;
-  const previousCount = input.previous.length;
+  const previousCount = input.previous.filter(reallyDone).length;
   const change = previousCount > 0 ? Math.round(((done.length - previousCount) / previousCount) * 100) : null;
 
   /* ----------------------------- umgeplant ----------------------------- */
   const moves = movesIn(range, input.log, input.notes, items);
-  const doneIds = new Set([...input.completed, ...input.previous].map((c) => c.task_id ?? c.id));
+  const doneIds = new Set([...input.completed, ...input.previous].filter(reallyDone).map((c) => c.task_id ?? c.id));
+  const notDoneIds = new Set(allNotDone.map((e) => e.taskId));
   const perTask = new Map<string, MovedTask>();
   const moveWeekday = Array<number>(7).fill(0);
   let postponed = 0;
@@ -271,7 +288,10 @@ export function buildReport(input: ReportInput): Report {
       count: 0,
       daysPushed: 0,
       reasons: [],
-      state: item && !item.checked ? 'open' : (doneIds.has(m.taskId) || item?.checked) ? 'done' : 'gone',
+      state: item && !item.checked ? 'open'
+        : doneIds.has(m.taskId) ? 'done'
+          : notDoneIds.has(m.taskId) ? 'notDone'
+            : item?.checked ? 'done' : 'gone',
     } satisfies MovedTask;
     entry.count += 1;
     entry.daysPushed += pushed;
@@ -286,6 +306,7 @@ export function buildReport(input: ReportInput): Report {
   }
   const top = [...perTask.values()].sort((a, b) => b.count - a.count || b.daysPushed - a.daysPushed);
   const reasons = [...reasonMap.values()].sort((a, b) => b.count - a.count);
+  const notDoneReasons = countReasons(notDone.map((e) => e.reason));
 
   /* ------------------------------- offen ------------------------------- */
   const overdueItems = Object.values(items)
@@ -327,6 +348,7 @@ export function buildReport(input: ReportInput): Report {
       reasons,
       byWeekday: moveWeekday,
     },
+    notDone: { count: notDone.length, tasks: notDone, reasons: notDoneReasons },
     timing,
     open: { overdue: overdueItems.length, oldest: overdueItems.slice(0, 5) },
     analysis: [],
@@ -335,6 +357,20 @@ export function buildReport(input: ReportInput): Report {
   report.analysis = analyse(report);
   report.learnings = learn(report, now);
   return report;
+}
+
+/** Gleiche Gründe zusammengefasst (Groß-/Kleinschreibung und Satzzeichen am Ende egal), häufigste zuerst. */
+function countReasons(list: string[]): Array<{ text: string; count: number }> {
+  const map = new Map<string, { text: string; count: number }>();
+  for (const reason of list) {
+    const text = reason.replace(/[.!…\s]+$/u, '');
+    if (!text) continue;
+    const norm = text.toLowerCase().replace(/\s+/g, ' ');
+    const entry = map.get(norm) ?? { text, count: 0 };
+    entry.count += 1;
+    map.set(norm, entry);
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count);
 }
 
 /** Die Verhaltensanalyse: ein paar Sätze, die die Zahlen in Worte fassen. */
@@ -354,6 +390,7 @@ export function analyse(r: Report): AnalysisLine[] {
   } else {
     out.push({ id: 'planningNone', params: {} });
   }
+  if (r.notDone.count > 0) out.push({ id: 'notDone', params: { count: r.notDone.count } });
   if (c.onTime + c.late > 0) out.push({ id: 'reliability', params: { share: pct(c.onTime, c.onTime + c.late), late: c.late } });
   const tm = r.timing;
   if (tm.late > 0) out.push({ id: 'timingLate', params: { avg: tm.avgLateDays, max: tm.maxLateDays } });
@@ -376,7 +413,7 @@ export function learn(r: Report, now = new Date()): Learning[] {
   const c = r.completed;
   const m = r.moves;
   const out: Learning[] = [];
-  if (c.count === 0 && m.count === 0) {
+  if (c.count === 0 && m.count === 0 && r.notDone.count === 0) {
     return [{ id: 'noData', tone: 'tip', params: {} }];
   }
   if (m.count >= 3 && m.postponed + m.undated + m.unknown > c.count * 0.5) {

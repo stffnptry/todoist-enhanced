@@ -2326,3 +2326,17 @@ html.desktop-app:not(.quickadd) body::before {
 .addsection-slot.atrest .addsection:hover .addsection-rule,
 .addsection-slot.atrest .addsection:focus-visible .addsection-rule{background:var(--accent);height:2px}
 .addsection-slot.atrest.armed .addsection-label{visibility:hidden}
+
+/* ---------- „Nicht erledigt“ (overlays/NotDoneDialog.tsx, Report) ---------- */
+.replan-mark.notdone-mark { color: var(--late-dark, var(--late)); }
+.comment.comment-notdone {
+  border-left: 3px solid var(--late);
+  padding-left: 8px;
+  border-radius: 6px;
+}
+.comment-badge.notdone {
+  font-size: 0.6875rem; font-weight: 600; color: var(--late-dark, var(--late));
+  padding: 1px 6px; border-radius: 999px; border: 1px solid currentColor;
+}
+.report-state.notDone { color: var(--late-dark, var(--late)); }
+.report-notdone-mark { color: var(--late-dark, var(--late)); font-weight: 700; }

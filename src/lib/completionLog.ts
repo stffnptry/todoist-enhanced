@@ -21,6 +21,8 @@ export interface CompletionEntry {
   projectId: string;
   labels: string[];
   recurring: boolean;
+  /** Als „nicht erledigt“ abgehakt, mit diesem Grund (domain/notDone.ts). */
+  notDone?: string;
 }
 
 const KEY = 'enhanced:completion-log';
@@ -34,6 +36,13 @@ const UNDO_WINDOW_MS = 3 * 60_000;
 const skipping = new Set<string>();
 export function skipNextCompletion(ids: readonly string[]): void {
   ids.forEach((id) => skipping.add(id));
+}
+
+/* „Nicht erledigt“ hakt ebenfalls ab. Wer so abhakt, meldet die Aufgabe
+   vorher mit dem Grund hier an; der Eintrag trägt ihn dann mit. */
+const notDone = new Map<string, string>();
+export function markNextCompletionNotDone(id: string, reason: string): void {
+  notDone.set(id, reason);
 }
 
 const CLOSE = new Set(['item_close', 'item_complete']);
@@ -107,7 +116,14 @@ export function loadCompletions(): CompletionEntry[] {
 
 /** Schreibt Abhaken und Wieder-Öffnen dieser Befehle ins Protokoll. */
 export function recordCompletions(before: Snapshot, commands: readonly Command[]): void {
-  const added = completionsFrom(before, commands).filter((e) => !skipping.delete(e.taskId));
+  const added = completionsFrom(before, commands)
+    .filter((e) => !skipping.delete(e.taskId))
+    .map((e) => {
+      const reason = notDone.get(e.taskId);
+      if (reason === undefined) return e;
+      notDone.delete(e.taskId);
+      return { ...e, notDone: reason };
+    });
   const reopened = reopenedBy(commands);
   if (added.length === 0 && reopened.length === 0) return;
   try {

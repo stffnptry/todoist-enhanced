@@ -12,6 +12,7 @@ import { reportDoc, reportFileName, reportHtml, reportMarkdown } from '@/domain/
 import type { Range } from '@/domain/periods';
 import { toApiDate } from '@/domain/dates';
 import { intlLocale, type TranslationKey } from '@/i18n';
+import { NOT_DONE_MARK } from '@/domain/notDone';
 
 /**
  * Report: ein Rückblick auf einen Zeitraum – was erledigt wurde, was oft
@@ -310,6 +311,28 @@ export function ReportView({ onOpen }: { onOpen?: (id: string) => void }) {
             <ChartCard title={t('report.section.areas')} span={6}>
               <RankedBars data={doc.byArea.map((a) => ({ key: a.label, label: a.label, value: a.value }))} emptyLabel={t('report.empty.done')} />
             </ChartCard>
+
+            <section className="card w12 report-notdone">
+              <h3>{t('report.section.notDone')} ({doc.notDone.length})</h3>
+              {doc.notDone.length === 0
+                ? <p className="chart-empty">{t('report.empty.notDone')}</p>
+                : (
+                  <table className="report-table">
+                    <thead>
+                      <tr><th>{t('report.col.task')}</th><th>{t('report.col.when')}</th><th>{t('report.col.reason')}</th></tr>
+                    </thead>
+                    <tbody>
+                      {doc.notDone.map((n, index) => (
+                        <tr key={index}>
+                          <td><span className="report-notdone-mark" aria-hidden="true">{NOT_DONE_MARK}</span> {n.title}</td>
+                          <td>{n.day}</td>
+                          <td className="report-reasons">{n.reason}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+            </section>
 
             {doc.overdue.length > 0 && (
               <section className="card w6">

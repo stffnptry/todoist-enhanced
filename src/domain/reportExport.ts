@@ -26,6 +26,8 @@ export interface ReportDoc {
   reasons: Array<{ text: string; count: number }>;
   overdue: Array<{ title: string; days: number }>;
   done: Array<{ day: string; title: string }>;
+  /** Als „nicht erledigt“ abgehakt, mit Grund. */
+  notDone: Array<{ day: string; title: string; reason: string }>;
   timing: {
     /** Früher / am Tag / später / ohne Datum. */
     split: Array<{ label: string; value: number }>;
@@ -96,6 +98,7 @@ export function reportDoc(r: Report, t: T, locale: Locale, intl: string, now = n
           ? t('report.kpi.doneHint', { perDay: decimal(c.perDay, intl) })
           : `${t('report.kpi.doneHint', { perDay: decimal(c.perDay, intl) })} · ${t('report.vsPrevious', { change: signed(c.change) })}`,
       },
+      { label: t('report.kpi.notDone'), value: String(r.notDone.count), hint: t('report.kpi.notDoneHint') },
       { label: t('report.kpi.moved'), value: String(r.moves.count), hint: t('report.kpi.movedHint', { tasks: r.moves.tasks }) },
       {
         label: t('report.kpi.onTime'),
@@ -125,6 +128,7 @@ export function reportDoc(r: Report, t: T, locale: Locale, intl: string, now = n
     reasons: r.moves.reasons.slice(0, 8),
     overdue: r.open.oldest.map((o) => ({ title: plainTitle(o.title), days: o.days })),
     done: c.tasks.map((task) => ({ day: day.format(new Date(task.completed_at)), title: plainTitle(task.content) })),
+    notDone: r.notDone.tasks.map((task) => ({ day: day.format(task.at), title: plainTitle(task.title) || '–', reason: task.reason })),
     timing: timingDoc(r, t, intl),
     note: t('report.logNote'),
   };
@@ -255,6 +259,13 @@ export function reportMarkdown(doc: ReportDoc, t: T): string {
     for (const o of doc.overdue) lines.push(`- ${o.title} – ${t('report.overdueDays', { days: o.days, count: o.days })}`);
     lines.push('');
   }
+  lines.push(`## ${t('report.section.notDone')}`, '');
+  if (doc.notDone.length === 0) lines.push(t('report.empty.notDone'), '');
+  else {
+    lines.push(`| ${t('report.col.task')} | ${t('report.col.when')} | ${t('report.col.reason')} |`, '| --- | --- | --- |');
+    for (const n of doc.notDone) lines.push(`| ${mdCell(n.title)} | ${mdCell(n.day)} | ${mdCell(n.reason)} |`);
+    lines.push('');
+  }
   lines.push(`## ${t('report.section.doneList')}`, '');
   if (doc.done.length === 0) lines.push(t('report.empty.done'));
   for (const d of doc.done) lines.push(`- [x] ${d.title} _(${d.day})_`);
@@ -342,6 +353,7 @@ ${section(t('report.section.timing'), timing)}
 ${section(t('report.section.moved'), moved)}
 ${doc.reasons.length > 0 ? section(t('report.section.reasons'), `<ul>${doc.reasons.map((r) => `<li>${esc(r.text)} (${r.count}×)</li>`).join('')}</ul>`) : ''}
 ${doc.overdue.length > 0 ? section(t('report.section.overdue'), `<ul>${doc.overdue.map((o) => `<li>${esc(o.title)} – <span class="muted">${esc(t('report.overdueDays', { days: o.days, count: o.days }))}</span></li>`).join('')}</ul>`) : ''}
+${section(t('report.section.notDone'), doc.notDone.length === 0 ? `<p class="muted">${esc(t('report.empty.notDone'))}</p>` : `<table class="list"><thead><tr><th>${esc(t('report.col.task'))}</th><th>${esc(t('report.col.when'))}</th><th>${esc(t('report.col.reason'))}</th></tr></thead><tbody>${doc.notDone.map((n) => `<tr><td>${esc(n.title)}</td><td>${esc(n.day)}</td><td>${esc(n.reason)}</td></tr>`).join('')}</tbody></table>`)}
 ${section(t('report.section.doneList'), doc.done.length === 0 ? `<p class="muted">${esc(t('report.empty.done'))}</p>` : `<ul class="done">${doc.done.map((d) => `<li>${esc(d.title)} <small>${esc(d.day)}</small></li>`).join('')}</ul>`)}
 <footer>${esc(doc.note)}</footer>
 </body></html>`;

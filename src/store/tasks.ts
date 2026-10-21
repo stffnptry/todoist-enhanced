@@ -16,7 +16,8 @@ import {
   restoreOrder, schedulePersist, settleFromServer,
 } from './helpers';
 import type { AppState, Slice, TasksSlice } from './types';
-import { skipNextCompletion } from '@/lib/completionLog';
+import { markNextCompletionNotDone, skipNextCompletion } from '@/lib/completionLog';
+import { notDoneCommentText } from '@/domain/notDone';
 
 /** A subtask created with its parent: a title, and the labels it starts with. */
 interface NewSubtask { content: string; labels?: string[]; estimateMinutes?: number | null }
@@ -437,6 +438,16 @@ export const createTasksSlice: Slice<TasksSlice> = (set, get) => ({
     });
     await done;
     if (checked) await promoteParents(get, [id]);
+  },
+  async markNotDone(id, reason) {
+    const item = get().snapshot.items[id];
+    const text = notDoneCommentText(translate(get().prefs.locale, 'notDone.commentHeadline'), reason);
+    if (!item || item.checked || !text || isUncompletable(item)) return false;
+    /* Erst der Kommentar: Lehnt Todoist ihn ab, bleibt die Aufgabe offen. */
+    if (!(await get().addComment(id, text))) return false;
+    markNextCompletionNotDone(id, reason.trim());
+    await get().toggleTask(id);
+    return true;
   },
   async setTaskStatus(ids, status) {
     const snapshot = get().snapshot;

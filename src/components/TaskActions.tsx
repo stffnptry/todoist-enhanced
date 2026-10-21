@@ -17,13 +17,14 @@ import { leaveToText, pointAnchor } from '@/lib/contextMenu';
 import { useStore } from '@/store/store';
 import { useConfirm } from './overlays/Confirm';
 import { ReplanDialog } from './overlays/ReplanDialog';
+import { NotDoneDialog } from './overlays/NotDoneDialog';
 import { effectiveEstimate, formatDuration } from '@/domain/estimates';
 import { EstimateField } from './EstimateField';
 import { DatePicker, shortDay, taskShortcuts, type RecurrenceReading } from './DatePicker';
 import { nextOccurrence } from '@/domain/nextOccurrence';
 import { formatDayOrName, formatTime, toApiDate } from '@/domain/dates';
 import { dueForDate } from '@/domain/recurrence';
-import { weekLabel } from '@/domain/types';
+import { isUncompletable, weekLabel } from '@/domain/types';
 import { markerStyle } from '@/domain/colors';
 import { dropMutation, moveArgs, type DropTarget } from '@/domain/dnd';
 import { updateItem, moveItem } from '@/api/commands';
@@ -190,6 +191,8 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep }: TaskActionsPro
   /* Rechtsklick → „Neu planen“: derselbe Dialog wie auf Heute, nur für diese
      Aufgabe und gleich beim Umplanen – mit Pflicht-Grund. */
   const [replanning, setReplanning] = useState(false);
+  /* Rechtsklick → „Nicht erledigt …“: abhaken mit Pflicht-Grund, im Report getrennt. */
+  const [notDone, setNotDone] = useState(false);
   /** What has been typed to narrow the destinations, and where the keyboard is. */
   const [dest, setDest] = useState('');
   const [destPick, setDestPick] = useState(-1);
@@ -685,6 +688,11 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep }: TaskActionsPro
             <button className="opt" onClick={() => { setMenu('none'); onOpen(item.id); }}>
               <span><Icon name="edit" size="sm" /> {t('task.edit')}</span>
             </button>
+            {!item.checked && !isUncompletable(item) && (
+              <button className="opt" onClick={() => { setMenu('none'); setNotDone(true); }}>
+                <span><Icon name="not-done" size="sm" /> {t('notDone.menu')}</span>
+              </button>
+            )}
             {/* On a phone this sheet is what holding the row opens, and it has
                 to be the whole of what hovering one would have shown — the
                 swipe tray is the shortcut to the three most-used of these, not
@@ -853,6 +861,10 @@ export function TaskActions({ item, childrenOf, onOpen, onKeep }: TaskActionsPro
         : menu !== 'none' && createPortal(menus, document.body)}
       {replanning && createPortal(
         <ReplanDialog open single items={[item]} onClose={() => setReplanning(false)} />,
+        document.body,
+      )}
+      {notDone && createPortal(
+        <NotDoneDialog item={item} onClose={() => setNotDone(false)} />,
         document.body,
       )}
     </span>
