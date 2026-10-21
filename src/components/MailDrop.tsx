@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/store/store';
 import { useT } from '@/hooks/useT';
+import { useRoute } from '@/hooks/useRoute';
 import {
-  appleMailMessageId, htmlToText, mailTask, messageFromText, parseEml, type MailMessage,
+  appleMailMessageId, htmlToText, mailTarget, mailTask, messageFromText, parseEml, type MailMessage,
 } from '@/domain/mail';
 import { Icon } from './Icon';
 
 /**
- * E-Mails ins Fenster ziehen: jede wird eine Aufgabe im Eingang, mit dem
- * Betreff als Titel und dem Text als Beschreibung (ENHANCED-2).
+ * E-Mails ins Fenster ziehen: jede wird eine Aufgabe in der gerade offenen
+ * Liste (sonst im Eingang), mit dem Betreff als Titel und dem Text als
+ * Beschreibung (ENHANCED-2).
  *
  * Was beim Ablegen ankommt, hängt am Mailprogramm:
  * - .eml-Dateien (aus dem Finder oder Programmen, die Dateien mitgeben) werden
@@ -17,6 +19,7 @@ import { Icon } from './Icon';
  *   holt die Mac-App per AppleScript aus Mail;
  * - Outlook gibt nur ein Datei-Versprechen, das Chromium nicht kennt; die
  *   Mac-App löst es beim Ablegen ein und reicht die .eml-Dateien herüber;
+ *   kommt keine Datei, fragt sie Outlook per AppleScript nach der Auswahl;
  * - gibt das Programm Chromium nichts davon (das neue Outlook), schaut die
  *   Mac-App auf die Drag-Ablage des Systems nach Dateien und Text;
  * - sonst bleibt Text oder HTML: erste Zeile Titel, der Rest Beschreibung.
@@ -29,16 +32,16 @@ export function MailDrop() {
   const createTask = useStore((s) => s.createTask);
   const toast = useStore((s) => s.toast);
   const snapshot = useStore((s) => s.snapshot);
+  const route = useRoute();
   const [over, setOver] = useState(false);
   const inside = useRef(false);
   const depth = useRef(0);
 
-  const inboxId = snapshot.user?.inbox_project_id
-    || Object.values(snapshot.projects).find((p) => p.inbox_project && !p.is_deleted)?.id
-    || '';
+  const target = mailTarget(route, snapshot);
+  const list = target.name ?? t('nav.inbox');
   /* Die Handler hängen einmal am Fenster; was sie brauchen, lesen sie hier. */
-  const latest = useRef({ inboxId, createTask, toast, t });
-  latest.current = { inboxId, createTask, toast, t };
+  const latest = useRef({ target, list, createTask, toast, t });
+  latest.current = { target, list, createTask, toast, t };
 
   useEffect(() => {
     const isField = (target: EventTarget | null) =>
@@ -88,7 +91,7 @@ export function MailDrop() {
   }, []);
 
   async function handleDrop(data: DataTransfer) {
-    const { inboxId: inbox, createTask: create, toast: say, t: tr } = latest.current;
+    const { target: into, list: where, createTask: create, toast: say, t: tr } = latest.current;
     /* Alles sofort auslesen: nach dem ersten await ist der DataTransfer leer. */
     const files = [...data.files];
     const types = [...data.types];
@@ -107,10 +110,10 @@ export function MailDrop() {
     let created = 0;
     for (const mail of mails) {
       const { content, description } = mailTask(mail, words);
-      if (await create({ content, description, project_id: inbox || undefined })) created += 1;
+      if (await create({ content, description, project_id: into.projectId || undefined, section_id: into.sectionId })) created += 1;
     }
-    if (created === 1) say(tr('mail.created', { name: mailTask(mails[0], words).content }));
-    else if (created > 1) say(tr('mail.createdMany', { count: created }));
+    if (created === 1) say(tr('mail.created', { name: mailTask(mails[0], words).content, list: where }));
+    else if (created > 1) say(tr('mail.createdMany', { count: created, list: where }));
   }
 
   if (!over) return null;
@@ -118,7 +121,7 @@ export function MailDrop() {
     <div className="maildrop" aria-hidden>
       <div className="maildrop-card">
         <Icon name="inbox" />
-        {t('mail.dropHint')}
+        {t('mail.dropHint', { list })}
       </div>
     </div>
   );
@@ -167,6 +170,7 @@ async function readMails(
   const promisedNames = [
     ...promisedFiles.map((path) => path.split('/').pop() ?? path),
     ...(promised?.errors ?? []),
+    ...(promised?.note ? [promised.note] : []),
   ];
 
   // 4. Nichts Lesbares für Chromium: die Drag-Ablage des Systems (neues Outlook u. a.)
@@ -183,6 +187,14 @@ async function readMails(
       const text = board.text || (board.html ? htmlToText(board.html) : '');
       const mail = text ? messageFromText(text) : null;
       if (mail) return { mails: [mail] };
+      /* Outlook ohne eingelöste Datei: die ausgewählten Mails per AppleScript. */
+      if (desktop.fromOutlook && (board.types ?? []).some((type) => type.startsWith('com.microsoft.'))) {
+        const outlook = await desktop.fromOutlook();
+        if (outlook.ok && outlook.mails?.length) {
+          return { mails: outlook.mails.map((m) => ({ subject: m.subject ?? '', from: m.from || undefined, date: m.date || undefined, body: m.body ?? '' })) };
+        }
+        promisedNames.push(`Outlook: ${outlook.error ?? 'keine Mail'}`);
+      }
       return { mails: [], systemTypes: [...promisedNames, ...(board.types ?? [])] };
     }
     return { mails: [], systemTypes: promisedNames };

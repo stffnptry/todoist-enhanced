@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { appleMailMessageId, decodeHeader, mailTask, messageFromText, parseEml } from './mail';
+import { appleMailMessageId, decodeHeader, mailTarget, mailTask, messageFromText, parseEml } from './mail';
+import type { Project, Section, Snapshot } from './types';
 
 const words = { from: 'Von', date: 'Datum', open: 'In Mail öffnen', noSubject: 'Mail ohne Betreff' };
 
@@ -88,5 +89,31 @@ describe('E-Mails lesen', () => {
     expect(task.content).toBe('Angebot');
     expect(task.description).toBe('**Von:** Anna\n**Datum:** Fr, 16.10.\n[In Mail öffnen](message://%3Cx%40y%3E)\n\nHallo\n\nTschüss');
     expect(mailTask({ subject: ' ', body: '' }, words).content).toBe('Mail ohne Betreff');
+  });
+});
+
+describe('Ziel gezogener Mails', () => {
+  const project = (id: string, extra: Partial<Project> = {}) =>
+    ({ id, name: id, is_deleted: false, is_archived: false, ...extra }) as Project;
+  const snapshot = {
+    user: { inbox_project_id: 'in' },
+    projects: { in: project('in', { name: 'Inbox', inbox_project: true }), p1: project('p1', { name: 'Privat_Geplant' }), old: project('old', { is_archived: true }) },
+    sections: {
+      s1: { id: 's1', project_id: 'p1', name: 'A', is_deleted: false, is_archived: false } as Section,
+      s2: { id: 's2', project_id: 'other', name: 'B', is_deleted: false, is_archived: false } as Section,
+    },
+  } as unknown as Pick<Snapshot, 'projects' | 'sections' | 'user'>;
+
+  it('nimmt die offene Liste, samt angesprungenem Abschnitt', () => {
+    expect(mailTarget({ view: 'project', id: 'p1' }, snapshot)).toEqual({ projectId: 'p1', sectionId: undefined, name: 'Privat_Geplant' });
+    expect(mailTarget({ view: 'project', id: 'p1', sectionId: 's1' }, snapshot).sectionId).toBe('s1');
+    expect(mailTarget({ view: 'project', id: 'p1', sectionId: 's2' }, snapshot).sectionId).toBeUndefined();
+  });
+
+  it('nimmt sonst den Eingang', () => {
+    expect(mailTarget({ view: 'report' }, snapshot)).toEqual({ projectId: 'in', name: null });
+    expect(mailTarget({ view: 'project', id: 'in' }, snapshot)).toEqual({ projectId: 'in', name: null });
+    expect(mailTarget({ view: 'project', id: 'old' }, snapshot)).toEqual({ projectId: 'in', name: null });
+    expect(mailTarget({ view: 'project', id: 'weg' }, snapshot)).toEqual({ projectId: 'in', name: null });
   });
 });

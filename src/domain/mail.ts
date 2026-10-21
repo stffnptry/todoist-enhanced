@@ -7,6 +7,8 @@
  * bzw. HTML, wenn das Programm nichts anderes mitgibt. Alles endet hier in
  * derselben Form und wird zu Titel und Beschreibung einer Aufgabe.
  */
+import type { Snapshot } from './types';
+
 export interface MailMessage {
   subject: string;
   from?: string;
@@ -198,4 +200,27 @@ export function mailTask(
     content: mail.subject.trim() || words.noSubject,
     description: [head, text].filter(Boolean).join('\n\n'),
   };
+}
+
+/**
+ * Wohin gezogene Mails kommen: in die gerade offene Liste (ein Projekt, mit
+ * dem Abschnitt, wenn einer angesprungen ist), sonst – Woche, Report, Eingang
+ * – in den Eingang. `name` ist null für den Eingang (die Seite übersetzt ihn).
+ */
+export function mailTarget(
+  route: { view: string; id?: string; sectionId?: string },
+  snapshot: Pick<Snapshot, 'projects' | 'sections' | 'user'>,
+): { projectId: string; sectionId?: string; name: string | null } {
+  const inbox = snapshot.user?.inbox_project_id
+    || Object.values(snapshot.projects).find((p) => p.inbox_project && !p.is_deleted)?.id
+    || '';
+  const project = route.view === 'project' && route.id ? snapshot.projects[route.id] : undefined;
+  if (!project || project.is_deleted || project.is_archived || project.inbox_project || project.id === inbox) {
+    return { projectId: inbox, name: null };
+  }
+  const section = route.sectionId ? snapshot.sections[route.sectionId] : undefined;
+  const sectionId = section && section.project_id === project.id && !section.is_deleted && !section.is_archived
+    ? section.id
+    : undefined;
+  return { projectId: project.id, sectionId, name: project.name };
 }

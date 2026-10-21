@@ -25,7 +25,9 @@ interface Window {
       /** Was auf der Drag-Ablage des Systems liegt: Typen, Dateipfade, Text, HTML. */
       dragPasteboard: () => Promise<{ ok: boolean; error?: string; types?: string[]; files?: string[]; text?: string | null; html?: string | null }>;
       /** Dateien aus Datei-Versprechen (Outlook) zum letzten Ablegen; ältere Mac-Apps kennen das nicht. */
-      promised?: () => Promise<{ ok: boolean; files?: string[]; errors?: string[] }>;
+      promised?: () => Promise<{ ok: boolean; files?: string[]; errors?: string[]; note?: string }>;
+      /** Die in Outlook ausgewählten Mails per AppleScript (Notlösung, wenn keine Datei kommt). */
+      fromOutlook?: () => Promise<{ ok: boolean; error?: string; mails?: Array<{ subject?: string; from?: string; date?: string; body?: string }> }>;
       /** Eine .eml-Datei lesen, deren Pfad auf der Drag-Ablage lag. */
       readEml: (file: string) => Promise<{ ok: boolean; error?: string; text?: string }>;
     };
