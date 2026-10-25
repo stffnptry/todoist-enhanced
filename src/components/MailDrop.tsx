@@ -37,8 +37,7 @@ export function MailDrop() {
   const inside = useRef(false);
   const depth = useRef(0);
 
-  const listMeta = useStore((s) => s.prefs.listMeta);
-  const target = mailTarget(route, snapshot, listMeta);
+  const target = mailTarget(route, snapshot, t('area.general'));
   const list = target.name ?? t('nav.inbox');
   /* Die Handler hängen einmal am Fenster; was sie brauchen, lesen sie hier. */
   const latest = useRef({ target, list, createTask, toast, t });

@@ -58,18 +58,19 @@ describe('groupItems', () => {
     expect(groups.find((g) => g.key === 'home')!.title).toBe('home');
   });
 
-  it('groups tasks by the list their list-label names inside their Bereich', () => {
-    const tagged = [
-      item({ id: 'a', project_id: 'site', labels: ['folder_geplant'] }),
-      item({ id: 'b', project_id: 'site', labels: ['einkauf'] }),
-      item({ id: 'c', project_id: 'home', labels: ['folder_geplant'] }),
+  it('groups tasks by the list (subproject) of their Bereich', () => {
+    const placed = [
+      item({ id: 'a', project_id: 'site' }),
+      item({ id: 'b', project_id: 'folder' }),
+      item({ id: 'c', project_id: 'home' }),
     ];
-    const groups = groupItems(tagged, 'list', snapshot, { ...labels, noList: 'Ohne Liste' });
-    expect(groups.map((g) => [g.key, g.title])).toEqual([
-      ['folder_geplant', 'folder · Geplante Aufgaben · 0/1'],
+    const groups = groupItems(placed, 'list', snapshot, { ...labels, noList: 'Ohne Liste', general: 'Allgemein' });
+    expect(groups.map((g) => [g.key, g.title.replace(/ · \d+\/\d+$/, '')])).toEqual([
+      ['folder', 'folder · Allgemein'],
+      ['site', 'folder · site'],
       ['none', 'Ohne Liste'],
     ]);
-    expect(groups[1].items.map((t) => t.id)).toEqual(['b', 'c']);
+    expect(groups[2].items.map((t) => t.id)).toEqual(['c']);
   });
 
   it('sorts the tasks inside each project', () => {

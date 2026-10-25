@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { canStoreDurations } from '@/domain/estimates';
+import { canStoreDeadlines, noteDeadlineMigration } from '@/domain/deadlineNote';
+import { patchItem } from './helpers';
 import { setEstimateStorage } from '@/domain/types';
 import type { AppState } from './types';
 import { createSyncSlice } from './sync';
@@ -12,7 +14,6 @@ import { createDustSlice } from './dust';
 import { createCollabSlice } from './collab';
 import * as idb from '@/db/idb';
 import { flushPersist, pendingDeletes } from './helpers';
-import { areaNames, listAreas, setKnownAreas } from '@/domain/lists';
 
 /**
  * The app's one store, built from slices — one file per area:
@@ -36,15 +37,24 @@ export const useStore = create<AppState>()((...a) => ({
 
 // Covers hydration, remote settings, account switches and the quick-add entry.
 setEstimateStorage(useStore.getState().prefs.estimateStorage);
+/*
+ * Seit Todoist Pro: Deadlines aus der Free-Zeit stehen noch als Zeile in der
+ * Beschreibung. Sobald das Konto ein Deadline-Feld kann, wandern sie einmal
+ * dorthin. Jede Aufgabe wird je Sitzung nur einmal versucht.
+ */
+const deadlinesMoved = new Set<string>();
+function moveNoteDeadlines(state: ReturnType<typeof useStore.getState>) {
+  if (state.demo || !canStoreDeadlines(state.snapshot.user)) return;
+  const commands = noteDeadlineMigration(state.snapshot.items, deadlinesMoved);
+  if (commands.length === 0) return;
+  for (const cmd of commands) deadlinesMoved.add(String(cmd.args.id));
+  void state.apply(commands, (snapshot) =>
+    commands.reduce((next, cmd) => patchItem(next, String(cmd.args.id), { deadline_from_note: false }), snapshot),
+  ).catch(() => { /* bleibt als Zeile lesbar; der nächste Start versucht es wieder */ });
+}
+
 useStore.subscribe((state, previous) => {
-  if (state.snapshot.projects !== previous.snapshot.projects || state.snapshot.labels !== previous.snapshot.labels) {
-    /* Bereiche sind Ordner oder ergeben sich aus den Listen-Namen (privat_geplant). */
-    const names = [
-      ...Object.values(state.snapshot.labels).filter((l) => !l.is_deleted).map((l) => l.name),
-      ...Object.values(state.snapshot.projects).filter((p) => !p.is_deleted && !p.is_archived).map((p) => p.name),
-    ];
-    setKnownAreas([...areaNames(state.snapshot.projects), ...listAreas(names)]);
-  }
+  if (state.snapshot.items !== previous.snapshot.items || state.snapshot.user !== previous.snapshot.user) moveNoteDeadlines(state);
   setEstimateStorage(state.prefs.estimateStorage);
   if (state.prefs.estimateStorage === 'duration' && !canStoreDurations(state.snapshot.user)) state.setPrefs({ estimateStorage: 'tag' });
 });

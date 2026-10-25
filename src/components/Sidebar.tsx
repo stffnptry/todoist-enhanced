@@ -10,9 +10,6 @@ import { createPortal } from 'react-dom';
 import { Icon, type IconName } from './Icon';
 import { useT } from '@/hooks/useT';
 import { AreaListSheet } from './overlays/AreaListSheet';
-import { useConfirm } from './overlays/Confirm';
-import { PageMenu } from './PageMenu';
-import { ListIcon } from './ListTitle';
 import { useData } from '@/hooks/useData';
 import { useStore } from '@/store/store';
 import { navigate, type Route } from '@/hooks/useRoute';
@@ -22,7 +19,7 @@ import { markerStyle, avatarUrl } from '@/domain/colors';
 import { firstName, karmaStanding } from '@/domain/karma';
 import { readProjectIcon } from '@/domain/projectIcons';
 import { ProjectIcon } from './ProjectIconPicker';
-import type { ViewId } from '@/domain/types';
+import type { Project, ViewId } from '@/domain/types';
 import type { DropTarget } from '@/domain/dnd';
 import type { TranslationKey } from '@/i18n';
 import { SyncStatus } from './SyncStatus';
@@ -38,7 +35,14 @@ import { byChildOrder, byLabelOrder } from '@/domain/orderKey';
 import { visibleSidebarNav, type SidebarItemId } from '@/domain/sidebar';
 import { pointAnchor } from '@/lib/contextMenu';
 import { isHiddenLabel } from '@/domain/kanban';
-import { areaTitle, compareLists, listDisplayName, parseListLabel, splitListName, type ListLabel, type ListMeta } from '@/domain/lists';
+import { listKind } from '@/domain/lists';
+
+/* Das Symbol einer Liste nach ihrer Art, wenn sie kein eigenes hat. */
+const KIND_ICON: Record<'eingang' | 'wiederholend' | 'geplant', IconName> = {
+  eingang: 'inbox',
+  wiederholend: 'repeat',
+  geplant: 'upcoming',
+};
 
 interface SidebarProps {
   route: Route;
@@ -184,37 +188,6 @@ export function Sidebar({
   }, [snapshot.labels, snapshot.projects, snapshot.filters]);
   const filterCounts = useFilterCounts(favourites.filters);
 
-  /*
-   * The Bereiche as drawn: each holds its lists. A list is a label (privat_geplant)
-   * or, on Todoist's free plan, a project (Claude_Eingang). Both show here by their
-   * plain names and are hidden from the other sections.
-   */
-  const listMeta = useStore((s) => s.prefs.listMeta);
-  const areas = useMemo(() => {
-    type Row = { key: string; list: string; name: string; color: string; view: ViewId; id: string; meta?: ListMeta; labelId?: string };
-    const byArea = new Map<string, Row[]>();
-    const add = (parts: ListLabel, row: Row) => {
-      byArea.set(parts.area, [...(byArea.get(parts.area) ?? []), row]);
-    };
-    for (const label of Object.values(snapshot.labels)) {
-      /* Die festen Listen (privat_geplant) und selbst angelegte (privat_einkauf). */
-      const parts = label.is_deleted ? null : splitListName(label.name) ?? parseListLabel(label.name);
-      const meta = listMeta[label.name];
-      if (parts) add(parts, { key: `label-${label.name}`, list: parts.list, name: meta?.name ?? listDisplayName(parts.list), color: label.color, view: 'label', id: label.name, meta, labelId: label.id });
-    }
-    for (const project of Object.values(snapshot.projects)) {
-      const parts = project.is_archived || project.is_deleted ? null : splitListName(project.name);
-      if (parts) add(parts, { key: `project-${project.id}`, list: parts.list, name: listDisplayName(parts.list), color: project.color, view: 'project', id: project.id });
-    }
-    const rank = (area: string) => ['privat', 'arbeit', 'claude'].indexOf(area) + 1 || 99;
-    return [...byArea.entries()]
-      .sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
-      .map(([area, rows]) => ({
-        area,
-        rows: [...rows].sort(compareLists),
-      }));
-  }, [snapshot.labels, snapshot.projects, listMeta]);
-
   /* A menu that only closes by pressing its own button is a menu that follows
      you around the app. Anywhere else, and Escape, put it away. */
   useEffect(() => {
@@ -236,32 +209,20 @@ export function Sidebar({
   const toggleGroup = (key: string) =>
     setOpenGroups((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
 
-  /*
-   * Eine Liste löschen heißt: ihr Label löschen. Todoist nimmt es dabei von den
-   * Aufgaben, die Aufgaben selbst bleiben (ohne Liste) erhalten.
-   */
-  const confirm = useConfirm();
-  const deleteLabel = useStore((s) => s.deleteLabel);
-  async function deleteList(labelId: string, labelName: string, name: string) {
-    const count = roots.filter((i) => hasLabel(i, labelName)).length;
-    const yes = await confirm({
-      title: t('area.deleteTitle', { name }),
-      body: count === 0 ? t('area.deleteBodyEmpty') : t('area.deleteBody', { count }),
-      confirmLabel: t('area.deleteList'),
-      destructive: true,
-    });
-    if (!yes) return;
-    if (route.view === 'label' && route.id === labelName) navigate('week');
-    const { [labelName]: _gone, ...rest } = useStore.getState().prefs.listMeta;
-    setPrefs({ listMeta: rest });
-    await deleteLabel(labelId);
-  }
-
   /* The area whose "+" was pressed; the dialog for a new list in it is open while set. */
-  const [addingArea, setAddingArea] = useState<string | null>(null);
+  const [addingArea, setAddingArea] = useState<Project | null>(null);
 
   const workspaceOrder = useStore((s) => s.prefs.workspaceOrder);
   const workspaces = useMemo(() => projectTree(snapshot, workspaceOrder), [snapshot, workspaceOrder]);
+  /*
+   * Die Bereiche: Hauptprojekte im eigenen Bereich, die Unterprojekte haben.
+   * Jeder bekommt eine eigene Gruppe mit seinen Listen; was übrig bleibt, steht
+   * unter „Meine Projekte“.
+   */
+  const areaNodes = useMemo(
+    () => workspaces.find((w) => !w.workspaceId)?.roots.filter((node) => node.children.length > 0) ?? [],
+    [workspaces],
+  );
   const user = snapshot.user;
   const avatar = avatarUrl(user);
   const karma = karmaStanding(user?.karma);
@@ -362,7 +323,7 @@ export function Sidebar({
   const navBlock = (ids: SidebarItemId[]) => ids.map((id) => <Fragment key={id}>{navEntry(id)}</Fragment>);
 
   /** A project row, or a folder that discloses the projects inside it. */
-  const projectNode = (node: ProjectNode, keyPrefix = '', depth = 0): JSX.Element => {
+  const projectNode = (node: ProjectNode, keyPrefix = '', depth = 0, title?: string): JSX.Element => {
     const { project, children } = node;
 
     if (project.is_folder) {
@@ -395,6 +356,8 @@ export function Sidebar({
     const menuOpen = rowMenu?.key === rowKey;
     const childrenOpen = openFolders[project.id] ?? true;
     const customIcon = readProjectIcon(project.description);
+    /* Eine Liste wie „Privat wiederholend“ zeigt ohne eigenes Symbol das ihrer Art. */
+    const kindIcon = customIcon ? null : listKind(project.name);
 
     const row = (
       <Droppable
@@ -441,10 +404,10 @@ export function Sidebar({
                   <span className="hash" style={markerStyle(project.color)}>
                     {customIcon
                       ? <ProjectIcon iconId={customIcon} size="sm" style={{ color: 'inherit' }} />
-                      : '#'}
+                      : kindIcon ? <Icon name={KIND_ICON[kindIcon]} size="sm" /> : '#'}
                   </span>
                 )}
-              <span className="label">{project.name}</span>
+              <span className="label">{title ?? project.name}</span>
             </button>
 
             {/* The count gives up its place to the actions under the pointer,
@@ -666,58 +629,28 @@ export function Sidebar({
           </SideGroup>
         )}
 
-        {areas.map(({ area, rows }) => {
-          const key = `area-${area}`;
+        {areaNodes.map((node) => {
+          const area = node.project;
+          const key = `area-${area.id}`;
           return (
             <SideGroup
               key={key}
-              title={areaTitle(area)}
+              title={area.name}
               open={openGroups[key] ?? true}
               onToggle={() => toggleGroup(key)}
               onAdd={() => setAddingArea(area)}
               addLabel={t('area.add')}
             >
-              {rows.map((row) => {
-                const button = (
-                  <button
-                    key={row.key}
-                    className="navitem"
-                    aria-current={route.view === row.view && route.id === row.id ? 'page' : undefined}
-                    onClick={() => navigate(row.view, row.id)}
-                  >
-                    <ListIcon list={row.list} meta={row.meta} />
-                    <span className="label">{row.name}</span>
-                  </button>
-                );
-                /* Nur Listen aus Labels lassen sich hier löschen: Eine Liste,
-                   die ein Todoist-Projekt ist (Claude_Eingang), nähme ihre
-                   Aufgaben mit. */
-                const labelId = row.labelId;
-                if (!labelId) return button;
-                return (
-                  <div key={row.key} className="navrow arearow">
-                    {button}
-                    <span className="navend">
-                      <PageMenu
-                        floating
-                        label={t('area.listActions')}
-                        contextOn=".arearow"
-                        items={[{
-                          key: 'delete', label: t('area.deleteList'), icon: 'trash', danger: true,
-                          onPick: () => void deleteList(labelId, row.id, row.name),
-                        }]}
-                      />
-                    </span>
-                  </div>
-                );
-              })}
+              {/* Aufgaben direkt im Hauptprojekt: der Bereich selbst, als „Allgemein“. */}
+              {projectNode({ project: area, children: [] }, 'area-', 0, t('area.general'))}
+              {node.children.map((child) => projectNode(child))}
             </SideGroup>
           );
         })}
 
         {workspaces.map((workspace) => {
           const key = workspace.workspaceId ?? 'personal';
-          const projects = workspace.roots.filter((node) => !splitListName(node.project.name));
+          const projects = workspace.workspaceId ? workspace.roots : workspace.roots.filter((node) => node.children.length === 0);
           /* On the personal workspace the lists are the content; an empty "Meine
              Projekte" heading under them is noise. Team workspaces keep theirs. */
           if (!workspace.workspaceId && projects.length === 0) return null;

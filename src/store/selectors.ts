@@ -12,7 +12,7 @@ import type { RowOrder } from '@/domain/dnd';
 import { PREFERENCES_TASK_CONTENT } from './prefs';
 import { byChildOrder, byLabelOrder, bySectionOrder } from '@/domain/orderKey';
 import { chosenAreas, inAreas } from '@/domain/projectQuick';
-import { listDisplayName, listOf } from '@/domain/lists';
+import { placementOf } from '@/domain/lists';
 import { isHiddenLabel, statusOf, TASK_STATUSES, type TaskStatus } from '@/domain/kanban';
 
 /**
@@ -343,6 +343,8 @@ export function groupItems(
     noLabel: string;
     /** The title of tasks that are in no list, when the page has a list grouping. */
     noList?: string;
+    /** The title of a Bereich's own tasks, which sit in none of its lists. */
+    general?: string;
     unassigned?: string;
     unavailable?: string;
     priority: (p: number) => string;
@@ -387,11 +389,13 @@ export function groupItems(
         break;
       }
       case 'list': {
-        // A task's list is its list-label inside its Bereich; without one it sits in no list.
-        const area = topLevelProject(snapshot, item.project_id);
-        const found = area ? listOf(item.labels, [area.name]) : null;
-        if (!area || !found) push('none', labels.noList ?? labels.noLabel, item);
-        else push(`${found.area}_${found.list}`, `${area.name} · ${listDisplayName(found.list)}`, item);
+        // A task's list is the subproject of its Bereich it sits in; directly in the Bereich it is "general".
+        const placement = placementOf(snapshot.projects, item.project_id);
+        if (!placement) push('none', labels.noList ?? labels.noLabel, item);
+        else {
+          const id = placement.list?.id ?? placement.area.id;
+          push(id, `${placement.area.name} · ${placement.list?.name ?? labels.general ?? placement.area.name}`, item);
+        }
         break;
       }
       case 'section': {

@@ -5,7 +5,6 @@ import { defaultConflictSettings, type ConflictSettings } from '@/domain/conflic
 import { defaultCapacity, type DailyCapacity } from '@/domain/load';
 import { DATE_FORMATS, type DateFormat } from '@/domain/dates';
 import { DEFAULT_DUST_MONTHS, isDustMonths, type DustMonths } from '@/domain/views';
-import { readListMeta, type ListMeta } from '@/domain/lists';
 import { defaultSidebarNav, readSidebarNav, type SidebarNav } from '@/domain/sidebar';
 import {
   defaultDetailOrder, defaultTaskFields, readDetailOrder, readTaskFields, type DetailChip, type TaskFields,
@@ -414,10 +413,10 @@ export interface Preferences {
    * of every account once, including those that were set up long before it.
    */
   setupDone: boolean;
+  /** Nach dem Wechsel zu Todoist Pro einmal gefragt, ob Schätzungen echte Dauern werden sollen. */
+  durationOffered: boolean;
   /** The order of the project groups in the sidebar: 'personal' and workspace ids. Empty is Todoist's. */
   workspaceOrder: string[];
-  /** Selbst angelegte Listen in einem Bereich, nach Label: Listentyp, Symbol, Name (domain/lists.ts). */
-  listMeta: Record<string, ListMeta>;
   /** Whether a release that brings something new says so once, after the update (#115). */
   whatsNew: boolean;
   /**
@@ -481,8 +480,8 @@ export const defaultPreferences = (locale: Locale): Preferences => ({
   eisenhowerWorkspace: null,
   onboarded: false,
   setupDone: false,
+  durationOffered: false,
   workspaceOrder: [],
-  listMeta: {},
   whatsNew: true,
   seenVersion: null,
   hireNoteSeen: false,
@@ -586,10 +585,10 @@ export function hydratePreferences(stored: unknown, locale: Locale): Preferences
     dustAfterMonths: isDustMonths(s.dustAfterMonths) ? s.dustAfterMonths : base.dustAfterMonths,
     onboarded: s.onboarded === true,
     setupDone: s.setupDone === true,
+    durationOffered: s.durationOffered === true,
     workspaceOrder: Array.isArray(s.workspaceOrder)
       ? s.workspaceOrder.filter((id): id is string => typeof id === 'string')
       : [],
-    listMeta: readListMeta(s.listMeta),
     whatsNew: s.whatsNew !== false,
     seenVersion: typeof s.seenVersion === 'string' && /^\d+\.\d+\.\d+$/.test(s.seenVersion)
       ? s.seenVersion

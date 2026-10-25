@@ -1,10 +1,10 @@
-import { labelSlug, parseListLabel, splitListName } from './lists';
-import type { Item, Project, Snapshot } from './types';
+import { areaKeyOf, areasOf, placementOf } from './lists';
+import type { Item, Snapshot } from './types';
 
 /*
  * Schnellfilter nach Bereich im Seitenkopf (Heute, Demnächst, Woche …).
- * Die Todoist-Projekte heißen <Bereich>_<Liste> (privat_geplant, Arbeit_Geplant);
- * die Chips zeigen nur die Bereiche (Privat, Arbeit, Claude), nicht die Listen.
+ * Die Chips zeigen die Bereiche (Hauptprojekte wie Privat, Arbeit), nicht die
+ * Listen darin.
  * Aufgaben ohne Bereich (Eingang) gibt es nur unter „Alle“.
  *
  * Gespeichert wird die Auswahl in filters.projects als `area:<bereich>`. Ältere
@@ -21,29 +21,10 @@ export function chosenAreas(stored: readonly string[]): string[] {
   return stored.filter((entry) => entry.startsWith(AREA_PREFIX)).map((entry) => entry.slice(AREA_PREFIX.length));
 }
 
-/**
- * Der Bereich einer Aufgabe, klein geschrieben („privat“), oder null.
- * Zuerst das Projekt (oder eins darüber) nach seinem Namen, dann ein Ordner
- * ganz oben, der wie ein Bereich heißt, zuletzt ein Listen-Label der Aufgabe.
- * Der Eingang gehört zu keinem Bereich.
- */
+/** Der Bereich einer Aufgabe als Schlüssel („privat“), oder null. Der Eingang gehört zu keinem Bereich. */
 export function areaOf(item: Item, snapshot: Snapshot): string | null {
-  let id: string | null | undefined = item.project_id;
-  const seen = new Set<string>();
-  while (id && !seen.has(id)) {
-    seen.add(id);
-    const project: Project | undefined = snapshot.projects[id];
-    if (!project) break;
-    const parts = splitListName(project.name);
-    if (parts) return parts.area;
-    if (project.is_folder && !project.parent_id) return labelSlug(project.name) || null;
-    id = project.parent_id;
-  }
-  for (const label of item.labels) {
-    const parts = splitListName(label) ?? parseListLabel(label);
-    if (parts) return parts.area;
-  }
-  return null;
+  const placement = placementOf(snapshot.projects, item.project_id);
+  return placement ? areaKeyOf(placement.area) : null;
 }
 
 /** Whether a task is in one of the chosen Bereiche; none chosen lets everything through. */
@@ -53,13 +34,11 @@ export function inAreas(item: Item, snapshot: Snapshot, chosen: readonly string[
   return area !== null && chosen.includes(area);
 }
 
-/** Die übliche Reihenfolge der Bereiche, wie in der Seitenleiste. */
-export function areaRank(area: string): number {
-  return ['privat', 'arbeit', 'claude'].indexOf(area) + 1 || 99;
-}
-
 export interface QuickArea {
   area: string;
+  /** Der Name des Hauptprojekts, wie in Todoist. */
+  name: string;
+  color: string | null;
   /** How many of the page's tasks are in it. */
   count: number;
 }
@@ -76,9 +55,17 @@ export function quickAreas(items: readonly Item[], snapshot: Snapshot, chosen: r
     if (area) counts.set(area, (counts.get(area) ?? 0) + 1);
   }
   for (const area of chosen) if (!counts.has(area)) counts.set(area, 0);
+  const known = areasOf(snapshot.projects);
+  const rank = (area: string) => {
+    const at = known.findIndex((a) => a.key === area);
+    return at === -1 ? known.length : at;
+  };
   return [...counts.entries()]
-    .map(([area, count]) => ({ area, count }))
-    .sort((a, b) => areaRank(a.area) - areaRank(b.area) || a.area.localeCompare(b.area));
+    .map(([area, count]) => {
+      const project = known.find((a) => a.key === area)?.project;
+      return { area, name: project?.name ?? area, color: project?.color ?? null, count };
+    })
+    .sort((a, b) => rank(a.area) - rank(b.area) || a.area.localeCompare(b.area));
 }
 
 /** Clicking a chip: add it to the choice or take it out. */

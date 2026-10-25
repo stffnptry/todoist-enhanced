@@ -17,7 +17,8 @@ const note = (id: string, itemId: string, at: string, content: string): Note => 
   id, item_id: itemId, project_id: null, content, posted_at: at, posted_uid: 'me', is_deleted: false, file_attachment: null,
 });
 const projects: Record<string, Project> = {
-  p: { id: 'p', name: 'Arbeit_Geplant' } as Project,
+  a: { id: 'a', name: 'Arbeit', parent_id: null, child_order: 1, is_deleted: false, is_archived: false } as Project,
+  p: { id: 'p', name: 'Arbeit geplant', parent_id: 'a', child_order: 1, is_deleted: false, is_archived: false } as Project,
 };
 
 describe('reasonOf', () => {

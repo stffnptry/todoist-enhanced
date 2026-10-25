@@ -1,33 +1,28 @@
 import { useEffect, useState } from 'react';
 import { Overlay } from './Overlay';
 import { Icon } from '../Icon';
-import { Select } from '../Select';
 import { ProjectIcon, ProjectIconGrid } from '../ProjectIconPicker';
 import { useT } from '@/hooks/useT';
 import { useStore } from '@/store/store';
-import { areaTitle, newListLabel, type ListKind } from '@/domain/lists';
+import { withProjectIcon } from '@/domain/projectIcons';
+import type { Project } from '@/domain/types';
 
 /** Das Symbol, mit dem eine neue Liste startet (wie in Steffens Entwurf). */
 const DEFAULT_ICON = 'list';
 
 /**
- * Eine neue Liste in einem Bereich anlegen: Name, Listentyp, Symbol.
+ * Eine neue Liste in einem Bereich anlegen: Name und Symbol.
  *
- * Beide Listentypen werden ein Label im Bereich („privat_einkauf“): Todoists
- * kostenloser Tarif hat nur fünf Projekte, und die sind mit den festen Listen
- * belegt. Was Todoist an einem Label nicht speichern kann – Listentyp, Symbol
- * und der Name, wie er eingegeben wurde –, liegt in den Einstellungen
- * (`listMeta`) und reist mit ihnen.
+ * Die Liste wird ein echtes Unterprojekt des Bereichs in Todoist, in seiner
+ * Farbe. Das Symbol reist wie bei jedem Projekt in der Beschreibung mit
+ * (`domain/projectIcons.ts`).
  */
-export function AreaListSheet({ area, onClose }: { area: string | null; onClose: () => void }) {
+export function AreaListSheet({ area, onClose }: { area: Project | null; onClose: () => void }) {
   const { t } = useT();
-  const labels = useStore((s) => s.snapshot.labels);
-  const listMeta = useStore((s) => s.prefs.listMeta);
-  const createLabel = useStore((s) => s.createLabel);
-  const setPrefs = useStore((s) => s.setPrefs);
+  const projects = useStore((s) => s.snapshot.projects);
+  const createProject = useStore((s) => s.createProject);
 
   const [name, setName] = useState('');
-  const [kind, setKind] = useState<ListKind>('list');
   const [icon, setIcon] = useState<string | null>(DEFAULT_ICON);
   const [iconOpen, setIconOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -36,29 +31,28 @@ export function AreaListSheet({ area, onClose }: { area: string | null; onClose:
   useEffect(() => {
     if (!area) return;
     setName('');
-    setKind('list');
     setIcon(DEFAULT_ICON);
     setIconOpen(false);
   }, [area]);
 
-  const label = area ? newListLabel(area, name) : null;
-  const taken = Boolean(label && Object.values(labels).some((l) => !l.is_deleted && l.name.toLowerCase() === label));
-  const unusable = name.trim() !== '' && !label;
-  const ready = Boolean(label) && !taken && !busy;
+  const wanted = name.trim();
+  const taken = Boolean(area && wanted && Object.values(projects).some((p) =>
+    !p.is_deleted && !p.is_archived && p.parent_id === area.id && p.name.toLowerCase() === wanted.toLowerCase()));
+  const unusable = name !== '' && !/[\p{L}\p{N}]/u.test(name);
+  const ready = Boolean(area && wanted) && !unusable && !taken && !busy;
 
   async function submit() {
-    if (!ready || !label) return;
+    if (!ready || !area) return;
     setBusy(true);
     try {
-      setPrefs({ listMeta: { ...listMeta, [label]: { kind, icon, name: name.trim() } } });
-      await createLabel(label);
+      await createProject(wanted, area.color, null, null, { parentId: area.id, description: withProjectIcon('', icon) });
       onClose();
     } finally {
       setBusy(false);
     }
   }
 
-  const title = area ? t('area.newTitle', { area: areaTitle(area) }) : '';
+  const title = area ? t('area.newTitle', { area: area.name }) : '';
 
   return (
     <Overlay open={area !== null} onClose={onClose} label={title} size="sm">
@@ -84,20 +78,6 @@ export function AreaListSheet({ area, onClose }: { area: string | null; onClose:
           />
           {taken && <span className="filtererror">{t('area.taken')}</span>}
           {unusable && <span className="filtererror">{t('area.unusable')}</span>}
-        </div>
-
-        <span className="listform-label">{t('area.kind')}</span>
-        <div className="listform-field">
-          <Select
-            value={kind}
-            ariaLabel={t('area.kind')}
-            matchWidth
-            options={[
-              { value: 'list', label: t('area.kindList') },
-              { value: 'project', label: t('area.kindProject') },
-            ]}
-            onChange={(next) => setKind(next === 'project' ? 'project' : 'list')}
-          />
         </div>
 
         <span className="listform-label">{t('area.icon')}</span>

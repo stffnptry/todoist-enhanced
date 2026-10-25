@@ -16,7 +16,7 @@ import type { CompletionEntry } from '@/lib/completionLog';
 import type { RescheduleEntry } from '@/lib/rescheduleLog';
 import { estimateOf } from './estimates';
 import { focusScore } from './insights';
-import { areaTitle, parseListLabel, splitListName } from './lists';
+import { placementOf } from './lists';
 import { isRescheduleComment } from './replan';
 import { isNotDoneCompletion, notDoneTasks, type NotDoneTask } from './notDone';
 import { missingCompletions, timingOf, type Timing } from './planVsActual';
@@ -189,17 +189,9 @@ export function movesIn(
   return moves.sort((a, b) => a.at.getTime() - b.at.getTime());
 }
 
-/** Der Bereich einer Aufgabe: aus dem Projektnamen („Privat_Geplant“) oder dem Listen-Label, sonst das Projekt. */
-export function areaOf(projectId: string, labels: string[], projects: Record<string, Project>): string {
-  const project = projects[projectId];
-  const fromProject = project ? splitListName(project.name) : null;
-  if (fromProject) return areaTitle(fromProject.area);
-  for (const label of labels) {
-    const parsed = parseListLabel(label);
-    if (parsed) return areaTitle(parsed.area);
-  }
-  if (project?.parent_id && projects[project.parent_id]?.is_folder) return projects[project.parent_id].name;
-  return project?.name ?? '–';
+/** Der Bereich einer Aufgabe: das Hauptprojekt über ihrem Projekt, sonst das Projekt selbst. */
+export function areaOf(projectId: string, _labels: string[], projects: Record<string, Project>): string {
+  return placementOf(projects, projectId)?.area.name ?? projects[projectId]?.name ?? '–';
 }
 
 export function slotOf(hour: number): DaySlot {

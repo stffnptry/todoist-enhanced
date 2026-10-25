@@ -11,22 +11,25 @@ const snapshot: Snapshot = {
   ...emptySnapshot(),
   projects: {
     inbox: project('inbox', 'Inbox', { inbox_project: true }),
-    pw: project('pw', 'privat_wiederholend'),
-    pg: project('pg', 'Privat_Geplant'),
-    ag: project('ag', 'arbeit_geplant'),
-    ce: project('ce', 'Claude_Eingang'),
-    ordner: project('ordner', 'Arbeit', { is_folder: true }),
-    kunde: project('kunde', 'Kunde A', { parent_id: 'ordner' }),
+    privat: project('privat', 'Privat', { child_order: 1, color: 'lime_green' }),
+    pw: project('pw', 'Privat wiederholend', { parent_id: 'privat' }),
+    pg: project('pg', 'Privat geplant', { parent_id: 'privat' }),
+    arbeit: project('arbeit', 'Arbeit', { child_order: 2 }),
+    ag: project('ag', 'Arbeit geplant', { parent_id: 'arbeit' }),
+    kunde: project('kunde', 'Kunde A', { parent_id: 'ag' }),
+    dev: project('dev', 'Development', { child_order: 3 }),
+    ce: project('ce', 'Claude Eingang', { parent_id: 'dev' }),
+    allein: project('allein', 'Urlaub', { child_order: 4 }),
   },
 };
 
 describe('Bereichs-Schnellfilter', () => {
-  it('liest den Bereich aus dem Projektnamen, einem Ordner oder einem Listen-Label', () => {
+  it('liest den Bereich aus dem Hauptprojekt, auch direkt darin und tiefer verschachtelt', () => {
     expect(areaOf(item({ project_id: 'pw' }), snapshot)).toBe('privat');
-    expect(areaOf(item({ project_id: 'pg' }), snapshot)).toBe('privat');
-    expect(areaOf(item({ project_id: 'ce' }), snapshot)).toBe('claude');
+    expect(areaOf(item({ project_id: 'privat' }), snapshot)).toBe('privat');
+    expect(areaOf(item({ project_id: 'ce' }), snapshot)).toBe('development');
     expect(areaOf(item({ project_id: 'kunde' }), snapshot)).toBe('arbeit');
-    expect(areaOf(item({ project_id: 'inbox', labels: ['privat_geplant'] }), snapshot)).toBe('privat');
+    expect(areaOf(item({ project_id: 'allein' }), snapshot)).toBeNull();
   });
 
   it('der Eingang gehört zu keinem Bereich und steht nur unter „Alle“', () => {
@@ -45,13 +48,13 @@ describe('Bereichs-Schnellfilter', () => {
       item({ id: '5', project_id: 'ce' }),
     ];
     expect(quickAreas(items, snapshot, [])).toEqual([
-      { area: 'privat', count: 2 },
-      { area: 'arbeit', count: 1 },
-      { area: 'claude', count: 1 },
+      { area: 'privat', name: 'Privat', color: 'lime_green', count: 2 },
+      { area: 'arbeit', name: 'Arbeit', color: 'grey', count: 1 },
+      { area: 'development', name: 'Development', color: 'grey', count: 1 },
     ]);
-    expect(quickAreas([items[0]], snapshot, ['claude'])).toEqual([
-      { area: 'arbeit', count: 1 },
-      { area: 'claude', count: 0 },
+    expect(quickAreas([items[0]], snapshot, ['development']).map((a) => [a.area, a.count])).toEqual([
+      ['arbeit', 1],
+      ['development', 0],
     ]);
   });
 

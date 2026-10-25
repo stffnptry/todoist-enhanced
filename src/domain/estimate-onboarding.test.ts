@@ -8,4 +8,9 @@ describe('estimate choice after startup', () => {
       expect(shouldAskEstimateStorage({ ...ready, ...patch })).toBe(false);
     }
   });
+
+  it('fragt nach dem Wechsel zu Pro einmal, auch wenn schon Labels gewählt sind', () => {
+    expect(shouldAskEstimateStorage({ ...ready, storage: 'tag', upgraded: true })).toBe(true);
+    expect(shouldAskEstimateStorage({ ...ready, storage: 'tag', upgraded: true, dismissed: true })).toBe(false);
+  });
 });

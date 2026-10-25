@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '@/api/commands';
 import { emptySnapshot, type Item, type Snapshot } from './types';
-import { canStoreDeadlines, deadlinesToNotes, parseDeadlineNote, readDeadlineNote, withDeadlineNote } from './deadlineNote';
+import { canStoreDeadlines, deadlinesToNotes, noteDeadlineMigration, parseDeadlineNote, readDeadlineNote, withDeadlineNote } from './deadlineNote';
 
 const item = (patch: Partial<Item> = {}): Item => ({
   id: 't1', user_id: 'u', project_id: 'p', section_id: null, parent_id: null, content: 'Rechnung',
@@ -65,5 +65,18 @@ describe('deadline note', () => {
     expect(deadlinesToNotes([add], after, true)[0]).toBe(add);
     expect(deadlinesToNotes([cmd('item_update', { id: 't1', description: 'X' })], after, true)[0].args)
       .toEqual({ id: 't1', description: 'X', deadline: { date: '2026-10-26', lang: 'de' } });
+  });
+});
+
+describe('Umstellung auf Pro', () => {
+  it('schreibt Deadlines aus der Beschreibung einmal ins echte Feld, nur bei offenen Aufgaben', () => {
+    const fromNote = readDeadlineNote(item({ id: 'a', description: 'IBAN siehe Mail\n\nDeadline: 26.10.2026' }));
+    const done = readDeadlineNote(item({ id: 'b', checked: true, description: 'Deadline: 01.11.2026' }));
+    const native = item({ id: 'c', deadline: { date: '2026-11-02', lang: 'de' } });
+    const commands = noteDeadlineMigration({ a: fromNote, b: done, c: native });
+    expect(commands.map((c) => c.args)).toEqual([
+      { id: 'a', description: 'IBAN siehe Mail', deadline: { date: '2026-10-26', lang: 'de' } },
+    ]);
+    expect(noteDeadlineMigration({ a: fromNote }, new Set(['a']))).toEqual([]);
   });
 });

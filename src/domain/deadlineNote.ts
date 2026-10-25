@@ -1,4 +1,4 @@
-import type { Command } from '@/api/commands';
+import { updateItem, type Command } from '@/api/commands';
 import type { Item, Snapshot, TodoistDeadline, TodoistUser } from './types';
 
 /**
@@ -55,7 +55,18 @@ export function readDeadlineNote(item: Item): Item {
   if (!item.description || !/deadline:/i.test(item.description)) return item;
   const { date, rest } = parseDeadlineNote(item.description);
   if (!date) return item;
-  return { ...item, description: rest, deadline: item.deadline ?? { date, lang: 'de' } };
+  return { ...item, description: rest, deadline: item.deadline ?? { date, lang: 'de' }, deadline_from_note: true };
+}
+
+/**
+ * Pro: Deadlines, die noch als Zeile in der Beschreibung stehen, einmal ins
+ * echte Feld schreiben – Beschreibung ohne die Zeile, Deadline als Feld. Nur
+ * offene Aufgaben; erledigte bleiben, wie sie sind.
+ */
+export function noteDeadlineMigration(items: Record<string, Item>, skip: ReadonlySet<string> = new Set()): Command[] {
+  return Object.values(items)
+    .filter((item) => item.deadline_from_note && item.deadline && !item.checked && !item.is_deleted && !skip.has(item.id))
+    .map((item) => updateItem(item.id, { description: item.description, deadline: item.deadline }));
 }
 
 /** Wie `canStoreDurations`: nur ein ausdrücklich freies Konto kann kein Deadline-Feld. */

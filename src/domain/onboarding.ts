@@ -86,7 +86,9 @@ export function forgetOnboarding(userId: string | null | undefined): void {
 export function shouldAskEstimateStorage(state: {
   ready: boolean; settled: boolean; demo: boolean; quickAdd: boolean;
   onboarded: boolean; storage: 'tag' | 'duration' | null; busy: boolean; dismissed: boolean;
+  /** Das Konto kann jetzt Dauern (Pro), speichert aber Labels und wurde dazu noch nicht gefragt. */
+  upgraded?: boolean;
 }): boolean {
-  return state.ready && state.settled && state.onboarded && state.storage === null
+  return state.ready && state.settled && state.onboarded && (state.storage === null || state.upgraded === true)
     && !state.demo && !state.quickAdd && !state.busy && !state.dismissed;
 }

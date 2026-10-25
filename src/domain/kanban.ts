@@ -1,5 +1,4 @@
 import type { Item } from './types';
-import { isListLabel } from './lists';
 
 /**
  * Kanban-Status einer Aufgabe: Offen, In Arbeit, Abgeschlossen.
@@ -27,9 +26,9 @@ const statusNames = new Set(Object.values(STATUS_LABELS).map((name) => name.toLo
 
 export const isStatusLabel = (name: string): boolean => statusNames.has(name.toLowerCase());
 
-/** Labels, die nie als Tag erscheinen: Schätzungen (`est-…`), der Kanban-Status und Listen (`privat_geplant`). */
+/** Labels, die nie als Tag erscheinen: Schätzungen (`est-…`) und der Kanban-Status. */
 export const isHiddenLabel = (name: string): boolean =>
-  name.toLowerCase().startsWith('est-') || isStatusLabel(name) || isListLabel(name);
+  name.toLowerCase().startsWith('est-') || isStatusLabel(name);
 
 export function statusOf(item: Pick<Item, 'checked' | 'labels'>): TaskStatus {
   if (item.checked) return 'done';

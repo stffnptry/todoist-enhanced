@@ -94,6 +94,7 @@ function useGrouped(props: ModeSurfaceProps) {
       noEstimate: t('metrics.noEstimates'),
       noLabel: t('common.none'),
       noList: t('group.noList'),
+      general: t('area.general'),
       unassigned: t('detail.unassigned'),
       unavailable: t('assignee.unavailable'),
       priority: (p) => t(`common.p${p}` as TranslationKey),

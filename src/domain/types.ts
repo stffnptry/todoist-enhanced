@@ -43,6 +43,8 @@ export interface Item {
   priority: TodoistPriority;
   due: TodoistDue | null;
   deadline: TodoistDeadline | null;
+  /** Nur in der App: Die Deadline stand als Zeile in der Beschreibung (Free-Tarif, domain/deadlineNote.ts). */
+  deadline_from_note?: boolean;
   duration: TodoistDuration | null;
   labels: string[];
   child_order: number;

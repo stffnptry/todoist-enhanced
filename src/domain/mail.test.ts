@@ -97,7 +97,7 @@ describe('Ziel gezogener Mails', () => {
     ({ id, name: id, is_deleted: false, is_archived: false, ...extra }) as Project;
   const snapshot = {
     user: { inbox_project_id: 'in' },
-    projects: { in: project('in', { name: 'Inbox', inbox_project: true }), p1: project('p1', { name: 'Privat_Geplant' }), old: project('old', { is_archived: true }) },
+    projects: { in: project('in', { name: 'Inbox', inbox_project: true }), privat: project('privat', { name: 'Privat' }), p1: project('p1', { name: 'Privat geplant', parent_id: 'privat' }), old: project('old', { is_archived: true }) },
     sections: {
       s1: { id: 's1', project_id: 'p1', name: 'A', is_deleted: false, is_archived: false } as Section,
       s2: { id: 's2', project_id: 'other', name: 'B', is_deleted: false, is_archived: false } as Section,
@@ -109,14 +109,15 @@ describe('Ziel gezogener Mails', () => {
   } as unknown as Pick<Snapshot, 'projects' | 'sections' | 'user' | 'labels'>;
 
   it('nimmt die offene Liste, samt angesprungenem Abschnitt', () => {
-    expect(mailTarget({ view: 'project', id: 'p1' }, snapshot)).toEqual({ projectId: 'p1', sectionId: undefined, name: 'Privat · Geplante Aufgaben' });
+    expect(mailTarget({ view: 'project', id: 'p1' }, snapshot)).toEqual({ projectId: 'p1', sectionId: undefined, name: 'Privat · Privat geplant' });
+    expect(mailTarget({ view: 'project', id: 'privat' }, snapshot).name).toBe('Privat · Allgemein');
     expect(mailTarget({ view: 'project', id: 'p1', sectionId: 's1' }, snapshot).sectionId).toBe('s1');
     expect(mailTarget({ view: 'project', id: 'p1', sectionId: 's2' }, snapshot).sectionId).toBeUndefined();
   });
 
-  it('nimmt eine in der App angelegte Liste (Label) mit in den Eingang', () => {
-    expect(mailTarget({ view: 'label', id: 'privat_einkauf' }, snapshot, { privat_einkauf: { name: 'Einkaufen' } }))
-      .toEqual({ projectId: 'in', labels: ['privat_einkauf'], name: 'Privat · Einkaufen' });
+  it('nimmt auf einer Tag-Seite den Tag mit in den Eingang', () => {
+    expect(mailTarget({ view: 'label', id: 'privat_einkauf' }, snapshot))
+      .toEqual({ projectId: 'in', labels: ['privat_einkauf'], name: 'privat_einkauf' });
     expect(mailTarget({ view: 'label', id: 'alt' }, snapshot)).toEqual({ projectId: 'in', name: null });
   });
 

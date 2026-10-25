@@ -223,7 +223,8 @@ export function buildDemoSnapshot(locale: Locale = 'en', seed = 20260914): Snaps
 
   addProject('inbox', copy.projects.inbox, 'charcoal', 0, { inbox_project: true });
   addProject('personal', copy.projects.personal, 'orange', 1, { is_favorite: true });
-  addProject('home', copy.projects.home, 'green', 2, { description: copy.projects.homeDescription });
+  // Ein Bereich wie bei Steffen: „Persönlich“ mit der Liste „Zuhause“ darunter.
+  addProject('home', copy.projects.home, 'green', 2, { description: copy.projects.homeDescription, parent_id: 'personal' });
   addProject('site', copy.projects.site, 'blue', 3, {
     is_favorite: true,
     description: `${copy.projects.siteDescription}\n\n<!-- icon:briefcase -->`,

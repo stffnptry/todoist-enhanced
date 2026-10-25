@@ -33,6 +33,7 @@ import { SettingsView } from './views/SettingsView';
 import { EisenhowerView } from './views/EisenhowerView';
 import { ConnectView } from './views/ConnectView';
 import { EstimateStorageDialog } from './components/overlays/EstimateStorageDialog';
+import { canStoreDurations } from '@/domain/estimates';
 import { Walkthrough } from './components/overlays/Walkthrough';
 import { Tour } from './components/overlays/Tour';
 import { WhatsNew, type WhatsNewScope } from './components/overlays/WhatsNew';
@@ -321,11 +322,15 @@ export function App() {
     return () => window.removeEventListener('enhanced:hire-note', show);
   }, [setHireNote]);
 
+  const canDurations = useStore((s) => canStoreDurations(s.snapshot.user));
+  const durationOffered = useStore((s) => s.prefs.durationOffered);
+  const upgraded = storage === 'tag' && canDurations && !durationOffered;
   const storageOpen = shouldAskEstimateStorage({
     ready: ready && connected && Boolean(userId), settled, demo, quickAdd: QUICK_ADD,
     onboarded: onboarded || hasOnboarded(userId), storage,
     busy: tourOpen || walkthroughOpen || Boolean(whatsNew) || seenVersion !== VERSION,
     dismissed: storageDismissed === userId,
+    upgraded,
   });
 
   /* Settings opens the whole history. With `detail.versions` the same event
@@ -399,7 +404,7 @@ export function App() {
 
       {/* Outside the shell, and above it. The choices it offers change the
           page behind it, which is the point of showing them here. */}
-      <EstimateStorageDialog onConvert={(target) => setConversionRequest((previous) => ({ target, request: previous.request + 1 }))} open={storageOpen && !demo && !tourOpen && !walkthroughOpen && !whatsNew} onClose={() => { setStorageDismissed(userId ?? null); }} />
+      <EstimateStorageDialog onConvert={(target) => setConversionRequest((previous) => ({ target, request: previous.request + 1 }))} open={storageOpen && !demo && !tourOpen && !walkthroughOpen && !whatsNew} upgraded={upgraded} onClose={() => { setStorageDismissed(userId ?? null); if (upgraded) setPrefs({ durationOffered: true }); }} />
       <EstimateConversion target={conversionRequest.target} openRequest={conversionRequest.request} hideTrigger />
       <ShareSheet projectId={shareProject} onClose={() => setShareProject(null)} />
       <Walkthrough
