@@ -68,7 +68,11 @@ export function quickAreas(items: readonly Item[], snapshot: Snapshot, chosen: r
     .sort((a, b) => rank(a.area) - rank(b.area) || a.area.localeCompare(b.area));
 }
 
-/** Clicking a chip: add it to the choice or take it out. */
-export function toggleArea(chosen: readonly string[], area: string): string[] {
-  return chosen.includes(area) ? chosen.filter((entry) => entry !== area) : [...chosen, area];
+/**
+ * Klick auf einen Chip: nur noch dieser Bereich (Einfachauswahl, Wunsch vom
+ * 26.10.). Ist er schon allein gewählt, geht es zurück zu „Alle“. Eine ältere
+ * Mehrfachauswahl wird beim nächsten Klick auf diesen einen Bereich reduziert.
+ */
+export function pickArea(chosen: readonly string[], area: string): string[] {
+  return chosen.length === 1 && chosen[0] === area ? [] : [area];
 }

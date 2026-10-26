@@ -1436,7 +1436,7 @@ export const en = {
   'time.pill': 'I have time',
   'pquick.label': 'Filter by area',
   'pquick.all': 'All',
-  'pquick.hint': 'Show only “{name}” (click more areas to add them)',
+  'pquick.hint': 'Show only “{name}”',
   'time.sort': 'Order',
   'time.sortDuration': 'Shortest first',
   'time.sortPriority': 'Priority first',

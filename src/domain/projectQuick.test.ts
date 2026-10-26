@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { areaKey, areaOf, chosenAreas, inAreas, quickAreas, toggleArea } from './projectQuick';
+import { areaKey, areaOf, chosenAreas, inAreas, quickAreas, pickArea } from './projectQuick';
 import { emptySnapshot, type Project, type Snapshot } from './types';
 import { item } from '@/test/items';
 
@@ -63,9 +63,10 @@ describe('Bereichs-Schnellfilter', () => {
     expect(chosenAreas(['area:privat', '6Jf8VQXxpwv56VQ7', 'area:arbeit'])).toEqual(['privat', 'arbeit']);
   });
 
-  it('Klick nimmt dazu oder heraus', () => {
-    expect(toggleArea([], 'arbeit')).toEqual(['arbeit']);
-    expect(toggleArea(['arbeit'], 'privat')).toEqual(['arbeit', 'privat']);
-    expect(toggleArea(['arbeit'], 'arbeit')).toEqual([]);
+  it('Klick wählt nur diesen Bereich, zweiter Klick zurück zu Alle', () => {
+    expect(pickArea([], 'arbeit')).toEqual(['arbeit']);
+    expect(pickArea(['arbeit'], 'privat')).toEqual(['privat']);
+    expect(pickArea(['arbeit'], 'arbeit')).toEqual([]);
+    expect(pickArea(['arbeit', 'privat'], 'arbeit')).toEqual(['arbeit']);
   });
 });

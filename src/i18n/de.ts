@@ -1438,7 +1438,7 @@ export const de: Record<TranslationKey, string> = {
   'time.pill': 'Ich habe Zeit',
   'pquick.label': 'Nach Bereich filtern',
   'pquick.all': 'Alle',
-  'pquick.hint': 'Nur „{name}“ zeigen (Klick auf weitere Bereiche nimmt sie dazu)',
+  'pquick.hint': 'Nur „{name}“ zeigen',
   'time.sort': 'Reihenfolge',
   'time.sortDuration': 'Kürzeste zuerst',
   'time.sortPriority': 'Priorität zuerst',

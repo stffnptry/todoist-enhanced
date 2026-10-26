@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useStore } from '@/store/store';
 import { viewPrefs } from '@/store/prefs';
 import { applyFilters } from '@/store/selectors';
-import { areaKey, chosenAreas, quickAreas, toggleArea } from '@/domain/projectQuick';
+import { areaKey, chosenAreas, quickAreas, pickArea } from '@/domain/projectQuick';
 import { colorValue } from '@/domain/colors';
 import { useT } from '@/hooks/useT';
 import type { Item } from '@/domain/types';
@@ -16,8 +16,8 @@ interface ProjectQuickFilterProps {
 
 /**
  * Bereichs-Chips im Seitenkopf neben „Ich habe Zeit“: ein Klick zeigt nur diesen
- * Bereich (Privat, Arbeit … – alle Listen darin), weitere Klicks nehmen
- * Bereiche dazu, „Alle“ setzt zurück. Aufgaben ohne Bereich (Eingang) stehen
+ * Bereich (Privat, Arbeit … – alle Listen darin), ein Klick auf einen anderen
+ * wechselt dorthin (nur eine Auswahl), „Alle“ oder ein zweiter Klick setzt zurück. Aufgaben ohne Bereich (Eingang) stehen
  * nur unter „Alle“. Die Auswahl wird je Ansicht gemerkt (filters.projects).
  */
 export function ProjectQuickFilter({ viewKey, pageItems, childrenOf }: ProjectQuickFilterProps) {
@@ -61,7 +61,7 @@ export function ProjectQuickFilter({ viewKey, pageItems, childrenOf }: ProjectQu
             className={`pquick-chip${on ? ' on' : ''}`}
             aria-pressed={on}
             title={t('pquick.hint', { name })}
-            onClick={() => set(toggleArea(chosen, area))}
+            onClick={() => set(pickArea(chosen, area))}
           >
             <span className="pquick-dot" style={{ background: colorValue(color) }} aria-hidden="true" />
             <span className="pquick-name">{name}</span>
