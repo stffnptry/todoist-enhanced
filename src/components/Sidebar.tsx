@@ -29,7 +29,8 @@ import { COFFEE_URL } from '@/app-info';
 import { Feedback } from './overlays/Feedback';
 import { ProjectMenu } from './ProjectMenu';
 import { DraggableTag } from './dnd/DraggableTag';
-import { dragClock } from './dnd/DragProvider';
+import { AREA_DRAG_PREFIX, dragClock } from './dnd/DragProvider';
+import { useDndContext, useDraggable, useDroppable } from '@dnd-kit/core';
 import type { ProjectSheetTarget } from './overlays/ProjectSheet';
 import { byChildOrder, byLabelOrder } from '@/domain/orderKey';
 import { visibleSidebarNav, type SidebarItemId } from '@/domain/sidebar';
@@ -636,6 +637,7 @@ export function Sidebar({
             <SideGroup
               key={key}
               title={area.name}
+              areaId={area.id}
               open={openGroups[key] ?? true}
               onToggle={() => toggleGroup(key)}
               onAdd={() => setAddingArea(area)}
@@ -718,9 +720,11 @@ export function Sidebar({
  * resting sidebar stays quiet.
  */
 function SideGroup({
-  title, logo, open, onToggle, onAdd, addLabel, dropTarget, children,
+  title, logo, areaId, open, onToggle, onAdd, addLabel, dropTarget, children,
 }: {
   title: string;
+  /** Ein Bereich: Die Überschrift lässt sich ziehen, die Gruppe nimmt andere Bereiche auf. */
+  areaId?: string;
   /** A workspace's own picture, when Todoist has one. */
   logo?: string | null;
   open: boolean;
@@ -731,9 +735,16 @@ function SideGroup({
   dropTarget?: DropTarget;
   children: React.ReactNode;
 }) {
-  const head = () => (
+  const head = (handle?: AreaHandle) => (
     <div className="side-head">
-        <button className="side-headbtn" aria-expanded={open} onClick={onToggle}>
+        <button
+          className="side-headbtn"
+          aria-expanded={open}
+          {...handle?.props}
+          ref={handle?.ref}
+          /* Wer die Überschrift gezogen hat, wollte die Gruppe nicht zuklappen. */
+          onClick={() => { if (!dragClock.justEnded()) onToggle(); }}
+        >
           {logo && <img className="side-logo" src={logo} alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
           <span>{title}</span>
         </button>
@@ -767,10 +778,52 @@ function SideGroup({
     </section>
   );
 
+  if (areaId) {
+    return (
+      <AreaSortable areaId={areaId}>
+        {(handle) => (
+          <section className="side-group">
+            {head(handle)}
+            {open && children}
+          </section>
+        )}
+      </AreaSortable>
+    );
+  }
   if (!dropTarget) return body(false);
   return (
     <Droppable target={dropTarget} scope="side-group">
       {({ isOver }) => body(isOver)}
     </Droppable>
+  );
+}
+
+/**
+ * Ein Bereich als Ganzes, an seiner Überschrift verschiebbar.
+ *
+ * Die ganze Gruppe ist Landeplatz, damit man nicht auf eine schmale Zeile zielen
+ * muss; ein Strich über oder unter ihr zeigt, wo der Bereich landen würde.
+ */
+interface AreaHandle {
+  props: React.HTMLAttributes<HTMLElement>;
+  ref: (node: HTMLElement | null) => void;
+}
+
+function AreaSortable({ areaId, children }: {
+  areaId: string;
+  children: (handle: AreaHandle) => React.ReactNode;
+}) {
+  const id = `${AREA_DRAG_PREFIX}${areaId}`;
+  const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({ id });
+  const { setNodeRef: setDropRef, isOver, rect } = useDroppable({ id });
+  const { active } = useDndContext();
+  const translated = active?.rect.current.translated;
+  const landing = isOver && !isDragging && rect.current && translated
+    ? (translated.top + translated.height / 2 > rect.current.top + rect.current.height / 2 ? ' drop-after' : ' drop-before')
+    : '';
+  return (
+    <div ref={setDropRef} className={`area-sortable${isDragging ? ' lifting' : ''}${landing}`}>
+      {children({ props: { ...attributes, ...listeners }, ref: setDragRef })}
+    </div>
   );
 }

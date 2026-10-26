@@ -2340,3 +2340,17 @@ html.desktop-app:not(.quickadd) body::before {
 }
 .report-state.notDone { color: var(--late-dark, var(--late)); }
 .report-notdone-mark { color: var(--late-dark, var(--late)); font-weight: 700; }
+
+/* ---------- Bereiche in der Seitenleiste verschieben (Sidebar.tsx, AreaSortable) ---------- */
+.area-sortable { position: relative; }
+.area-sortable .side-headbtn { touch-action: none; }
+@media (hover:none),(max-width:720px){ .area-sortable .side-headbtn { touch-action: manipulation; } }
+.area-sortable.lifting { opacity: .4; }
+.area-sortable.drop-before::before,
+.area-sortable.drop-after::after {
+  content: ""; position: absolute; z-index: 4; left: 4px; right: 4px; height: 2px;
+  border-radius: 1px; background: var(--accent); pointer-events: none;
+}
+.area-sortable.drop-before::before { top: 10px; }
+.area-sortable.drop-after::after { bottom: -11px; }
+.dragoverlay.area { font-weight: 600; }

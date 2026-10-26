@@ -16,6 +16,7 @@ import {
 } from '@/domain/order';
 import { useT } from '@/hooks/useT';
 import { siblingOrder } from '@/store/selectors';
+import { areaOrderAfterDrop } from '@/domain/lists';
 import { SUBTASK_DRAG_PREFIX } from '@/components/TaskRow';
 import {
   TAG_DRAG_PREFIX, TAG_DROP_PREFIX, TAG_TOP_DROP_ID, tagOrderFor,
@@ -70,14 +71,19 @@ const anchorLeftOfCursor: Modifier = ({
 const pressedAndHeld = (event: DragEndEvent): boolean =>
   Math.abs(event.delta.x) < HOLD_SLOP_PX && Math.abs(event.delta.y) < HOLD_SLOP_PX;
 
-const dragKind = (id: string): 'subtask' | 'section' | 'project' | 'tag' | 'task' =>
+/** Ein Bereich in der Seitenleiste, an seiner Überschrift gezogen. */
+export const AREA_DRAG_PREFIX = 'area:';
+
+const dragKind = (id: string): 'subtask' | 'section' | 'project' | 'area' | 'tag' | 'task' =>
   (id.startsWith('subtask:') ? 'subtask'
+    : id.startsWith(AREA_DRAG_PREFIX) ? 'area'
     : id.startsWith('section:') ? 'section'
       : id.startsWith('project-row:') ? 'project'
         : id.startsWith(TAG_DRAG_PREFIX) ? 'tag' : 'task');
 
-const dropKind = (id: string): 'subtask' | 'slot' | 'project' | 'tag' | 'target' =>
+const dropKind = (id: string): 'subtask' | 'slot' | 'project' | 'area' | 'tag' | 'target' =>
   (id.startsWith('subtask:') ? 'subtask'
+    : id.startsWith(AREA_DRAG_PREFIX) ? 'area'
     : id.startsWith('slot:') || id.startsWith('section-slot:') ? 'slot'
       : id.startsWith('project-row:') || id.startsWith('project-slot:') ? 'project'
         : id.startsWith(TAG_DROP_PREFIX) ? 'tag' : 'target');
@@ -88,6 +94,8 @@ const ACCEPTS: Record<ReturnType<typeof dragKind>, Array<ReturnType<typeof dropK
   /* A sidebar row is both a position in the list and a project destination,
      and a project dragged onto either means the same landing. */
   project: ['project', 'target'],
+  /* Ein Bereich landet nur vor oder hinter einem anderen Bereich, nirgends hinein. */
+  area: ['area'],
   /* A tag is not a position in any list and not a destination for anything.
      The one place it can go is Favourites. */
   tag: ['target', 'tag'],
@@ -363,17 +371,18 @@ export function DragProvider({ children }: { children: ReactNode }) {
     const id = String(event.active.id);
     const isSection = id.startsWith('section:');
     const isProject = id.startsWith('project-row:');
+    const isArea = id.startsWith(AREA_DRAG_PREFIX);
 
     setDraggingId(id);
     /* None of these is a task being filed somewhere, so the "a task is in
        flight" flag stays down and the empty drop zones stay closed. A subtask
        being reordered is moving inside its parent, not out of it. */
-    setDragging(isSection || isProject ? null : taskIdOf(id));
+    setDragging(isSection || isProject || isArea ? null : taskIdOf(id));
     setDraggingSection(isSection ? id.slice('section:'.length) : null);
     setDraggingProject(isProject ? id.slice('project-row:'.length) : null);
     setDraggingTag(id.startsWith(TAG_DRAG_PREFIX) ? id.slice(TAG_DRAG_PREFIX.length) : null);
 
-    const block = isSection || isProject || id.startsWith('subtask:') ? [] : carriedWith(taskIdOf(id));
+    const block = isSection || isProject || isArea || id.startsWith('subtask:') ? [] : carriedWith(taskIdOf(id));
     setCarrying(block);
     document.documentElement.classList.toggle('carrying-selection', block.length > 1);
     /* The rows around the landing spot make room for what is carried, the way
@@ -495,6 +504,23 @@ export function DragProvider({ children }: { children: ReactNode }) {
     }
 
     if (!event.over) return;
+
+    /* Ein Bereich wird unter den Hauptprojekten umsortiert; Todoist merkt sich
+       die Reihenfolge, die Seitenleiste folgt ihr. */
+    if (activeId.startsWith(AREA_DRAG_PREFIX)) {
+      const overId = String(event.over.id);
+      if (!overId.startsWith(AREA_DRAG_PREFIX)) return;
+      const from = activeId.slice(AREA_DRAG_PREFIX.length);
+      const over = overId.slice(AREA_DRAG_PREFIX.length);
+      /* Dieselbe Rechnung wie der Strich, den die Gruppe beim Überfahren zeigt. */
+      const carried = event.active.rect.current.translated;
+      const middle = event.over.rect.top + event.over.rect.height / 2;
+      const order = areaOrderAfterDrop(
+        snapshot.projects, from, over, carried && carried.top + carried.height / 2 > middle ? 'after' : 'before',
+      );
+      if (order) await reorderProjects(order);
+      return;
+    }
 
     /* A section is dragged whole, into a slot between two others. It is not a
        task and none of the task rules apply to it. */
@@ -1236,6 +1262,9 @@ export function DragProvider({ children }: { children: ReactNode }) {
   const draggingProjectRow = draggingId?.startsWith('project-row:')
     ? snapshot.projects[draggingId.slice('project-row:'.length)]
     : null;
+  const draggingArea = draggingId?.startsWith(AREA_DRAG_PREFIX)
+    ? snapshot.projects[draggingId.slice(AREA_DRAG_PREFIX.length)]
+    : undefined;
   const draggingTagName = draggingId?.startsWith(TAG_DRAG_PREFIX)
     ? draggingId.slice(TAG_DRAG_PREFIX.length)
     : null;
@@ -1308,6 +1337,9 @@ export function DragProvider({ children }: { children: ReactNode }) {
             <span className="hash" style={markerStyle(draggingProjectRow.color)}>#</span>
             {draggingProjectRow.name}
           </div>
+        )}
+        {draggingArea && (
+          <div className="dragoverlay area">{draggingArea.name}</div>
         )}
         {draggingTagName && (
           <div className="dragoverlay tag">

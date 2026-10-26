@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { areasOf, labelSlug, listKind, placementOf, placementTitle } from './lists';
+import { areaOrderAfterDrop, areasOf, labelSlug, listKind, placementOf, placementTitle } from './lists';
 import type { Project } from './types';
 
 const project = (id: string, name: string, extra: Partial<Project> = {}): Project => ({
@@ -54,5 +54,20 @@ describe('Bereiche aus dem Projektbaum', () => {
 
   it('macht aus Namen Schlüssel ohne Umlaute', () => {
     expect(labelSlug('Über Bereich')).toBe('ueber_bereich');
+  });
+});
+
+describe('Bereiche umsortieren', () => {
+  it('schiebt einen Bereich vor oder hinter einen anderen, mit allen Hauptprojekten', () => {
+    expect(areaOrderAfterDrop(projects, 'arbeit', 'privat', 'before')).toEqual(['arbeit', 'privat', 'urlaub']);
+    expect(areaOrderAfterDrop(projects, 'privat', 'arbeit', 'after')).toEqual(['arbeit', 'privat', 'urlaub']);
+    expect(areaOrderAfterDrop(projects, 'privat', 'urlaub', 'after')).toEqual(['arbeit', 'urlaub', 'privat']);
+  });
+
+  it('meldet nichts, wenn sich die Reihenfolge nicht ändert oder ein Projekt kein Hauptprojekt ist', () => {
+    expect(areaOrderAfterDrop(projects, 'privat', 'arbeit', 'before')).toBeNull();
+    expect(areaOrderAfterDrop(projects, 'privat', 'privat', 'after')).toBeNull();
+    expect(areaOrderAfterDrop(projects, 'pg', 'arbeit', 'before')).toBeNull();
+    expect(areaOrderAfterDrop(projects, 'team', 'arbeit', 'before')).toBeNull();
   });
 });

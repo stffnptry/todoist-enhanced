@@ -92,3 +92,25 @@ export function placementTitle(projects: Record<string, Project>, projectId: str
   if (!placement) return null;
   return `${placement.area.name} · ${placement.list?.name ?? general}`;
 }
+
+/**
+ * Die neue Reihenfolge der Hauptprojekte, wenn der Bereich `from` vor oder
+ * hinter den Bereich `over` gezogen wird – als ganze Geschwisterliste, so wie
+ * Todoists `project_reorder` sie erwartet. Hauptprojekte ohne Listen behalten
+ * ihren Platz relativ zueinander. null, wenn sich nichts ändert.
+ */
+export function areaOrderAfterDrop(
+  projects: Record<string, Project>,
+  from: string,
+  over: string,
+  position: 'before' | 'after',
+): string[] | null {
+  const siblings = Object.values(projects)
+    .filter((p) => live(p) && canBeArea(p))
+    .sort(byChildOrder)
+    .map((p) => p.id);
+  if (from === over || !siblings.includes(from) || !siblings.includes(over)) return null;
+  const next = siblings.filter((id) => id !== from);
+  next.splice(next.indexOf(over) + (position === 'after' ? 1 : 0), 0, from);
+  return next.every((id, i) => id === siblings[i]) ? null : next;
+}
